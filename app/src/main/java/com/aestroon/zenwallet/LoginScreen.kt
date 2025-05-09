@@ -25,10 +25,7 @@ import androidx.compose.ui.unit.dp
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
-fun LoginScreen(
-    viewModel: LoginViewModel = koinViewModel(),
-    onLoginSuccess: () -> Unit
-) {
+fun LoginScreen(viewModel: AuthViewModel) {
     val uiState by viewModel.uiState.collectAsState()
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -39,38 +36,27 @@ fun LoginScreen(
             .padding(32.dp),
         verticalArrangement = Arrangement.Center
     ) {
-        OutlinedTextField(
-            value = email,
-            onValueChange = { email = it },
-            label = { Text("Email") },
-            modifier = Modifier.fillMaxWidth()
-        )
+        OutlinedTextField(value = email, onValueChange = { email = it }, label = { Text("Email") })
         Spacer(modifier = Modifier.height(16.dp))
         OutlinedTextField(
             value = password,
             onValueChange = { password = it },
             label = { Text("Password") },
-            modifier = Modifier.fillMaxWidth(),
             visualTransformation = PasswordVisualTransformation()
         )
         Spacer(modifier = Modifier.height(16.dp))
-
-        Button(
-            onClick = { viewModel.login(email, password) },
-            modifier = Modifier.fillMaxWidth()
-        ) {
+        Button(onClick = { viewModel.login(email, password) }) {
             Text("Login")
         }
 
         when (uiState) {
-            is LoginViewModel.LoginUiState.Loading -> CircularProgressIndicator()
-            is LoginViewModel.LoginUiState.Error -> Text(
-                text = (uiState as LoginViewModel.LoginUiState.Error).message,
+            is AuthViewModel.LoginUiState.Loading -> CircularProgressIndicator()
+            is AuthViewModel.LoginUiState.Error -> Text(
+                (uiState as AuthViewModel.LoginUiState.Error).message,
                 color = MaterialTheme.colorScheme.error
             )
 
-            is LoginViewModel.LoginUiState.Success -> {
-                LaunchedEffect(Unit) { onLoginSuccess() }
+            is AuthViewModel.LoginUiState.Success -> {
                 Text("Welcome!")
             }
 
