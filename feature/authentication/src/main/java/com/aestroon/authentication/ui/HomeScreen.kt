@@ -1,4 +1,4 @@
-package com.aestroon.zenwallet
+package com.aestroon.authentication.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -7,10 +7,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import org.koin.compose.getKoin
+import com.aestroon.authentication.domain.AuthViewModel
 
 @Composable
 fun HomeScreen(viewModel: AuthViewModel) {

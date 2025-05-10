@@ -1,8 +1,8 @@
-package com.aestroon.zenwallet
+package com.aestroon.authentication.domain
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.aestroon.zenwallet.data.AuthRepository
+import com.aestroon.authentication.data.AuthRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch

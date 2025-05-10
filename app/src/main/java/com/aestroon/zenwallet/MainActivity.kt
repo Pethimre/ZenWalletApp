@@ -12,10 +12,11 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.lifecycle.lifecycleScope
 import appModule
+import com.aestroon.authentication.domain.AuthViewModel
+import com.aestroon.authentication.ui.HomeScreen
+import com.aestroon.authentication.ui.LoginScreen
 import com.aestroon.zenwallet.ui.theme.ZenWalletTheme
-import kotlinx.coroutines.launch
 import org.koin.android.ext.koin.androidContext
 import org.koin.compose.getKoin
 import org.koin.core.context.startKoin

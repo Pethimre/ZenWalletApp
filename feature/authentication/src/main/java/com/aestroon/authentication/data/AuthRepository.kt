@@ -1,4 +1,4 @@
-package com.aestroon.zenwallet.data
+package com.aestroon.authentication.data
 
 interface AuthRepository {
     suspend fun login(email: String, password: String): Boolean

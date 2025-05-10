@@ -22,4 +22,7 @@ dependencyResolutionManagement {
 
 rootProject.name = "ZenWallet"
 include(":app")
- 
+include(":shared")
+include(":feature")
+include(":feature:authentication")
+include(":shared:common")

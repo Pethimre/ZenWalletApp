@@ -1,9 +1,8 @@
-import com.aestroon.zenwallet.AuthViewModel
-import com.aestroon.zenwallet.LoginViewModel
-import com.aestroon.zenwallet.SupabaseClientProvider
-import com.aestroon.zenwallet.UserManager
-import com.aestroon.zenwallet.data.AuthRepository
-import com.aestroon.zenwallet.data.AuthRepositoryImpl
+import com.aestroon.authentication.domain.SupabaseClientProvider
+import com.aestroon.authentication.domain.UserManager
+import com.aestroon.authentication.data.AuthRepository
+import com.aestroon.authentication.data.AuthRepositoryImpl
+import com.aestroon.authentication.domain.AuthViewModel
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.gotrue.Auth
 import org.koin.dsl.module
@@ -16,6 +15,5 @@ val appModule = module {
     single { UserManager(get()) }
     single { get<SupabaseClient>().pluginManager.getPlugin(Auth) }
 
-    viewModel { LoginViewModel(get()) }
     viewModel { AuthViewModel(get(), get()) }
 }

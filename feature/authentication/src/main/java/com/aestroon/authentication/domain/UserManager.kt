@@ -1,4 +1,4 @@
-package com.aestroon.zenwallet
+package com.aestroon.authentication.domain
 
 import io.github.jan.supabase.gotrue.Auth
 import io.github.jan.supabase.gotrue.user.UserInfo

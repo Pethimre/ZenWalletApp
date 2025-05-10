@@ -13,3 +13,7 @@
 .externalNativeBuild
 .cxx
 local.properties
+/shared/common/build/
+/feature/authentication/build/
+/.idea/
+/.kotlin/
