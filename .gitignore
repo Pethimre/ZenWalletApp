@@ -17,3 +17,4 @@ local.properties
 /feature/authentication/build/
 /.idea/
 /.kotlin/
+/shared/components/build/

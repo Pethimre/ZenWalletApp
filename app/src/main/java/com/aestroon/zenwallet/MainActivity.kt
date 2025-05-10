@@ -16,7 +16,7 @@ import appModule
 import com.aestroon.authentication.domain.AuthViewModel
 import com.aestroon.authentication.ui.HomeScreen
 import com.aestroon.authentication.ui.LoginScreen
-import com.aestroon.zenwallet.ui.theme.ZenWalletTheme
+import com.aestroon.components.theme.ZenWalletTheme
 import org.koin.android.ext.koin.androidContext
 import org.koin.compose.getKoin
 import org.koin.core.context.startKoin

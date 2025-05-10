@@ -48,6 +48,8 @@ android {
 }
 
 dependencies {
+    implementation(project(":shared:components"))
+
     // Supabase setup
     implementation(platform("io.github.jan-tennert.supabase:bom:2.4.0"))
     implementation("io.github.jan-tennert.supabase:gotrue-kt")
