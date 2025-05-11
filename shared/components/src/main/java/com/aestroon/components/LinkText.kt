@@ -10,7 +10,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.aestroon.components.theme.AppDimensions.tiny
-import com.aestroon.components.theme.primaryColor
+import com.aestroon.components.theme.PrimaryColor
 
 @Composable
 fun LinkText(
@@ -23,7 +23,7 @@ fun LinkText(
         Spacer(modifier = Modifier.width(tiny.dp))
         Text(
             text = interactiveText,
-            color = primaryColor,
+            color = PrimaryColor,
             fontWeight = FontWeight.SemiBold,
             modifier = Modifier.clickable {
                 onClick()

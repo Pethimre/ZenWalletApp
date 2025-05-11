@@ -1,5 +1,3 @@
-import java.util.Properties
-
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
@@ -7,12 +5,11 @@ plugins {
 }
 
 android {
-    namespace = "com.aestroon.authentication"
+    namespace = "com.aestroon.home"
     compileSdk = 35
 
     buildFeatures {
         compose = true
-        buildConfig = true
     }
 
     defaultConfig {
@@ -20,13 +17,6 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles("consumer-rules.pro")
-
-        val properties = Properties().apply {
-            load(rootProject.file("local.properties").inputStream())
-        }
-
-        buildConfigField("String", "SUPABASE_ANON_KEY", "\"${properties.getProperty("SUPABASE_ANON_KEY")}\"")
-        buildConfigField("String", "SUPABASE_URL", "\"${properties.getProperty("SUPABASE_URL")}\"")
     }
 
     buildTypes {

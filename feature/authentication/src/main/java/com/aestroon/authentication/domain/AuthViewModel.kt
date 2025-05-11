@@ -3,6 +3,8 @@ package com.aestroon.authentication.domain
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.aestroon.authentication.data.AuthRepository
+import io.github.jan.supabase.gotrue.SessionStatus
+import io.github.jan.supabase.gotrue.auth
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -22,13 +24,33 @@ class AuthViewModel(
     val uiState: StateFlow<LoginUiState> = _uiState
 
     init {
-        _isLoggedIn.value = userManager.isLoggedIn()
+        observeSessionStatus()
     }
 
-    suspend fun restoreSession() {
-        SupabaseClientProvider.restoreSession()
-        _isLoggedIn.value = userManager.isLoggedIn()
-        _restoreComplete.value = true
+    private fun observeSessionStatus() {
+        viewModelScope.launch {
+            SupabaseClientProvider.client.auth.sessionStatus.collect { status ->
+                when (status) {
+                    is SessionStatus.Authenticated -> {
+                        _isLoggedIn.value = true
+                        _restoreComplete.value = true
+                    }
+                    is SessionStatus.NotAuthenticated -> {
+                        _isLoggedIn.value = false
+                        _restoreComplete.value = true
+                    }
+                    else -> {
+                        // Do nothing for Loading, or unknown statuses
+                    }
+                }
+            }
+        }
+    }
+
+    fun restoreSession() {
+        viewModelScope.launch {
+            SupabaseClientProvider.restoreSession()
+        }
     }
 
     fun login(email: String, password: String) {

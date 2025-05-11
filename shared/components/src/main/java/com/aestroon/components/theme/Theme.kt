@@ -5,10 +5,10 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 
 private val LightColorPalette = lightColorScheme(
-    primary = primaryColor,
-    secondary = secondaryColor,
-    background = appWhite,
-    onBackground = tertiaryColor,
+    primary = PrimaryColor,
+    secondary = SecondaryColor,
+    background = AppWhite,
+    onBackground = TertiaryColor,
 )
 
 /**

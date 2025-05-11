@@ -1,0 +1,75 @@
+package com.aestroon.zenwallet
+
+import HomeScreen
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.StackedLineChart
+import androidx.compose.material.icons.filled.Wallet
+import androidx.compose.material3.Scaffold
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import com.aestroon.common.ScreenNavItems
+import com.aestroon.components.AnimatedNavigationBar
+import com.aestroon.components.ButtonData
+import com.aestroon.components.theme.PrimaryColor
+import com.aestroon.home.mockProvider.CalendarScreen
+import com.aestroon.home.mockProvider.PortfolioScreen
+import com.aestroon.home.mockProvider.SettingsScreen
+import com.aestroon.home.mockProvider.WalletsScreen
+
+@Composable
+fun AuthenticatedNavGraph() {
+    val navController = rememberNavController()
+
+    val buttons = listOf(
+        ButtonData("Wallets", Icons.Default.Wallet),
+        ButtonData("Portfolio", Icons.Default.StackedLineChart),
+        ButtonData("Home", Icons.Default.Home),
+        ButtonData("Calendar", Icons.Default.DateRange),
+        ButtonData("Settings", Icons.Default.Settings),
+    )
+
+    Scaffold(
+        bottomBar = {
+            AnimatedNavigationBar(
+                buttons = buttons,
+                barColor = Color.White,
+                circleColor = Color.White,
+                selectedColor = PrimaryColor,
+                unselectedColor = Color.Gray,
+                onItemClick = { index ->
+                    val route = when (index) {
+                        0 -> ScreenNavItems.Wallets.route
+                        1 -> ScreenNavItems.Portfolio.route
+                        2 -> ScreenNavItems.Home.route
+                        3 -> ScreenNavItems.Calendar.route
+                        4 -> ScreenNavItems.Settings.route
+                        else -> ScreenNavItems.Home.route
+                    }
+                    navController.navigate(route) {
+                        launchSingleTop = true
+                    }
+                }
+            )
+        }
+    ) { padding ->
+        NavHost(
+            navController = navController,
+            startDestination = ScreenNavItems.Home.route,
+            modifier = Modifier.padding(padding)
+        ) {
+            composable(ScreenNavItems.Home.route) { HomeScreen() }
+            composable(ScreenNavItems.Wallets.route) { WalletsScreen() }
+            composable(ScreenNavItems.Portfolio.route) { PortfolioScreen() }
+            composable(ScreenNavItems.Calendar.route) { CalendarScreen() }
+            composable(ScreenNavItems.Settings.route) { SettingsScreen() }
+        }
+    }
+}

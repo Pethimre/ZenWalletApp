@@ -48,26 +48,28 @@ android {
 
 dependencies {
     implementation(project(":feature:authentication"))
+    implementation(project(":feature:home"))
     implementation(project(":shared:common"))
     implementation(project(":shared:components"))
 
     // Supabase setup
     implementation(platform("io.github.jan-tennert.supabase:bom:2.4.0"))
-    implementation("io.github.jan-tennert.supabase:gotrue-kt")
-    implementation("io.github.jan-tennert.supabase:postgrest-kt")
     implementation("io.github.jan-tennert.supabase:storage-kt")
-    implementation("io.github.jan-tennert.supabase:realtime-kt:1.3.3")
+    implementation(libs.gotrue.kt)
+    implementation(libs.postgrest.kt)
+    implementation(libs.realtime.kt)
 
-    implementation("io.ktor:ktor-client-android:2.3.0")
-    implementation("io.ktor:ktor-utils:2.3.0")
-    implementation("io.ktor:ktor-client-core:2.3.0")
-    implementation("io.coil-kt:coil-compose:2.6.0")
+    implementation(libs.androidx.navigation.compose)
+    implementation(libs.ktor.client.android)
+    implementation(libs.ktor.utils)
+    implementation(libs.ktor.client.core)
+    implementation(libs.coil.compose)
 
     // For instrumentation tests
-    implementation("com.google.android.gms:play-services-auth:21.0.0")
-    implementation("androidx.navigation:navigation-compose:2.5.3")
-    implementation("com.google.accompanist:accompanist-swiperefresh:0.24.13-rc")
-    implementation("androidx.compose.material:material-icons-extended:1.7.8")
+    implementation(libs.play.services.auth)
+    implementation(libs.androidx.navigation.compose)
+    implementation(libs.accompanist.swiperefresh)
+    implementation(libs.androidx.material.icons.extended)
 
     implementation(libs.koin.android)
     implementation(libs.koin.androidx.compose)

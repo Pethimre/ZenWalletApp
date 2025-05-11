@@ -12,7 +12,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.aestroon.components.theme.AppDimensions.normal
 import com.aestroon.components.theme.ComponentDimensions.buttonHeight
-import com.aestroon.components.theme.primaryColor
+import com.aestroon.components.theme.PrimaryColor
 
 @Composable
 fun PrimaryButton(
@@ -26,7 +26,7 @@ fun PrimaryButton(
             .fillMaxWidth()
             .height(buttonHeight.dp),
         shape = shape,
-        colors = ButtonDefaults.buttonColors(containerColor = primaryColor)
+        colors = ButtonDefaults.buttonColors(containerColor = PrimaryColor)
     ) {
         Text(text, color = Color.White)
     }

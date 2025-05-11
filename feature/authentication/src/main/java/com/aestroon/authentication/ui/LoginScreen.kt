@@ -33,7 +33,7 @@ import com.aestroon.components.PrimaryButton
 import com.aestroon.components.LinkText
 import com.aestroon.components.PasswordInput
 import com.aestroon.components.theme.AppDimensions.small
-import com.aestroon.components.theme.primaryColor
+import com.aestroon.components.theme.PrimaryColor
 
 @Composable
 fun LoginScreen(viewModel: AuthViewModel) {
@@ -61,7 +61,7 @@ fun LoginScreen(viewModel: AuthViewModel) {
                 Box(
                     modifier = Modifier
                         .size(32.dp)
-                        .background(primaryColor, CircleShape)
+                        .background(PrimaryColor, CircleShape)
                 )
                 Spacer(modifier = Modifier.width(small.dp))
                 Box(
