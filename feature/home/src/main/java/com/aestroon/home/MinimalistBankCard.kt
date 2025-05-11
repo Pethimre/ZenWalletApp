@@ -92,7 +92,7 @@ fun MinimalistBankCard(
                     Icon(
                         imageVector = card.icon,
                         contentDescription = null,
-                        tint = AppWhite,
+                        tint = Color.White,
                     )
                 }
 

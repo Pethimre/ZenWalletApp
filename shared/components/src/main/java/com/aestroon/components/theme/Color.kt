@@ -11,9 +11,6 @@ val PrimaryFontColor = Color(0xFF5163BF)
 val SecondaryFontColor = Color(0xFF1E1E1E)
 val InactiveFontColor = Color(0xFF878787)
 
-val AppWhite = Color.White
-val AppBlack = Color(0xFF1E1E1E)
-
 val LightBlueChipColor = Color(0xFF8AD6E8)
 val DarkBlueChipColor = Color(0xFF5164BF)
 val GreenChipColor = Color(0xFF4CAF50)
@@ -33,3 +30,6 @@ val NavyBlueChipColor = Color(0xFF0D47A1)
 val DarkNavyChipColor = Color(0xFF002147)
 val PurpleChipColor = Color(0xFF673AB7)
 val LightPurpleChipColor = Color(0xFF7E57C2)
+
+val AppWhite = GreyChipColor.copy(alpha = .2f)
+val AppBlack = Color(0xFF1E1E1E)
