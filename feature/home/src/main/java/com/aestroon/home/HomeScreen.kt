@@ -21,9 +21,7 @@ import androidx.compose.ui.unit.sp
 import com.aestroon.common.TextFormatter
 import com.aestroon.components.expandableListSection
 import com.aestroon.components.theme.AppDimensions.normal
-import com.aestroon.components.theme.AppDimensions.small
 import com.aestroon.components.theme.PrimaryFontColor
-import com.aestroon.components.theme.SecondaryFontColor
 import com.aestroon.home.MinimalistBankCard
 import com.aestroon.home.mockProvider.BANK_CARDS
 import com.aestroon.home.mockProvider.BankCard
@@ -50,7 +48,11 @@ fun HomeScreen() {
     ) {
         Spacer(modifier = Modifier.height(normal.dp))
 
-        Text("Current Balance", color = SecondaryFontColor, fontWeight = FontWeight.SemiBold)
+        Text(
+            "Current Balance",
+            color = MaterialTheme.colorScheme.onBackground,
+            fontWeight = FontWeight.SemiBold
+        )
         Text(
             text = "${TextFormatter.toBasicFormat(totalBalance)} $baseCurrency",
             fontSize = 28.sp,
@@ -129,17 +131,17 @@ fun TransactionFlow(
 }
 
 @Composable
-fun TransactionHeader(sumOfTransactions: Double, currency: String, headerText: String){
+fun TransactionHeader(sumOfTransactions: Double, currency: String, headerText: String) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
             text = headerText,
             fontWeight = FontWeight.SemiBold,
-            color = SecondaryFontColor,
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+            color = MaterialTheme.colorScheme.onBackground,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
         )
         Row {
             Icon(
@@ -150,7 +152,7 @@ fun TransactionHeader(sumOfTransactions: Double, currency: String, headerText: S
             Text(
                 text = "${TextFormatter.toBasicFormat(sumOfTransactions)} $currency",
                 fontWeight = FontWeight.SemiBold,
-                color = SecondaryFontColor,
+                color = MaterialTheme.colorScheme.onBackground,
                 modifier = Modifier.padding(end = 12.dp),
                 fontSize = 14.sp,
             )
@@ -169,7 +171,7 @@ fun TransactionItem(transaction: Transaction) {
     ) {
         Row(
             modifier = Modifier
-                .background(Color.White)
+                .background(MaterialTheme.colorScheme.background.copy(alpha = .3f))
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
@@ -178,16 +180,20 @@ fun TransactionItem(transaction: Transaction) {
                 Icon(
                     imageVector = transaction.icon,
                     contentDescription = null,
-                    tint = Color.White,
+                    tint = MaterialTheme.colorScheme.onBackground,
                     modifier = Modifier
                         .size(40.dp)
                         .background(transaction.iconBackgroundColor, CircleShape)
                         .padding(8.dp)
                 )
                 Spacer(modifier = Modifier.width(8.dp))
-                Column {
+                Column(modifier = Modifier.fillMaxWidth(.6f)) {
                     Text(transaction.title, fontWeight = FontWeight.SemiBold)
-                    Text(transaction.time, fontSize = 12.sp, color = Color.Gray)
+                    Text(
+                        text = transaction.description,
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
                 }
             }
             Text(

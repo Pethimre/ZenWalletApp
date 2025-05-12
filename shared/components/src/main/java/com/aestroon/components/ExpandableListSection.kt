@@ -8,6 +8,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -50,14 +51,14 @@ fun <T> LazyListScope.expandableListSection(
         Text(
             text = sectionTitle,
             fontWeight = FontWeight.SemiBold,
-            color = SecondaryFontColor,
+            color = MaterialTheme.colorScheme.onBackground,
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
         )
     },
     noItemsContent: @Composable () -> Unit = {
         Text(
             text = "No items to display.",
-            color = SecondaryFontColor,
+            color = MaterialTheme.colorScheme.onBackground,
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
         )
     },
@@ -95,10 +96,14 @@ fun <T> LazyListScope.expandableListSection(
                 TextButton(onClick = onToggleExpand) {
                     Icon(
                         imageVector = if (isExpanded) buttonIcons.second else buttonIcons.first,
-                        contentDescription = if (isExpanded) buttonTexts.second else buttonTexts.first
+                        contentDescription = if (isExpanded) buttonTexts.second else buttonTexts.first,
+                        tint = MaterialTheme.colorScheme.onBackground,
                     )
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text(text = if (isExpanded) buttonTexts.second else buttonTexts.first)
+                    Text(
+                        text = if (isExpanded) buttonTexts.second else buttonTexts.first,
+                        color = MaterialTheme.colorScheme.onBackground,
+                    )
                 }
             }
         }

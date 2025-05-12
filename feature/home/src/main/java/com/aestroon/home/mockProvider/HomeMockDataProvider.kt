@@ -53,6 +53,7 @@ val MOCK_TRANSACTIONS = listOf(
         Transaction(
             "0$it",
             "Entertainment",
+            "This description is not very entertaining",
             "4:${30 + it} PM",
             "EUR",
             5.84 + it,
@@ -63,6 +64,7 @@ val MOCK_TRANSACTIONS = listOf(
         Transaction(
             "1$it",
             "Bills",
+            "These cost more than they should huhu",
             "5:${10 + it} PM",
             "EUR",
             -(20.00 + it),
@@ -74,6 +76,7 @@ val MOCK_TRANSACTIONS = listOf(
         Transaction(
             "2$it",
             "Delivery",
+            "Carpe diem",
             "6:${10 + it} PM",
             "EUR",
             6.32 + it,
@@ -84,6 +87,7 @@ val MOCK_TRANSACTIONS = listOf(
         Transaction(
             "3$it",
             "Groceries",
+            "I will never financially recover from this",
             "7:${10 + it} PM",
             "EUR",
             -(30.00 + it),
@@ -95,6 +99,7 @@ val MOCK_TRANSACTIONS = listOf(
         Transaction(
             "4$it",
             "Freelance",
+            "This is freelance money. Don't touch",
             "3:${10 + it} PM",
             "EUR",
             150.0 + it * 10,
@@ -105,6 +110,7 @@ val MOCK_TRANSACTIONS = listOf(
         Transaction(
             "5$it",
             "Rent",
+            "Rent is due soon bruh",
             "8:${10 + it} AM",
             "EUR",
             -(300.00 + it * 10),
@@ -127,6 +133,7 @@ data class BankCard(
 data class Transaction(
     val id: String,
     val title: String,
+    val description: String,
     val time: String,
     val currency: String,
     val amount: Double,

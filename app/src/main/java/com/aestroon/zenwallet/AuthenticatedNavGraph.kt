@@ -8,6 +8,7 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.StackedLineChart
 import androidx.compose.material.icons.filled.Wallet
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -40,8 +41,8 @@ fun AuthenticatedNavGraph() {
         bottomBar = {
             AnimatedNavigationBar(
                 buttons = buttons,
-                barColor = Color.White,
-                circleColor = Color.White,
+                barColor = MaterialTheme.colorScheme.onPrimary,
+                circleColor = MaterialTheme.colorScheme.onPrimary,
                 selectedColor = PrimaryColor,
                 unselectedColor = Color.Gray,
                 onItemClick = { index ->
