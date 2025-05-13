@@ -48,7 +48,6 @@ android {
 }
 
 dependencies {
-    implementation(project(":shared:components"))
     implementation(project(":shared:common"))
 
     // Supabase setup

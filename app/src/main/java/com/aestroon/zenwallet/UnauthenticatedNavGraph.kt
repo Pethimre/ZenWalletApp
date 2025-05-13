@@ -6,7 +6,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.aestroon.authentication.domain.AuthViewModel
 import com.aestroon.authentication.ui.LoginScreen
-import com.aestroon.common.ScreenNavItems
+import com.aestroon.common.navigation.ScreenNavItems
 
 @Composable
 fun UnauthenticatedNavGraph(viewModel: AuthViewModel) {

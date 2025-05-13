@@ -1,6 +1,6 @@
 package com.aestroon.zenwallet
 
-import HomeScreen
+import com.aestroon.home.HomeScreen
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DateRange
@@ -16,14 +16,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.aestroon.common.ScreenNavItems
-import com.aestroon.components.AnimatedNavigationBar
-import com.aestroon.components.ButtonData
-import com.aestroon.components.theme.PrimaryColor
-import com.aestroon.home.mockProvider.CalendarScreen
-import com.aestroon.home.mockProvider.PortfolioScreen
-import com.aestroon.home.mockProvider.SettingsScreen
-import com.aestroon.home.mockProvider.WalletsScreen
+import com.aestroon.calendar.CalendarScreen
+import com.aestroon.common.navigation.ScreenNavItems
+import com.aestroon.common.navigation.AnimatedNavigationBar
+import com.aestroon.common.navigation.ButtonData
+import com.aestroon.common.theme.PrimaryColor
+import com.aestroon.calendar.mockProvider.PortfolioScreen
+import com.aestroon.calendar.mockProvider.WalletsScreen
+import com.aestroon.profile.ProfileScreen
 
 @Composable
 fun AuthenticatedNavGraph() {
@@ -70,7 +70,7 @@ fun AuthenticatedNavGraph() {
             composable(ScreenNavItems.Wallets.route) { WalletsScreen() }
             composable(ScreenNavItems.Portfolio.route) { PortfolioScreen() }
             composable(ScreenNavItems.Calendar.route) { CalendarScreen() }
-            composable(ScreenNavItems.Settings.route) { SettingsScreen() }
+            composable(ScreenNavItems.Settings.route) { ProfileScreen() }
         }
     }
 }

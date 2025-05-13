@@ -5,12 +5,8 @@ plugins {
 }
 
 android {
-    namespace = "com.aestroon.home"
+    namespace = "com.aestroon.calendar"
     compileSdk = 35
-
-    buildFeatures {
-        compose = true
-    }
 
     defaultConfig {
         minSdk = 24

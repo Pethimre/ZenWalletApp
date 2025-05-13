@@ -29,11 +29,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.aestroon.authentication.domain.AuthViewModel
-import com.aestroon.components.PrimaryButton
-import com.aestroon.components.LinkText
-import com.aestroon.components.PasswordInput
-import com.aestroon.components.theme.AppDimensions.small
-import com.aestroon.components.theme.PrimaryColor
+import com.aestroon.common.components.PrimaryButton
+import com.aestroon.common.components.LinkText
+import com.aestroon.common.components.PasswordInput
+import com.aestroon.common.theme.AppDimensions.small
+import com.aestroon.common.theme.PrimaryColor
 
 @Composable
 fun LoginScreen(viewModel: AuthViewModel) {

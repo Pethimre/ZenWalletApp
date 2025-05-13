@@ -5,12 +5,8 @@ plugins {
 }
 
 android {
-    namespace = "com.aestroon.home"
+    namespace = "com.aestroon.profile"
     compileSdk = 35
-
-    buildFeatures {
-        compose = true
-    }
 
     defaultConfig {
         minSdk = 24

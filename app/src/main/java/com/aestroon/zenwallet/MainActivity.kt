@@ -9,7 +9,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import appModule
 import com.aestroon.authentication.domain.AuthViewModel
-import com.aestroon.components.theme.ZenWalletTheme
+import com.aestroon.common.theme.ZenWalletTheme
 import org.koin.android.ext.koin.androidContext
 import org.koin.compose.getKoin
 import org.koin.core.context.startKoin

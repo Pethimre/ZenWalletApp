@@ -49,8 +49,9 @@ android {
 dependencies {
     implementation(project(":feature:authentication"))
     implementation(project(":feature:home"))
+    implementation(project(":feature:calendar"))
+    implementation(project(":feature:profile"))
     implementation(project(":shared:common"))
-    implementation(project(":shared:components"))
 
     // Supabase setup
     implementation(platform("io.github.jan-tennert.supabase:bom:2.4.0"))
