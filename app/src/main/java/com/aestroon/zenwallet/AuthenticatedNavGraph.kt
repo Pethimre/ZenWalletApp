@@ -21,8 +21,8 @@ import com.aestroon.common.navigation.ScreenNavItems
 import com.aestroon.common.navigation.AnimatedNavigationBar
 import com.aestroon.common.navigation.ButtonData
 import com.aestroon.common.theme.PrimaryColor
-import com.aestroon.calendar.mockProvider.PortfolioScreen
 import com.aestroon.calendar.mockProvider.WalletsScreen
+import com.aestroon.portfolio.PortfolioOverviewScreen
 import com.aestroon.profile.ProfileScreen
 
 @Composable
@@ -68,7 +68,7 @@ fun AuthenticatedNavGraph() {
         ) {
             composable(ScreenNavItems.Home.route) { HomeScreen() }
             composable(ScreenNavItems.Wallets.route) { WalletsScreen() }
-            composable(ScreenNavItems.Portfolio.route) { PortfolioScreen() }
+            composable(ScreenNavItems.Portfolio.route) { PortfolioOverviewScreen() }
             composable(ScreenNavItems.Calendar.route) { CalendarScreen() }
             composable(ScreenNavItems.Settings.route) { ProfileScreen() }
         }

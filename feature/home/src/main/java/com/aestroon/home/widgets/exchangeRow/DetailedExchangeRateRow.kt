@@ -19,11 +19,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.aestroon.common.theme.PrimaryColor
+import com.aestroon.common.utilities.TextFormatter
 import com.aestroon.home.mockProvider.CurrencyExchangeInfo
 import com.aestroon.home.mockProvider.RateTrend
 
 @Composable
-internal fun DetailedExchangeRateRow( // Previously ExchangeRateRow or ExchangeRateRowInternal
+internal fun DetailedExchangeRateRow(
     info: CurrencyExchangeInfo,
     baseCurrencySymbol: String
 ) {
@@ -31,16 +33,15 @@ internal fun DetailedExchangeRateRow( // Previously ExchangeRateRow or ExchangeR
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        // Currency Icon and Code
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.weight(1f) // Give it some weight
+            modifier = Modifier.weight(1f),
         ) {
             Icon(
                 imageVector = info.icon,
                 contentDescription = info.currencyName,
                 modifier = Modifier.size(20.dp),
-                tint = MaterialTheme.colorScheme.primary
+                tint = PrimaryColor,
             )
             Spacer(modifier = Modifier.width(8.dp))
             Text(
@@ -51,23 +52,12 @@ internal fun DetailedExchangeRateRow( // Previously ExchangeRateRow or ExchangeR
             )
         }
 
-        // Rate in HUF (aligned to end)
-        Text(
-            text = "${String.format("%,.2f", info.rateInHUF)} $baseCurrencySymbol",
-            style = MaterialTheme.typography.bodyLarge,
-            fontWeight = FontWeight.SemiBold,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.End,
-            modifier = Modifier.weight(1f) // Give it some weight
-        )
-
-        // Trend Icon (aligned to end)
         Box(
-            modifier = Modifier.width(40.dp).padding(start = 8.dp), // Fixed width for trend icon area
-            contentAlignment = Alignment.CenterEnd
+            modifier = Modifier.width(140.dp).padding(start = 8.dp),
+            contentAlignment = Alignment.CenterEnd,
         ) {
             val trendIconAndColor = when (info.trend) {
-                RateTrend.UP -> Icons.Filled.ArrowDropUp to MaterialTheme.colorScheme.tertiary // Often greenish
+                RateTrend.UP -> Icons.Filled.ArrowDropUp to MaterialTheme.colorScheme.tertiary
                 RateTrend.DOWN -> Icons.Filled.ArrowDropDown to MaterialTheme.colorScheme.error
                 RateTrend.STABLE -> null
             }
@@ -77,9 +67,18 @@ internal fun DetailedExchangeRateRow( // Previously ExchangeRateRow or ExchangeR
                     imageVector = icon,
                     contentDescription = "Trend: ${info.trend.name}",
                     modifier = Modifier.size(24.dp),
-                    tint = color
+                    tint = color,
                 )
-            } ?: Spacer(Modifier.width(24.dp)) // Maintain space if no icon
+            } ?: Spacer(Modifier.width(24.dp))
         }
+
+        Text(
+            text = "${TextFormatter.toBasicFormat(info.rateInHUF)} $baseCurrencySymbol",
+            style = MaterialTheme.typography.bodyLarge,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.weight(1f),
+        )
     }
 }

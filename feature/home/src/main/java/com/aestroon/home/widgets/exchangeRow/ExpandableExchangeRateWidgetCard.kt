@@ -25,7 +25,6 @@ const val NUMBER_OF_CURRENCIES_ON_COMPACT = 3
 fun ExpandableExchangeRateWidgetCard(
     modifier: Modifier = Modifier,
     allExchangeRates: List<CurrencyExchangeInfo>,
-    // Typically the first 3-4 rates you want to show in the collapsed view
     ratesForCollapsedView: List<CurrencyExchangeInfo> = allExchangeRates.take(NUMBER_OF_CURRENCIES_ON_COMPACT),
     baseCurrencySymbol: String = "Ft",
     initiallyExpanded: Boolean = false,
@@ -35,43 +34,39 @@ fun ExpandableExchangeRateWidgetCard(
 
     Card(
         modifier = modifier.fillMaxWidth(),
-        // onClick is handled by the AnimatedContent or specific clickable areas if needed
-        // For this setup, the entire card's content area effectively changes
-        shape = RoundedCornerShape(16.dp), // Consistent with other cards
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainerLow // A subtle background
+            containerColor = MaterialTheme.colorScheme.background
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
     ) {
         AnimatedContent(
             targetState = isExpanded,
             transitionSpec = {
-                // Define transitions for entering and exiting content
                 fadeIn(animationSpec = tween(300, easing = FastOutSlowInEasing)) +
                         expandVertically(
                             animationSpec = tween(300, easing = FastOutSlowInEasing),
-                            expandFrom = Alignment.Top
+                            expandFrom = Alignment.Top,
                         ) togetherWith
                         fadeOut(animationSpec = tween(300, easing = FastOutSlowInEasing)) +
                         shrinkVertically(
                             animationSpec = tween(300, easing = FastOutSlowInEasing),
-                            shrinkTowards = Alignment.Top
+                            shrinkTowards = Alignment.Top,
                         )
             },
             label = "expandableExchangeRateContent"
         ) { targetExpanded ->
             if (targetExpanded) {
-                // Expanded State: Full list of rates
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable { isExpanded = false } // Click expanded content to collapse
-                        .padding(vertical = 12.dp, horizontal = 16.dp)
+                        .clickable { isExpanded = false }
+                        .padding(vertical = 12.dp, horizontal = 16.dp),
                 ) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
+                        horizontalArrangement = Arrangement.SpaceBetween,
                     ){
                         Text(
                             text = cardTitle,
@@ -80,10 +75,10 @@ fun ExpandableExchangeRateWidgetCard(
                             color = MaterialTheme.colorScheme.onSurface,
                         )
                         Icon(
-                            imageVector = Icons.Filled.ExpandLess,
+                            imageVector = Icons.Filled.UnfoldLess,
                             contentDescription = "Collapse",
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(28.dp)
+                            tint = MaterialTheme.colorScheme.onBackground,
+                            modifier = Modifier.size(28.dp),
                         )
                     }
                     Spacer(modifier = Modifier.height(10.dp))
@@ -91,19 +86,18 @@ fun ExpandableExchangeRateWidgetCard(
                     allExchangeRates.forEachIndexed { index, rateInfo ->
                         DetailedExchangeRateRow(
                             info = rateInfo,
-                            baseCurrencySymbol = baseCurrencySymbol
+                            baseCurrencySymbol = baseCurrencySymbol,
                         )
                         if (index < allExchangeRates.size - 1) {
                             HorizontalDivider(
                                 modifier = Modifier.padding(vertical = 8.dp),
                                 thickness = 0.5.dp,
-                                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
                             )
                         }
                     }
                 }
             } else {
-                // Collapsed State: Compact display
                 Box(modifier = Modifier.clickable { isExpanded = true }) {
                     CollapsedRatesDisplay(
                         rates = ratesForCollapsedView
@@ -114,7 +108,6 @@ fun ExpandableExchangeRateWidgetCard(
     }
 }
 
-// Sample data (ensure this is defined or passed from your ViewModel/source)
 private val sampleExchangeRatesForWidget = listOf(
     CurrencyExchangeInfo("EUR", "Euro", Icons.Filled.EuroSymbol, 403.85, RateTrend.UP),
     CurrencyExchangeInfo("USD", "US Dollar", Icons.Filled.AttachMoney, 360.94, RateTrend.DOWN),

@@ -2,11 +2,12 @@ package com.aestroon.home.widgets.savingSummary
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccountBalanceWallet // Placeholder for savings/car
-import androidx.compose.material.icons.filled.LocalDining // Placeholder for food
-import androidx.compose.material.icons.filled.TrendingUp // Placeholder for revenue
+import androidx.compose.material.icons.filled.AccountBalanceWallet
+import androidx.compose.material.icons.filled.TrendingDown
+import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -22,48 +23,53 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.aestroon.common.theme.PrimaryColor
+import com.aestroon.common.utilities.TextFormatter
 
 @Composable
 fun SavingsSummaryCard(
     modifier: Modifier = Modifier,
-    revenueLastWeek: String,
-    foodLastWeek: String,
-    savingsGoalPercentage: Float, // Value between 0f and 1f
-    savingsIcon: ImageVector = Icons.Filled.AccountBalanceWallet, // Replace with your icon
-    revenueIcon: ImageVector = Icons.Filled.TrendingUp,         // Replace with your icon
-    foodIcon: ImageVector = Icons.Filled.LocalDining            // Replace with your icon
+    income: String,
+    expense: String,
+    savingsGoalPercentage: Float,
+    goalIcon: ImageVector = Icons.Filled.AccountBalanceWallet,
+    revenueIcon: ImageVector = Icons.Filled.TrendingUp,
+    expenseIcon: ImageVector = Icons.Filled.TrendingDown,
 ) {
     Card(
         modifier = modifier
             .fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer // Or primary for a more vibrant look like the image
+            containerColor = MaterialTheme.colorScheme.background
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
     ) {
         Row(
             modifier = Modifier
                 .padding(16.dp)
                 .fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceAround,
         ) {
-            // Savings Goal Circular Progress
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
-                    .weight(0.4f) // Give more space to circular progress part
                     .padding(end = 16.dp)
             ) {
-                CircularSavingsProgress(
+                CircularProgress(
                     percentage = savingsGoalPercentage,
-                    icon = savingsIcon,
-                    foregroundColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                    icon = goalIcon,
+                    percentageIndicator = true,
+                    foregroundColor = PrimaryColor,
                     backgroundColor = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.3f)
                 )
-                Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(top = 80.dp)) { // Adjust padding as needed
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.padding(top = 80.dp)
+                ) {
                     Text(
-                        text = "Savings on Goals",
+                        text = "Cashflow rate",
                         color = MaterialTheme.colorScheme.onPrimaryContainer,
                         fontWeight = FontWeight.SemiBold,
                         fontSize = 14.sp,
@@ -73,35 +79,32 @@ fun SavingsSummaryCard(
                 }
             }
 
-            // Vertical Divider (optional, as in image)
             Divider(
                 modifier = Modifier
-                    .height(130.dp) // Adjust height as needed
+                    .height(130.dp)
                     .width(1.dp),
-                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.5f)
+                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.5f),
             )
 
-            // Revenue and Food Info
             Column(
                 modifier = Modifier
-                    .weight(0.6f)
                     .padding(start = 16.dp),
-                verticalArrangement = Arrangement.Center
+                verticalArrangement = Arrangement.Center,
             ) {
                 InfoItem(
                     icon = revenueIcon,
-                    label = "Revenue Last Week",
-                    value = revenueLastWeek,
-                    iconColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                    textColor = MaterialTheme.colorScheme.onPrimaryContainer
+                    label = "Income",
+                    value = income,
+                    iconColor = Color.Green,
+                    textColor = MaterialTheme.colorScheme.onPrimaryContainer,
                 )
                 Spacer(modifier = Modifier.height(16.dp))
                 InfoItem(
-                    icon = foodIcon,
-                    label = "Food Last Week",
-                    value = foodLastWeek,
-                    iconColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                    textColor = MaterialTheme.colorScheme.onPrimaryContainer
+                    icon = expenseIcon,
+                    label = "Expense",
+                    value = expense,
+                    iconColor = Color.Red,
+                    textColor = MaterialTheme.colorScheme.onPrimaryContainer,
                 )
             }
         }
@@ -109,13 +112,14 @@ fun SavingsSummaryCard(
 }
 
 @Composable
-private fun CircularSavingsProgress(
+private fun CircularProgress(
     percentage: Float,
-    icon: ImageVector,
+    icon: ImageVector?,
     size: Dp = 72.dp,
     strokeWidth: Dp = 6.dp,
     foregroundColor: Color,
-    backgroundColor: Color
+    backgroundColor: Color,
+    percentageIndicator: Boolean = false,
 ) {
     Box(contentAlignment = Alignment.Center, modifier = Modifier.size(size)) {
         Canvas(modifier = Modifier.fillMaxSize()) {
@@ -127,7 +131,6 @@ private fun CircularSavingsProgress(
                 (this.size.height - arcSize.height) / 2
             )
 
-            // Background circle
             drawArc(
                 color = backgroundColor,
                 startAngle = 0f,
@@ -135,26 +138,33 @@ private fun CircularSavingsProgress(
                 useCenter = false,
                 topLeft = topLeft,
                 size = arcSize,
-                style = Stroke(width = actualStrokeWidth)
+                style = Stroke(width = actualStrokeWidth),
             )
 
-            // Foreground arc
             drawArc(
                 color = foregroundColor,
-                startAngle = -90f, // Start from the top
+                startAngle = -90f,
                 sweepAngle = 360 * percentage.coerceIn(0f, 1f),
                 useCenter = false,
                 topLeft = topLeft,
                 size = arcSize,
-                style = Stroke(width = actualStrokeWidth, cap = StrokeCap.Round)
+                style = Stroke(width = actualStrokeWidth, cap = StrokeCap.Round),
             )
         }
-        Icon(
-            imageVector = icon,
-            contentDescription = "Savings Icon",
-            modifier = Modifier.size(size / 2.5f), // Adjust icon size relative to circle
-            tint = foregroundColor
-        )
+        if (icon != null && !percentageIndicator) {
+            Icon(
+                imageVector = icon,
+                contentDescription = "Savings Icon",
+                modifier = Modifier.size(size / 2.5f),
+                tint = foregroundColor,
+            )
+        }
+        if (percentageIndicator) {
+            Text(
+                TextFormatter.formatPercentage((percentage * 100).toDouble()),
+                color = if (percentage > 0) Color.Green else Color.Red
+            )
+        }
     }
 }
 
@@ -170,21 +180,21 @@ private fun InfoItem(
         Icon(
             imageVector = icon,
             contentDescription = label,
-            modifier = Modifier.size(28.dp), // Slightly smaller icon next to text
-            tint = iconColor
+            modifier = Modifier.size(28.dp),
+            tint = iconColor,
         )
         Spacer(modifier = Modifier.width(8.dp))
         Column {
             Text(
                 text = label,
-                color = textColor.copy(alpha = 0.8f), // Slightly muted label
-                fontSize = 12.sp
+                color = textColor.copy(alpha = 0.8f),
+                fontSize = 12.sp,
             )
             Text(
                 text = value,
                 color = textColor,
                 fontWeight = FontWeight.Bold,
-                fontSize = 16.sp
+                fontSize = 16.sp,
             )
         }
     }

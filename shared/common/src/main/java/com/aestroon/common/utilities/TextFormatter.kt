@@ -1,6 +1,7 @@
 package com.aestroon.common.utilities
 
 import java.text.DecimalFormat
+import java.util.Locale
 import kotlin.math.round
 import kotlin.math.abs
 
@@ -10,7 +11,7 @@ object TextFormatter {
         BEFORE, AFTER
     }
 
-    private val decimalFormat = DecimalFormat("#,###.##")
+    private val twoDecimalFormat = DecimalFormat("#,##0.00")
 
     fun toBasicFormat(amount: Double) = "%,.2f".format(amount)
 
@@ -46,10 +47,18 @@ object TextFormatter {
         val formatted = if (round) {
             DecimalFormat("#,###").format(round(value))
         } else {
-            decimalFormat.format(value)
+            twoDecimalFormat.format(value)
         }
 
         return "$sign$formatted${suffixes[index]}"
+    }
+
+    fun formatPercentage(value: Double, locale: Locale = Locale.getDefault()): String {
+        return if (value % 1.0 == 0.0) {
+            String.format(locale, "%d%%", value.toInt())
+        } else {
+            String.format(locale, "%.2f%%", value)
+        }
     }
 
     fun toPrettyCompactDecimal(
@@ -59,7 +68,7 @@ object TextFormatter {
         currencyPosition: CurrencyPosition = CurrencyPosition.BEFORE
     ): String {
         val formattedAmount = if (abs(amount) < 100_000) {
-            decimalFormat.format(amount)
+            twoDecimalFormat.format(amount)
         } else {
             toPrettyAmount(amount, round)
         }

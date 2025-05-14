@@ -1,28 +1,18 @@
-import java.util.Properties
-
 plugins {
-    alias(libs.plugins.android.application)
+    alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
-    kotlin("plugin.serialization") version "1.9.0"
-}
-
-val localProperties = Properties().apply {
-    load(rootProject.file("local.properties").inputStream())
 }
 
 android {
-    namespace = "com.aestroon.zenwallet"
+    namespace = "com.aestroon.portfolio"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.aestroon.zenwallet"
-        minSdk = 33
-        targetSdk = 35
-        versionCode = 1
-        versionName = "1.0"
+        minSdk = 24
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        consumerProguardFiles("consumer-rules.pro")
     }
 
     buildTypes {
@@ -41,18 +31,13 @@ android {
     kotlinOptions {
         jvmTarget = "11"
     }
-    buildFeatures {
-        compose = true
-    }
 }
 
 dependencies {
-    implementation(project(":feature:authentication"))
-    implementation(project(":feature:home"))
-    implementation(project(":feature:portfolio"))
-    implementation(project(":feature:calendar"))
-    implementation(project(":feature:profile"))
     implementation(project(":shared:common"))
+    implementation ("io.github.ehsannarmani:compose-charts:0.1.7")
+
+    implementation("androidx.compose.material3:material3:1.2.1")
 
     // Supabase setup
     implementation(platform("io.github.jan-tennert.supabase:bom:2.4.0"))
