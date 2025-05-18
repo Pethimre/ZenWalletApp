@@ -13,8 +13,12 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
@@ -100,7 +104,7 @@ fun AnimatedNavigationBar(
         )
     }
 
-    Box {
+    Box(Modifier.padding(WindowInsets.navigationBars.asPaddingValues())) {
         Circle(
             modifier = Modifier
                 .offset { circleOffset }

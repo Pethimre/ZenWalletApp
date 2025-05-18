@@ -3,6 +3,7 @@ package com.aestroon.portfolio
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -48,7 +49,7 @@ import com.aestroon.portfolio.mockProvider.mockPortfolioSummary
 val currencyFormatter = DecimalFormat("#,##0.00")
 val percentageFormatter = DecimalFormat("0.00'%'")
 
-fun formatCurrency(value: Double, currencySymbol: String = "$"): String {
+fun formatCurrency(value: Double, currencySymbol: String = "HUF "): String {
     return "$currencySymbol${currencyFormatter.format(value)}"
 }
 
@@ -686,22 +687,28 @@ fun PortfolioOverviewScreen(
     Scaffold(
         floatingActionButton = {
             if (selectedAssetType != PortfolioAssetType.ALL) {
-                ExtendedFloatingActionButton(
-                    onClick = {
-                        showAddAccountDialogForType = selectedAssetType
-                    },
-                    icon = { Icon(Icons.Filled.Add, "Add Account Icon") },
-                    text = { Text("Add Account") },
-                    shape = RoundedCornerShape(16.dp)
-                )
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 30.dp, bottom = 8.dp),
+                    horizontalArrangement = Arrangement.Start
+                ) {
+                    ExtendedFloatingActionButton(
+                        onClick = {
+                            showAddAccountDialogForType = selectedAssetType
+                        },
+                        icon = { Icon(Icons.Filled.Add, "Add Account Icon") },
+                        text = { Text(" Account") },
+                        shape = RoundedCornerShape(16.dp),
+                    )
+                }
             }
         },
         floatingActionButtonPosition = FabPosition.End
-    ) { paddingValues ->
+    ) { _ ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(bottom = paddingValues.calculateBottomPadding())
         ) {
             SegmentedControlTabs(
                 tabs = PortfolioAssetType.entries.toList(),

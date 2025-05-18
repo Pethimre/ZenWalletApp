@@ -18,13 +18,11 @@ import androidx.compose.material.icons.filled.Fastfood
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Palette
-import androidx.compose.material.icons.filled.Payment
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.ReplayCircleFilled
 import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.Savings
 import androidx.compose.material.icons.filled.School
-import androidx.compose.material.icons.filled.Snooze
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Undo
 import androidx.compose.material.icons.filled.Upgrade
@@ -37,7 +35,6 @@ import com.aestroon.common.components.mockProvider.TransactionTag
 import com.aestroon.common.components.mockProvider.TransactionType
 import com.aestroon.common.theme.PrimaryColor
 import com.aestroon.common.theme.PrimaryFontColor
-import com.aestroon.common.theme.RedChipColor
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale

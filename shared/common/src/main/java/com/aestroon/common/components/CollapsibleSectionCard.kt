@@ -32,6 +32,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AttachMoney
+import androidx.compose.material.icons.filled.CallMade
+import androidx.compose.material.icons.filled.CallReceived
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.MoneyOff
@@ -70,7 +72,6 @@ import com.aestroon.common.theme.DarkGreenChipColor
 import com.aestroon.common.theme.GreenChipColor
 import com.aestroon.common.theme.RedChipColor
 import java.text.DecimalFormat
-import kotlin.math.exp
 
 @Composable
 fun CollapsibleSectionCard(
@@ -152,7 +153,7 @@ fun CollapsibleSectionCard(
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class) // For FlowRow
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun TransactionListItem(
     modifier: Modifier = Modifier,
@@ -257,7 +258,7 @@ fun TransactionListItem(
                 Spacer(modifier = Modifier.height(10.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
-                        imageVector = if (transaction.transactionType == TransactionType.INCOME) Icons.Filled.AttachMoney else Icons.Filled.MoneyOff, // Example icons
+                        imageVector = if (transaction.transactionType == TransactionType.INCOME) Icons.Filled.CallReceived else Icons.Filled.CallMade,
                         contentDescription = "Amount",
                         tint = amountColor,
                         modifier = Modifier.size(28.dp)
