@@ -42,6 +42,7 @@ import com.aestroon.portfolio.mockProvider.Instrument
 import com.aestroon.portfolio.mockProvider.PortfolioAccount
 import com.aestroon.portfolio.mockProvider.PortfolioAssetType
 import com.aestroon.portfolio.mockProvider.PortfolioSummary
+import com.aestroon.portfolio.mockProvider.SegmentedControlTabs
 import com.aestroon.portfolio.mockProvider.mockPortfolioAccounts
 import com.aestroon.portfolio.mockProvider.mockPortfolioSummary
 
@@ -58,55 +59,6 @@ fun formatPercentage(value: Double): String {
 }
 
 // --- UI Components ---
-@Composable
-fun SegmentedControlTabs(
-    tabs: List<PortfolioAssetType>,
-    selectedTab: PortfolioAssetType,
-    onTabSelected: (PortfolioAssetType) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 12.dp)
-            .clip(RoundedCornerShape(24.dp))
-            .background(MaterialTheme.colorScheme.surfaceContainer)
-            .padding(4.dp),
-        horizontalArrangement = Arrangement.SpaceEvenly,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        tabs.forEach { assetType ->
-            val isSelected = selectedTab == assetType
-
-            val backgroundColor = if (isSelected) MaterialTheme.colorScheme.primary
-            else Color.Transparent
-
-            val contentColor = if (isSelected) MaterialTheme.colorScheme.onPrimary
-            else MaterialTheme.colorScheme.onSurfaceVariant
-
-            TextButton(
-                onClick = { onTabSelected(assetType) },
-                modifier = Modifier
-                    .weight(1f)
-                    .height(40.dp)
-                    .clip(RoundedCornerShape(20.dp))
-                    .background(backgroundColor),
-                colors = ButtonDefaults.textButtonColors(
-                    containerColor = Color.Transparent,
-                    contentColor = contentColor
-                ),
-                contentPadding = PaddingValues(0.dp)
-            ) {
-                Text(
-                    text = assetType.displayName,
-                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                    color = contentColor,
-                    modifier = Modifier.padding(horizontal = 12.dp)
-                )
-            }
-        }
-    }
-}
 
 @Composable
 fun AnimatedLineChart(
@@ -374,7 +326,7 @@ fun AccountCard(
             Button(
                 onClick = onAddInstrument,
                 modifier = Modifier
-                    .align(Alignment.End)
+                    .align(Alignment.Start)
                     .height(48.dp),
                 shape = RoundedCornerShape(12.dp)
             ) {
@@ -690,8 +642,8 @@ fun PortfolioOverviewScreen(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(start = 30.dp, bottom = 8.dp),
-                    horizontalArrangement = Arrangement.Start
+                        .padding(bottom = 8.dp),
+                    horizontalArrangement = Arrangement.End
                 ) {
                     ExtendedFloatingActionButton(
                         onClick = {

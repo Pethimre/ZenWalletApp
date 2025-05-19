@@ -1,6 +1,6 @@
 package com.aestroon.zenwallet
 
-import com.aestroon.home.HomeScreen
+import com.aestroon.home.HomeMainScreen
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DateRange
@@ -66,7 +66,7 @@ fun AuthenticatedNavGraph() {
             startDestination = ScreenNavItems.Home.route,
             modifier = Modifier.padding(padding)
         ) {
-            composable(ScreenNavItems.Home.route) { HomeScreen() }
+            composable(ScreenNavItems.Home.route) { HomeMainScreen() }
             composable(ScreenNavItems.Wallets.route) { WalletsScreen() }
             composable(ScreenNavItems.Portfolio.route) { PortfolioOverviewScreen() }
             composable(ScreenNavItems.Calendar.route) { CalendarScreen() }

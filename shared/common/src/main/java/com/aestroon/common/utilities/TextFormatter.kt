@@ -1,6 +1,8 @@
 package com.aestroon.common.utilities
 
 import java.text.DecimalFormat
+import java.text.SimpleDateFormat
+import java.util.Date
 import java.util.Locale
 import kotlin.math.round
 import kotlin.math.abs
@@ -77,5 +79,15 @@ object TextFormatter {
             CurrencyPosition.BEFORE -> "$currency$formattedAmount"
             CurrencyPosition.AFTER -> "$formattedAmount$currency"
         }
+    }
+
+    fun formatNewsDate(date: Date?, pattern: String = "MMM dd, yyyy 'at' hh:mma", locale: Locale = Locale.getDefault()): String {
+        return date?.let { SimpleDateFormat(pattern, locale).format(it) } ?: "Date N/A"
+    }
+    fun formatNewsTimestamp(date: Date?, locale: Locale = Locale.getDefault()): String {
+        return date?.let {
+            val sdf = SimpleDateFormat("hh:mma - EEEE", locale) // e.g., 10:30AM - Monday
+            sdf.format(it)
+        } ?: ""
     }
 }

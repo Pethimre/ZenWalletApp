@@ -114,7 +114,7 @@ fun mockInstruments(type: PortfolioAssetType, count: Int): List<Instrument> {
     }
 }
 
-fun mockPortfolioAccounts(): MutableList<PortfolioAccount> { /* ... same as before ... */
+fun mockPortfolioAccounts(): MutableList<PortfolioAccount> {
     val stockInstruments = mockInstruments(PortfolioAssetType.STOCKS, 5)
     val bondInstruments = mockInstruments(PortfolioAssetType.BONDS, 3)
     val cryptoInstruments = mockInstruments(PortfolioAssetType.CRYPTO, 4)
