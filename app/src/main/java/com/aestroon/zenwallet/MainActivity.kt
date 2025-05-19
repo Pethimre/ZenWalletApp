@@ -10,6 +10,7 @@ import androidx.compose.runtime.getValue
 import appModule
 import com.aestroon.authentication.domain.AuthViewModel
 import com.aestroon.common.theme.ZenWalletTheme
+import com.aestroon.home.news.di.newsModule
 import org.koin.android.ext.koin.androidContext
 import org.koin.compose.getKoin
 import org.koin.core.context.startKoin
@@ -20,7 +21,10 @@ class MainActivity : ComponentActivity() {
 
         startKoin {
             androidContext(this@MainActivity)
-            modules(appModule)
+            modules(
+                appModule,
+                newsModule,
+            )
         }
 
         enableEdgeToEdge()
