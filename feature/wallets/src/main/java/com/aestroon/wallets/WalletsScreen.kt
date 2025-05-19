@@ -18,12 +18,15 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
@@ -81,6 +84,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import com.aestroon.common.components.mockProvider.MOCK_BASE_CURRENCY
 import com.aestroon.common.theme.AppBlack
 import com.aestroon.common.theme.GreenChipColor
 import com.aestroon.common.theme.RedChipColor
@@ -99,7 +103,7 @@ import java.util.Date
 import java.util.Locale
 import kotlin.random.Random
 
-enum class WalletsScreenCarouselItems(name: String){
+enum class WalletsScreenCarouselItems(name: String) {
     OVERVIEW("Overview"),
     WALLETS("Wallets"),
 }
@@ -243,7 +247,11 @@ fun OverallSummaryCard(summary: WalletsScreenSummary, modifier: Modifier = Modif
     Card(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.onBackground.copy(alpha = .1f))
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.onBackground.copy(
+                alpha = .1f
+            )
+        )
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
@@ -256,17 +264,17 @@ fun OverallSummaryCard(summary: WalletsScreenSummary, modifier: Modifier = Modif
 
             SummaryRow(
                 "Total Balance:",
-                TextFormatter.toBasicFormat(summary.totalBalance),
+                "${TextFormatter.toBasicFormat(summary.totalBalance)} $MOCK_BASE_CURRENCY",
                 valueColor = MaterialTheme.colorScheme.onPrimaryContainer
             )
             SummaryRow(
-                "Total Monthly Income:",
-                TextFormatter.toBasicFormat(summary.totalMonthlyIncome),
+                "Σ Income (m):",
+                "${TextFormatter.toBasicFormat(summary.totalMonthlyIncome)} $MOCK_BASE_CURRENCY",
                 valueColor = GreenChipColor,
             )
             SummaryRow(
-                "Total Monthly Expense:",
-                TextFormatter.toBasicFormat(summary.totalMonthlyExpense),
+                "Σ Expense (m):",
+                "${TextFormatter.toBasicFormat(summary.totalMonthlyExpense)} $MOCK_BASE_CURRENCY",
                 valueColor = RedChipColor,
             )
 
@@ -286,36 +294,35 @@ fun OverallSummaryCard(summary: WalletsScreenSummary, modifier: Modifier = Modif
                         .height(180.dp)
                         .padding(vertical = 8.dp)
                 )
-                Row(
+                LazyVerticalGrid(
+                    columns = GridCells.Adaptive(minSize = 80.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 8.dp),
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    summary.balanceBreakdown.take(3).forEach { (wallet, _) ->
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.padding(horizontal = 4.dp)
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(8.dp)
-                                    .background(wallet.color, CircleShape)
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(
-                                wallet.name,
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer
-                            )
+                        .heightIn(max = 300.dp),
+                    userScrollEnabled = false,
+                ){
+                    summary.balanceBreakdown.forEach { (wallet, index) ->
+                        item(key = "${wallet.id}$index") {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.padding(horizontal = 4.dp)
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(8.dp)
+                                        .background(wallet.color, CircleShape)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                    wallet.name,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                            }
                         }
                     }
-                    if (summary.balanceBreakdown.size > 3) Text(
-                        "...",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer
-                    )
                 }
             }
 
@@ -369,9 +376,11 @@ private fun SummaryRow(label: String, value: String, valueColor: Color) {
 @Composable
 private fun LegendItem(color: Color, label: String) {
     Row(verticalAlignment = Alignment.CenterVertically) {
-        Box(modifier = Modifier
-            .size(10.dp)
-            .background(color, CircleShape))
+        Box(
+            modifier = Modifier
+                .size(10.dp)
+                .background(color, CircleShape)
+        )
         Spacer(modifier = Modifier.width(4.dp))
         Text(
             label,
@@ -399,16 +408,26 @@ fun SpendingWalletCard(
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = wallet.color.copy(alpha = 0.5f))
     ) {
-        Column(modifier = Modifier
-            .padding(16.dp)
-            .animateContentSize()) {
+        Column(
+            modifier = Modifier
+                .padding(16.dp)
+                .animateContentSize()
+        ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(Modifier.size(42.dp).clip(CircleShape).background(AppBlack), contentAlignment = Alignment.Center){
+                Box(
+                    Modifier
+                        .size(42.dp)
+                        .clip(CircleShape)
+                        .background(AppBlack),
+                    contentAlignment = Alignment.Center
+                ) {
                     Icon(
                         imageVector = wallet.type.icon,
                         contentDescription = wallet.type.displayName,
                         tint = wallet.color,
-                        modifier = Modifier.size(32.dp).padding(4.dp)
+                        modifier = Modifier
+                            .size(32.dp)
+                            .padding(4.dp)
                     )
                 }
                 Spacer(modifier = Modifier.width(12.dp))
@@ -540,9 +559,11 @@ fun AddEditWalletDialog(
 
     Dialog(onDismissRequest = onDismiss) {
         Card(shape = RoundedCornerShape(16.dp)) {
-            Column(modifier = Modifier
-                .padding(24.dp)
-                .width(IntrinsicSize.Min)) {
+            Column(
+                modifier = Modifier
+                    .padding(24.dp)
+                    .width(IntrinsicSize.Min)
+            ) {
                 Text(
                     if (existingWallet == null) "Add New Wallet" else "Edit Wallet",
                     style = MaterialTheme.typography.headlineSmall,
@@ -733,33 +754,37 @@ fun WalletsScreen(
             }
         }
     ) { _ ->
-        val pagerState = rememberPagerState(initialPage = 0, pageCount = { WalletsScreenCarouselItems.entries.size })
+        val pagerState = rememberPagerState(
+            initialPage = 0,
+            pageCount = { WalletsScreenCarouselItems.entries.size })
 
         HorizontalPager(
             state = pagerState,
             modifier = Modifier.fillMaxSize()
         ) { page ->
-            when (page) {
-                0 -> {
-                    // Wallets Overview Page
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(horizontal = 20.dp, vertical = 20.dp),
-                        verticalArrangement = Arrangement.Center,
-                    ) {
-                        OverallSummaryCard(summary = summary)
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 20.dp, vertical = 20.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                when (page) {
+                    0 -> {
+                        // Wallets Overview Page
+                        item(key = "wallet_screen_overview") {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(horizontal = 20.dp, vertical = 20.dp),
+                                verticalArrangement = Arrangement.Center,
+                            ) {
+                                OverallSummaryCard(summary = summary)
+                            }
+                        }
                     }
-                }
 
-                1 -> {
-                    // Wallets List Page
-                    LazyColumn(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(horizontal = 20.dp, vertical = 20.dp),
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
+                    1 -> {
+                        // Wallets List Page
                         item {
                             Text(
                                 "Your Wallets",
@@ -776,7 +801,10 @@ fun WalletsScreen(
                                         .padding(vertical = 32.dp),
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    Text("No wallets yet. Tap '+' to add one!", textAlign = TextAlign.Center)
+                                    Text(
+                                        "No wallets yet. Tap '+' to add one!",
+                                        textAlign = TextAlign.Center
+                                    )
                                 }
                             }
                         } else {
