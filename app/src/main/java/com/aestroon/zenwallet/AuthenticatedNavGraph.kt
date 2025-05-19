@@ -21,9 +21,9 @@ import com.aestroon.common.navigation.ScreenNavItems
 import com.aestroon.common.navigation.AnimatedNavigationBar
 import com.aestroon.common.navigation.ButtonData
 import com.aestroon.common.theme.PrimaryColor
-import com.aestroon.calendar.mockProvider.WalletsScreen
 import com.aestroon.portfolio.PortfolioOverviewScreen
 import com.aestroon.profile.ProfileScreen
+import com.aestroon.wallets.WalletsScreen
 
 @Composable
 fun AuthenticatedNavGraph() {

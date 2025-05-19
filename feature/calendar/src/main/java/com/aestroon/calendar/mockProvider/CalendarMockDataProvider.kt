@@ -22,11 +22,6 @@ import com.aestroon.common.theme.DarkBlueChipColor
 import com.aestroon.common.theme.GreyChipColor
 import com.aestroon.common.theme.LightBlueChipColor
 
-@Composable
-fun WalletsScreen() {
-    Text("Shared Screen")
-}
-
 val BANK_CARDS = listOf(
     BankCard("Visa", "Visa card for spending", 22840.10, "EUR", Icons.Default.CreditCard , DarkBlueChipColor),
     BankCard("MasterCard", "Savings account", 758964.55, "EUR", Icons.Default.AccountBalance , GreenChipColor),
