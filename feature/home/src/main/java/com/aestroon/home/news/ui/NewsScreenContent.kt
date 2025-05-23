@@ -27,7 +27,6 @@ import com.aestroon.home.mockProvider.NewsArticle
 import com.aestroon.home.mockProvider.createMockNewsArticles
 
 fun LazyListScope.addNewsScreenContent(
-    // In a real app, this would be a StateFlow from a ViewModel
     newsArticles: List<NewsArticle>,
     isLoading: Boolean,
     onArticleClick: (NewsArticle) -> Unit,

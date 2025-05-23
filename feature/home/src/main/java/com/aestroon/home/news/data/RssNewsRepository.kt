@@ -5,14 +5,14 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.xmlpull.v1.XmlPullParser
 import org.xmlpull.v1.XmlPullParserFactory
+import org.jsoup.Jsoup
 import java.net.URL
 import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
+import java.util.*
 
 class RssNewsRepository {
 
-    private val rssUrl = "https://ir.thomsonreuters.com/rss/news-releases.xml?items=15"
+    private val rssUrl = "https://feeds.npr.org/1001/rss.xml"
 
     suspend fun fetchNews(): List<NewsArticle> = withContext(Dispatchers.IO) {
         val articles = mutableListOf<NewsArticle>()
@@ -30,6 +30,7 @@ class RssNewsRepository {
             var currentLink = ""
             var currentPubDateRaw = ""
             var currentImageUrl: String? = null
+            var currentContentEncoded: String? = null
             val currentCategories = mutableListOf<String>()
 
             val dateFormat = SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss Z", Locale.ENGLISH)
@@ -38,14 +39,6 @@ class RssNewsRepository {
                 when (eventType) {
                     XmlPullParser.START_TAG -> {
                         currentTag = parser.name
-
-                        // Handle media content or enclosure for image
-                        if (currentTag == "media:content" || currentTag == "enclosure") {
-                            val urlAttr = parser.getAttributeValue(null, "url")
-                            if (urlAttr != null && (urlAttr.endsWith(".jpg") || urlAttr.contains("image"))) {
-                                currentImageUrl = urlAttr
-                            }
-                        }
                     }
 
                     XmlPullParser.TEXT -> {
@@ -55,6 +48,7 @@ class RssNewsRepository {
                             "link" -> currentLink = parser.text
                             "pubDate" -> currentPubDateRaw = parser.text
                             "category" -> currentCategories.add(parser.text)
+                            "content:encoded" -> currentContentEncoded = parser.text
                         }
                     }
 
@@ -66,6 +60,13 @@ class RssNewsRepository {
                                 null
                             }
 
+                            // Try to extract image from content:encoded with Jsoup
+                            if (currentImageUrl == null && currentContentEncoded != null) {
+                                val doc = Jsoup.parse(currentContentEncoded)
+                                val img = doc.selectFirst("img")
+                                currentImageUrl = img?.attr("src")
+                            }
+
                             articles.add(
                                 NewsArticle(
                                     id = currentLink.hashCode().toString(),
@@ -74,19 +75,21 @@ class RssNewsRepository {
                                     link = currentLink,
                                     imageUrl = currentImageUrl,
                                     pubDate = parsedDate,
-                                    sourceName = "Reuters",
+                                    sourceName = "NPR",
                                     categories = currentCategories.toList()
                                 )
                             )
 
-                            // Reset for next item
+                            // Reset fields
                             currentTitle = ""
                             currentDescription = null
                             currentLink = ""
                             currentPubDateRaw = ""
                             currentImageUrl = null
+                            currentContentEncoded = null
                             currentCategories.clear()
                         }
+
                         currentTag = ""
                     }
                 }

@@ -10,9 +10,16 @@ import androidx.compose.material.icons.filled.StackedLineChart
 import androidx.compose.material.icons.filled.Wallet
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -21,13 +28,22 @@ import com.aestroon.common.navigation.ScreenNavItems
 import com.aestroon.common.navigation.AnimatedNavigationBar
 import com.aestroon.common.navigation.ButtonData
 import com.aestroon.common.theme.PrimaryColor
+import com.aestroon.home.news.domain.NewsViewModel
+import com.aestroon.home.news.ui.NewsDetailErrorScreen
+import com.aestroon.home.news.ui.NewsDetailScreen
+import com.aestroon.home.widgets.HomeScreenType
 import com.aestroon.portfolio.PortfolioOverviewScreen
 import com.aestroon.profile.ProfileScreen
 import com.aestroon.wallets.WalletsScreen
+import org.koin.androidx.compose.getViewModel
 
 @Composable
 fun AuthenticatedNavGraph() {
     val navController = rememberNavController()
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    val selectedTab = rememberSaveable { mutableStateOf(HomeScreenType.OVERVIEW) }
+    val newsViewModel: NewsViewModel = getViewModel()
 
     val buttons = listOf(
         ButtonData("Wallets", Icons.Default.Wallet),
@@ -38,6 +54,7 @@ fun AuthenticatedNavGraph() {
     )
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         bottomBar = {
             AnimatedNavigationBar(
                 buttons = buttons,
@@ -66,11 +83,36 @@ fun AuthenticatedNavGraph() {
             startDestination = ScreenNavItems.Home.route,
             modifier = Modifier.padding(padding)
         ) {
-            composable(ScreenNavItems.Home.route) { HomeMainScreen() }
             composable(ScreenNavItems.Wallets.route) { WalletsScreen() }
             composable(ScreenNavItems.Portfolio.route) { PortfolioOverviewScreen() }
             composable(ScreenNavItems.Calendar.route) { CalendarScreen() }
             composable(ScreenNavItems.Settings.route) { ProfileScreen() }
+
+            composable(ScreenNavItems.Home.route) {
+                HomeMainScreen(
+                    viewModel = newsViewModel,
+                    selectedHomeScreenType = selectedTab.value,
+                    onTabSelected = { selectedTab.value = it },
+                    onArticleClick = { articleId ->
+                        navController.navigate("news_detail/$articleId")
+                    }
+                )
+            }
+
+            composable("news_detail/{articleId}") { backStackEntry ->
+                val articleId = backStackEntry.arguments?.getString("articleId") ?: ""
+                val article = newsViewModel.findArticleById(articleId)
+
+                if (article != null) {
+                    NewsDetailScreen(article = article, onBackClick = {
+                        navController.popBackStack()
+                    })
+                } else {
+                    NewsDetailErrorScreen(onBackClick = {
+                        navController.popBackStack()
+                    })
+                }
+            }
         }
     }
 }

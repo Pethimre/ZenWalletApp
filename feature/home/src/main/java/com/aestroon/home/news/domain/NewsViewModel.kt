@@ -27,4 +27,8 @@ class NewsViewModel(
     }
 
     fun refresh() = loadNews()
+
+    fun findArticleById(id: String): NewsArticle? {
+        return _news.value.find { it.id == id }
+    }
 }

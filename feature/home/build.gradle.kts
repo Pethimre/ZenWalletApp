@@ -38,6 +38,7 @@ android {
 }
 
 dependencies {
+    implementation(libs.jsoup)
     implementation(project(":shared:common"))
 
     // Supabase setup
