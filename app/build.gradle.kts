@@ -55,6 +55,8 @@ dependencies {
     implementation(project(":feature:profile"))
     implementation(project(":shared:common"))
 
+    implementation(libs.lottie.compose)
+
     // Supabase setup
     implementation(platform("io.github.jan-tennert.supabase:bom:2.4.0"))
     implementation("io.github.jan-tennert.supabase:storage-kt")

@@ -25,6 +25,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.aestroon.home.mockProvider.NewsArticle
 import com.aestroon.home.mockProvider.createMockNewsArticles
+import com.aestroon.home.news.ui.component.FeaturedNewsCard
+import com.aestroon.home.news.ui.component.NewsArticleCard
 
 fun LazyListScope.addNewsScreenContent(
     newsArticles: List<NewsArticle>,

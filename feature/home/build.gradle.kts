@@ -39,6 +39,7 @@ android {
 
 dependencies {
     implementation(libs.jsoup)
+    implementation(libs.lottie.compose)
     implementation(project(":shared:common"))
 
     // Supabase setup

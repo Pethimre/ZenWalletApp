@@ -1,4 +1,4 @@
-package com.aestroon.home.news.ui
+package com.aestroon.home.news.ui.component
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
