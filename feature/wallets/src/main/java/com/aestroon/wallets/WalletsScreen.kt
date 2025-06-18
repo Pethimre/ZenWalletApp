@@ -711,12 +711,12 @@ fun WalletsScreen(
     var showConfirmDeleteDialog by remember { mutableStateOf<SpendingWallet?>(null) }
 
 
-    val summary = remember(wallets) { // Re-calculate summary when wallets list changes
+    val summary = remember(wallets) {
         val totalBalance = wallets.sumOf { it.balance }
         val totalIncome = wallets.sumOf { it.monthlyIncome }
         val totalExpense = wallets.sumOf { it.monthlyExpense }
         val breakdown = if (totalBalance > 0) {
-            wallets.map { it to (it.balance.toFloat() / totalBalance.toFloat()) } // Ensure float division
+            wallets.map { it to (it.balance.toFloat() / totalBalance.toFloat()) }
         } else {
             wallets.map { it to 0f }
         }
@@ -728,7 +728,7 @@ fun WalletsScreen(
                 monthYear = SimpleDateFormat(
                     "MMM yy",
                     Locale.getDefault()
-                ).format(calendar.time), // Shortened month/year
+                ).format(calendar.time),
                 income = Random.nextDouble(100000.0, 800000.0),
                 expense = Random.nextDouble(50000.0, 600000.0)
             )

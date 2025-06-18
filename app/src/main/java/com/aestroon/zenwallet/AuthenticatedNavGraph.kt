@@ -56,7 +56,7 @@ fun AuthenticatedNavGraph(onLogoutClicked: () -> Unit) {
         bottomBar = {
             AnimatedNavigationBar(
                 buttons = buttons,
-                barColor = MaterialTheme.colorScheme.onPrimary,
+                barColor = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = .6f),
                 circleColor = MaterialTheme.colorScheme.onPrimary,
                 selectedColor = PrimaryColor,
                 unselectedColor = Color.Gray,

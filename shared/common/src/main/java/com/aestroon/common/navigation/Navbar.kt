@@ -21,7 +21,14 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.StackedLineChart
+import androidx.compose.material.icons.filled.Wallet
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Text
@@ -41,6 +48,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
@@ -48,6 +56,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import com.aestroon.common.components.BarShape
 import com.aestroon.common.theme.AppWhite
+import com.aestroon.common.theme.PrimaryColor
+import com.aestroon.common.theme.ZenWalletTheme
 
 data class ButtonData(val text: String, val icon: ImageVector)
 
@@ -181,5 +191,28 @@ private fun Circle(
         ) { targetIcon ->
             Icon(targetIcon, button.text, tint = iconColor)
         }
+    }
+}
+
+@Composable
+@Preview
+fun AnimatedNavigationBarPreview(){
+    val buttons = listOf(
+        ButtonData("Wallets", Icons.Default.Wallet),
+        ButtonData("Portfolio", Icons.Default.StackedLineChart),
+        ButtonData("Home", Icons.Default.Home),
+        ButtonData("Calendar", Icons.Default.DateRange),
+        ButtonData("Settings", Icons.Default.Settings),
+    )
+
+    ZenWalletTheme {
+        AnimatedNavigationBar(
+            buttons = buttons,
+            barColor = MaterialTheme.colorScheme.onPrimary,
+            circleColor = MaterialTheme.colorScheme.onPrimary,
+            selectedColor = PrimaryColor,
+            unselectedColor = Color.Gray,
+            onItemClick = {}
+        )
     }
 }
