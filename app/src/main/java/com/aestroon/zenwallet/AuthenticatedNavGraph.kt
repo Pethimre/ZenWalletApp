@@ -12,14 +12,12 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -38,7 +36,7 @@ import com.aestroon.wallets.WalletsScreen
 import org.koin.androidx.compose.getViewModel
 
 @Composable
-fun AuthenticatedNavGraph() {
+fun AuthenticatedNavGraph(onLogoutClicked: () -> Unit) {
     val navController = rememberNavController()
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -86,7 +84,7 @@ fun AuthenticatedNavGraph() {
             composable(ScreenNavItems.Wallets.route) { WalletsScreen() }
             composable(ScreenNavItems.Portfolio.route) { PortfolioOverviewScreen() }
             composable(ScreenNavItems.Calendar.route) { CalendarScreen() }
-            composable(ScreenNavItems.Settings.route) { ProfileScreen() }
+            composable(ScreenNavItems.Settings.route) { ProfileScreen(onLogoutClicked) }
 
             composable(ScreenNavItems.Home.route) {
                 HomeMainScreen(

@@ -23,7 +23,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.aestroon.common.theme.GreenChipColor
 import com.aestroon.common.theme.PrimaryColor
+import com.aestroon.common.theme.RedChipColor
 import com.aestroon.common.utilities.TextFormatter
 
 @Composable
@@ -43,7 +45,6 @@ fun SavingsSummaryCard(
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.background
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
     ) {
         Row(
             modifier = Modifier
@@ -95,7 +96,7 @@ fun SavingsSummaryCard(
                     icon = revenueIcon,
                     label = "Income",
                     value = income,
-                    iconColor = Color.Green,
+                    iconColor = GreenChipColor,
                     textColor = MaterialTheme.colorScheme.onPrimaryContainer,
                 )
                 Spacer(modifier = Modifier.height(16.dp))
@@ -103,7 +104,7 @@ fun SavingsSummaryCard(
                     icon = expenseIcon,
                     label = "Expense",
                     value = expense,
-                    iconColor = Color.Red,
+                    iconColor = RedChipColor,
                     textColor = MaterialTheme.colorScheme.onPrimaryContainer,
                 )
             }
@@ -162,7 +163,7 @@ private fun CircularProgress(
         if (percentageIndicator) {
             Text(
                 TextFormatter.formatPercentage((percentage * 100).toDouble()),
-                color = if (percentage > 0) Color.Green else Color.Red
+                color = if (percentage > 0) GreenChipColor else RedChipColor
             )
         }
     }

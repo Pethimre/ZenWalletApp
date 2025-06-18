@@ -37,7 +37,6 @@ fun BalanceOverviewCard(
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.background,
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
@@ -62,7 +61,7 @@ fun BalanceOverviewCard(
                     icon = expenseIcon,
                     label = "Goal Reached in:",
                     value = amountUntilGoal,
-                    valueColor = MaterialTheme.colorScheme.error,
+                    valueColor = MaterialTheme.colorScheme.primary,
                 )
             }
 

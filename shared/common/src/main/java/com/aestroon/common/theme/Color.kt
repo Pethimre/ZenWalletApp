@@ -1,12 +1,9 @@
 package com.aestroon.common.theme
 
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.graphics.Color
 
 // Primary colors
 val PrimaryColor = Color(0xFF6C63FF)
-val SecondaryColor = Color.White
-val TertiaryColor = Color(0xFF6C63FF)
 
 val PrimaryFontColor = Color(0xFF5163BF)
 val SecondaryFontColor = Color(0xFF1E1E1E)

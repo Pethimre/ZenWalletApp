@@ -20,11 +20,11 @@ fun LinkText(
     onClick: () -> Unit = {},
 ){
     Row {
-        Text(labelText)
+        Text(labelText, color = MaterialTheme.colorScheme.secondary)
         Spacer(modifier = Modifier.width(AppDimensions.tiny.dp))
         Text(
             text = interactiveText,
-            color = MaterialTheme.colorScheme.onBackground,
+            color = MaterialTheme.colorScheme.primary,
             fontWeight = FontWeight.SemiBold,
             modifier = Modifier.clickable {
                 onClick()

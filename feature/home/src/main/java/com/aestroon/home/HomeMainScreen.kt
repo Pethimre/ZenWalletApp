@@ -1,5 +1,7 @@
 package com.aestroon.home
 
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.lazy.LazyColumn
@@ -8,6 +10,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.aestroon.home.homeScreen.addHomeScreenContent
@@ -33,7 +36,10 @@ fun HomeMainScreen(
         viewModel.loadNews()
     }
 
-    LazyColumn {
+    LazyColumn(
+        contentPadding = PaddingValues(horizontal = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
         item { Spacer(Modifier.height(20.dp)) }
 
         item {

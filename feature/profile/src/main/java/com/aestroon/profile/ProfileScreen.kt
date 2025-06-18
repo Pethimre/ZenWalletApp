@@ -2,6 +2,7 @@ package com.aestroon.profile
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -39,7 +40,9 @@ import com.aestroon.common.theme.FaintBlueChipColor
 import com.aestroon.common.theme.PrimaryColor
 
 @Composable
-fun ProfileScreen() {
+fun ProfileScreen(
+    onLogoutClicked: () -> Unit,
+) {
     val username = "Mock User"
     val userId = "891748923cFR"
     val profileImageUrl =
@@ -109,22 +112,40 @@ fun ProfileScreen() {
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            ProfileOption(icon = Icons.Default.Edit, title = "Edit Profile")
-            ProfileOption(icon = Icons.Default.Security, title = "Security")
-            ProfileOption(icon = Icons.Default.Settings, title = "Setting")
+            ProfileOption(
+                icon = Icons.Default.Edit,
+                title = "Edit Profile",
+            )
+            ProfileOption(
+                icon = Icons.Default.Security,
+                title = "Security",
+            )
+            ProfileOption(
+                icon = Icons.Default.Settings,
+                title = "Setting",
+            )
             ProfileOption(icon = Icons.Default.Help, title = "Help")
-            ProfileOption(icon = Icons.Default.Logout, title = "Logout")
+            ProfileOption(
+                icon = Icons.Default.Logout,
+                title = "Logout",
+                action = onLogoutClicked,
+            )
         }
     }
 }
 
 @Composable
-fun ProfileOption(icon: ImageVector, title: String) {
+fun ProfileOption(
+    icon: ImageVector,
+    title: String,
+    action: () -> Unit = {},
+) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 32.dp, vertical = 12.dp)
+            .clickable { action() }
     ) {
         Box(
             modifier = Modifier

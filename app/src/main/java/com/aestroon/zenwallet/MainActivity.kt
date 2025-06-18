@@ -31,20 +31,20 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             ZenWalletTheme {
-                val loginViewModel: AuthViewModel = getKoin().get()
-                val isLoggedIn by loginViewModel.isLoggedIn.collectAsState()
-                val restoreComplete by loginViewModel.restoreComplete.collectAsState()
+                val authViewModel: AuthViewModel = getKoin().get()
+                val isLoggedIn by authViewModel.isLoggedIn.collectAsState()
+                val restoreComplete by authViewModel.restoreComplete.collectAsState()
 
                 LaunchedEffect(Unit) {
-                    loginViewModel.restoreSession()
+                    authViewModel.restoreSession()
                 }
 
                 if (!restoreComplete) {
                     SplashScreen()
                 } else if (!isLoggedIn) {
-                    UnauthenticatedNavGraph(loginViewModel)
+                    UnauthenticatedNavGraph(authViewModel)
                 } else {
-                    AuthenticatedNavGraph()
+                    AuthenticatedNavGraph(onLogoutClicked = { authViewModel.logout() })
                 }
             }
         }

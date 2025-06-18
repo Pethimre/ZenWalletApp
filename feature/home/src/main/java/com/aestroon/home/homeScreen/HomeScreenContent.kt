@@ -77,7 +77,6 @@ fun LazyListScope.addHomeScreenContent(
             headerBackgroundColor = OrangeChipColor.copy(alpha = 0.3f),
             headerContentColor = MaterialTheme.colorScheme.onBackground,
             initiallyExpanded = false,
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
         ) {
             sampleUpcomingTransactions.forEach {
                 TransactionListItem(Modifier.padding(bottom = 8.dp), it)
@@ -97,7 +96,6 @@ fun LazyListScope.addHomeScreenContent(
             headerBackgroundColor = RedChipColor.copy(alpha = .3f),
             headerContentColor = MaterialTheme.colorScheme.onBackground,
             initiallyExpanded = false,
-            modifier = Modifier.padding(16.dp),
         ) {
             sampleOverdueTransactions.forEach {
                 TransactionListItem(Modifier.padding(bottom = 8.dp), it)

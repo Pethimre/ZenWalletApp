@@ -181,7 +181,6 @@ fun TransactionListItem(
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.onBackground.copy(alpha = .075f)
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
             Row(verticalAlignment = Alignment.Top) {
