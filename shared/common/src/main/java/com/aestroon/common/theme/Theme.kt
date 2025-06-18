@@ -18,7 +18,6 @@ val DarkColorScheme = darkColorScheme(
     primary = PrimaryColor,
     secondary = AppWhite,
     background = Color.Black,
-    surface = DarkGreyChipColor,
     onPrimary = Color.Black,
     onSecondary = Color.White,
     onBackground = Color.White,
