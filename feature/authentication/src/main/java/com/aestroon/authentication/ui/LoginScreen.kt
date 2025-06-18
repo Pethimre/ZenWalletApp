@@ -1,5 +1,7 @@
 package com.aestroon.authentication.ui
 
+import android.hardware.lights.Light
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -27,13 +29,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.aestroon.authentication.domain.AuthViewModel
 import com.aestroon.common.components.PrimaryButton
 import com.aestroon.common.components.LinkText
 import com.aestroon.common.components.PasswordInput
 import com.aestroon.common.theme.AppDimensions.small
+import com.aestroon.common.theme.LightBlueChipColor
 import com.aestroon.common.theme.PrimaryColor
+import com.aestroon.common.theme.ZenWalletTheme
+import org.koin.compose.getKoin
 
 @Composable
 fun LoginScreen(viewModel: AuthViewModel) {
@@ -46,7 +52,7 @@ fun LoginScreen(viewModel: AuthViewModel) {
             .fillMaxSize()
             .background(
                 brush = Brush.verticalGradient(
-                    colors = listOf(Color.White, Color(0xFFEAEFFF))
+                    colors = listOf(MaterialTheme.colorScheme.onBackground, MaterialTheme.colorScheme.background)
                 )
             )
             .padding(horizontal = 24.dp),
@@ -67,7 +73,7 @@ fun LoginScreen(viewModel: AuthViewModel) {
                 Box(
                     modifier = Modifier
                         .size(24.dp)
-                        .background(Color(0xFF94E0FF), CircleShape)
+                        .background(LightBlueChipColor, CircleShape)
                 )
             }
 
