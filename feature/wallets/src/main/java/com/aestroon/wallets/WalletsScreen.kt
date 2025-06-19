@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
@@ -58,8 +57,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -301,7 +298,7 @@ fun OverallSummaryCard(summary: WalletsScreenSummary, modifier: Modifier = Modif
                         .fillMaxWidth()
                         .heightIn(max = 300.dp),
                     userScrollEnabled = false,
-                ){
+                ) {
                     summary.balanceBreakdown.forEach { (wallet, index) ->
                         item(key = "${wallet.id}$index") {
                             Row(
@@ -633,7 +630,7 @@ fun AddEditWalletDialog(
                     Column(
                         modifier = Modifier.padding(end = 8.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
-                    ){
+                    ) {
                         Text("Color")
                         Box(
                             Modifier
@@ -804,12 +801,14 @@ fun WalletsScreen(
 
         HorizontalPager(
             state = pagerState,
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 12.dp)
         ) { page ->
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(horizontal = 20.dp, vertical = 20.dp),
+                    .padding(vertical = 20.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 when (page) {
@@ -819,7 +818,7 @@ fun WalletsScreen(
                             Column(
                                 modifier = Modifier
                                     .fillMaxSize()
-                                    .padding(horizontal = 20.dp, vertical = 20.dp),
+                                    .padding(vertical = 20.dp),
                                 verticalArrangement = Arrangement.Center,
                             ) {
                                 OverallSummaryCard(summary = summary)
