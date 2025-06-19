@@ -20,7 +20,7 @@ import com.aestroon.home.mockProvider.sampleExchangeRates
 fun CompactExchangeRateCard(
     modifier: Modifier = Modifier,
     rates: List<CurrencyExchangeInfo>,
-    baseCurrencySymbol: String = "Ft" // For HUF
+    baseCurrencySymbol: String = "Ft"
 ) {
     Card(
         modifier = modifier

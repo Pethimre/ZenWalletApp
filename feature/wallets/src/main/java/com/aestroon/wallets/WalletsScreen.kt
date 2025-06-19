@@ -34,7 +34,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.Edit
@@ -630,15 +629,20 @@ fun AddEditWalletDialog(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable { showColorPicker = !showColorPicker }) { // Toggle color picker
-                    Text("Wallet Color:", style = MaterialTheme.typography.bodyLarge)
-                    Spacer(Modifier.width(8.dp))
-                    Box(
-                        Modifier
-                            .size(24.dp)
-                            .background(selectedColor, CircleShape)
-                            .border(1.dp, MaterialTheme.colorScheme.outline, CircleShape)
-                    )
+                        .clickable { showColorPicker = !showColorPicker }) {
+                    Column(
+                        modifier = Modifier.padding(end = 8.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ){
+                        Text("Color")
+                        Box(
+                            Modifier
+                                .size(24.dp)
+                                .background(selectedColor, CircleShape)
+                                .border(1.dp, MaterialTheme.colorScheme.outline, CircleShape)
+                        )
+                    }
+                    CurrencyDropdownSelector()
                 }
 
                 AnimatedVisibility(visible = showColorPicker) {
@@ -677,6 +681,46 @@ fun AddEditWalletDialog(
                         Text(if (existingWallet == null) "Add" else "Save")
                     }
                 }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun CurrencyDropdownSelector() {
+    val options = listOf("Option 1", "Option 2", "Option 3", "Option 4", "Option 5")
+    var expanded by remember { mutableStateOf(false) }
+    var selectedOptionText by remember { mutableStateOf(options[0]) }
+
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { expanded = !expanded }
+    ) {
+        OutlinedTextField(
+            readOnly = true,
+            value = selectedOptionText,
+            onValueChange = {},
+            label = { Text("Currency") },
+            trailingIcon = {
+                ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
+            },
+            modifier = Modifier
+                .menuAnchor()
+        )
+
+        ExposedDropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false }
+        ) {
+            options.forEach { selectionOption ->
+                DropdownMenuItem(
+                    text = { Text(selectionOption) },
+                    onClick = {
+                        selectedOptionText = selectionOption
+                        expanded = false
+                    }
+                )
             }
         }
     }

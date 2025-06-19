@@ -39,7 +39,7 @@ fun LazyListScope.addNewsScreenContent(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(horizontal = 20.dp, vertical = 8.dp),
+                    .padding(vertical = 8.dp),
                 contentAlignment = Alignment.Center
             ) {
                 CircularProgressIndicator()
@@ -50,7 +50,7 @@ fun LazyListScope.addNewsScreenContent(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(horizontal = 20.dp, vertical = 8.dp),
+                    .padding(vertical = 8.dp),
                 contentAlignment = Alignment.Center
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -73,7 +73,7 @@ fun LazyListScope.addNewsScreenContent(
         }
     } else {
         item(key = "featured_${newsArticles.first().id}") {
-            Box(Modifier.padding(horizontal = 20.dp, vertical = 8.dp)) {
+            Box(Modifier.padding(vertical = 8.dp)) {
                 FeaturedNewsCard(
                     article = newsArticles.first(),
                     onClick = onArticleClick
@@ -81,7 +81,7 @@ fun LazyListScope.addNewsScreenContent(
             }
         }
         items(newsArticles.drop(1), key = { "article_${it.id}" }) { article ->
-            Box(Modifier.padding(horizontal = 20.dp, vertical = 8.dp)) {
+            Box(Modifier.padding(vertical = 8.dp)) {
                 NewsArticleCard(article = article, onClick = onArticleClick)
             }
         }
