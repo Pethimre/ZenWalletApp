@@ -1,68 +1,141 @@
 package com.aestroon.authentication.domain
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.aestroon.authentication.data.AuthRepository
+import com.aestroon.common.utilities.network.ConnectivityObserver
 import io.github.jan.supabase.gotrue.SessionStatus
-import io.github.jan.supabase.gotrue.auth
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 
 class AuthViewModel(
     private val authRepository: AuthRepository,
-    private val userManager: UserManager
+    private val userManager: UserManager,
+    private val connectivityObserver: ConnectivityObserver
 ) : ViewModel() {
 
+    // --- State Flows for UI content ---
+    private val _loginUiState = MutableStateFlow<UiState>(UiState.Idle)
+    val loginUiState: StateFlow<UiState> = _loginUiState
+
+    private val _signUpUiState = MutableStateFlow<UiState>(UiState.Idle)
+    val signUpUiState: StateFlow<UiState> = _signUpUiState
+
+    private val _verificationUiState = MutableStateFlow<UiState>(UiState.Idle)
+    val verificationUiState: StateFlow<UiState> = _verificationUiState
+
+    // --- State Flows for Authentication status ---
     private val _isLoggedIn = MutableStateFlow(false)
     val isLoggedIn: StateFlow<Boolean> = _isLoggedIn
 
     private val _restoreComplete = MutableStateFlow(false)
     val restoreComplete: StateFlow<Boolean> = _restoreComplete
 
-    private val _uiState = MutableStateFlow<LoginUiState>(LoginUiState.Idle)
-    val uiState: StateFlow<LoginUiState> = _uiState
+    // --- State Flow for Network status ---
+    private val _networkStatus = MutableStateFlow(ConnectivityObserver.Status.Available)
+    val networkStatus: StateFlow<ConnectivityObserver.Status> = _networkStatus
+
+    // --- Using a SharedFlow for one-time navigation events ---
+    private val _navigationEvent = MutableSharedFlow<NavigationEvent>()
+    val navigationEvent: SharedFlow<NavigationEvent> = _navigationEvent.asSharedFlow()
+
+    private val _isAuthFlowActive = MutableStateFlow(false)
 
     init {
         observeSessionStatus()
-    }
-
-    private fun observeSessionStatus() {
-        viewModelScope.launch {
-            SupabaseClientProvider.client.auth.sessionStatus.collect { status ->
-                when (status) {
-                    is SessionStatus.Authenticated -> {
-                        _isLoggedIn.value = true
-                        _restoreComplete.value = true
-                    }
-                    is SessionStatus.NotAuthenticated -> {
-                        _isLoggedIn.value = false
-                        _restoreComplete.value = true
-                    }
-                    else -> {
-                        // Do nothing for Loading, or unknown statuses
-                    }
+        viewModelScope.launch(Dispatchers.IO) {
+            connectivityObserver.observe().collect { status ->
+                if (status == ConnectivityObserver.Status.Available && !_isAuthFlowActive.value) {
+                    Log.d("AuthViewModel", "Network is available and auth flow is not active, attempting to sync pending users.")
+                    authRepository.syncPendingUsers()
                 }
             }
         }
     }
 
-    fun restoreSession() {
+    fun observeSessionStatus() {
         viewModelScope.launch {
-            SupabaseClientProvider.restoreSession()
+            authRepository.sessionStatus().collect { status ->
+                val user = if (status is SessionStatus.Authenticated) status.session.user else null
+                _isLoggedIn.value = authRepository.isUserVerified(user)
+            }
         }
+    }
+
+    fun setAuthFlowActive(isActive: Boolean) {
+        _isAuthFlowActive.value = isActive
     }
 
     fun login(email: String, password: String) {
         viewModelScope.launch {
-            _uiState.value = LoginUiState.Loading
-            val success = authRepository.login(email, password)
-            if (success) {
-                _isLoggedIn.value = true
-                _uiState.value = LoginUiState.Success
+            _loginUiState.value = UiState.Loading
+            authRepository.login(email, password)
+                .onSuccess { user ->
+                    if (authRepository.isUserVerified(user)) {
+                        _loginUiState.value = UiState.Success("Login Successful!")
+                        _isLoggedIn.value = true
+                    } else {
+                        _navigationEvent.emit(NavigationEvent.ToVerifyEmail(user?.email ?: ""))
+                        _loginUiState.value = UiState.Idle // Reset to idle after event
+                    }
+                }
+                .onFailure {
+                    _loginUiState.value = UiState.Error(it.message ?: "Unknown login error")
+                }
+        }
+    }
+
+    fun signUp(displayName: String, email: String, password: String) {
+        viewModelScope.launch {
+            _signUpUiState.value = UiState.Loading
+            authRepository.signUp(displayName, email, password)
+                .onSuccess { user ->
+                    if (user != null) {
+                        _navigationEvent.emit(NavigationEvent.ToVerifyEmail(user.email ?: ""))
+                        _signUpUiState.value = UiState.Idle
+                    } else {
+                        _signUpUiState.value = UiState.Success("Signup successful! You are offline. Please connect to verify your email.")
+                    }
+                }
+                .onFailure {
+                    _signUpUiState.value = UiState.Error(it.message ?: "Unknown signup error")
+                }
+        }
+    }
+
+    fun checkVerificationStatus() {
+        _verificationUiState.value = UiState.Success("Verification complete! Please log in to continue.")
+    }
+
+    fun resendVerificationEmail(email: String) {
+        viewModelScope.launch {
+            _verificationUiState.value = UiState.Loading
+            authRepository.resendVerificationEmail(email)
+                .onSuccess { _verificationUiState.value = UiState.Success("Verification email sent!") }
+                .onFailure { _verificationUiState.value = UiState.Error(it.message ?: "Failed to send email.") }
+        }
+    }
+
+    fun resetVerificationState() {
+        _verificationUiState.value = UiState.Idle
+    }
+
+    fun restoreSession() {
+        viewModelScope.launch {
+            val refreshToken = authRepository.getRefreshToken()
+            if (refreshToken != null) {
+                val user = authRepository.refreshSession(refreshToken)
+                _isLoggedIn.value = authRepository.isUserVerified(user)
             } else {
-                _uiState.value = LoginUiState.Error("Login failed")
+                _isLoggedIn.value = false
             }
+            _restoreComplete.value = true
         }
     }
 
@@ -73,10 +146,14 @@ class AuthViewModel(
         }
     }
 
-    sealed interface LoginUiState {
-        object Idle : LoginUiState
-        object Loading : LoginUiState
-        object Success : LoginUiState
-        data class Error(val message: String) : LoginUiState
+    sealed interface UiState {
+        object Idle : UiState
+        object Loading : UiState
+        data class Success(val message: String) : UiState
+        data class Error(val message: String) : UiState
+    }
+
+    sealed interface NavigationEvent {
+        data class ToVerifyEmail(val email: String) : NavigationEvent
     }
 }

@@ -1,6 +1,7 @@
 import java.util.Properties
 
 plugins {
+    id("com.google.devtools.ksp") version "2.1.0-1.0.29"
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
@@ -56,6 +57,12 @@ dependencies {
     implementation(project(":shared:common"))
 
     implementation(libs.lottie.compose)
+
+    implementation("androidx.room:room-runtime:2.7.2")
+    ksp("androidx.room:room-compiler:2.7.2")
+    implementation("androidx.room:room-ktx:2.7.2")
+
+    implementation(libs.androidx.security.crypto)
 
     // Supabase setup
     implementation(platform("io.github.jan-tennert.supabase:bom:2.4.0"))

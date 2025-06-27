@@ -7,11 +7,13 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.core.view.WindowCompat
 import appModule
 import com.aestroon.authentication.domain.AuthViewModel
 import com.aestroon.common.theme.ZenWalletTheme
 import com.aestroon.home.news.di.newsModule
 import org.koin.android.ext.koin.androidContext
+import org.koin.androidx.compose.koinViewModel
 import org.koin.compose.getKoin
 import org.koin.core.context.startKoin
 
@@ -27,11 +29,12 @@ class MainActivity : ComponentActivity() {
             )
         }
 
-        enableEdgeToEdge()
+        // Enable edge-to-edge drawing
+        WindowCompat.setDecorFitsSystemWindows(window, false)
 
         setContent {
             ZenWalletTheme {
-                val authViewModel: AuthViewModel = getKoin().get()
+                val authViewModel: AuthViewModel = koinViewModel()
                 val isLoggedIn by authViewModel.isLoggedIn.collectAsState()
                 val restoreComplete by authViewModel.restoreComplete.collectAsState()
 
@@ -39,12 +42,18 @@ class MainActivity : ComponentActivity() {
                     authViewModel.restoreSession()
                 }
 
-                if (!restoreComplete) {
-                    SplashScreen()
-                } else if (!isLoggedIn) {
-                    UnauthenticatedNavGraph(authViewModel)
-                } else {
-                    AuthenticatedNavGraph(onLogoutClicked = { authViewModel.logout() })
+                when {
+                    !restoreComplete -> {
+                        SplashScreen()
+                    }
+                    isLoggedIn -> {
+                        AuthenticatedNavGraph(
+                            onLogoutClicked = { authViewModel.logout() }
+                        )
+                    }
+                    else -> {
+                        UnauthenticatedNavGraph(authViewModel)
+                    }
                 }
             }
         }

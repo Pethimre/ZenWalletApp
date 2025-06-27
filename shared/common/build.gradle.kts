@@ -1,4 +1,5 @@
 plugins {
+    id("com.google.devtools.ksp") version "2.1.0-1.0.29"
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
@@ -38,6 +39,10 @@ dependencies {
     implementation(libs.lottie.compose)
 
     // Supabase setup
+    implementation("androidx.room:room-runtime:2.7.2")
+    ksp("androidx.room:room-compiler:2.7.2")
+    implementation("androidx.room:room-ktx:2.7.2")
+
     implementation(platform("io.github.jan-tennert.supabase:bom:2.4.0"))
     implementation("io.github.jan-tennert.supabase:storage-kt")
     implementation(libs.gotrue.kt)
