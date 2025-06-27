@@ -31,7 +31,8 @@ import com.aestroon.home.news.ui.NewsDetailErrorScreen
 import com.aestroon.home.news.ui.NewsDetailScreen
 import com.aestroon.home.widgets.HomeScreenType
 import com.aestroon.portfolio.PortfolioOverviewScreen
-import com.aestroon.profile.ProfileScreen
+import com.aestroon.profile.domain.ProfileViewModel
+import com.aestroon.profile.presentation.ProfileScreen
 import com.aestroon.wallets.WalletsScreen
 import org.koin.androidx.compose.getViewModel
 
@@ -42,6 +43,7 @@ fun AuthenticatedNavGraph(onLogoutClicked: () -> Unit) {
 
     val selectedTab = rememberSaveable { mutableStateOf(HomeScreenType.OVERVIEW) }
     val newsViewModel: NewsViewModel = getViewModel()
+    val profileViewModel: ProfileViewModel = getViewModel()
 
     val buttons = listOf(
         ButtonData("Wallets", Icons.Default.Wallet),
@@ -84,7 +86,12 @@ fun AuthenticatedNavGraph(onLogoutClicked: () -> Unit) {
             composable(ScreenNavItems.Wallets.route) { WalletsScreen() }
             composable(ScreenNavItems.Portfolio.route) { PortfolioOverviewScreen() }
             composable(ScreenNavItems.Calendar.route) { CalendarScreen() }
-            composable(ScreenNavItems.Settings.route) { ProfileScreen(onLogoutClicked) }
+            composable(ScreenNavItems.Settings.route) {
+                ProfileScreen(
+                    viewModel = profileViewModel,
+                    onLogoutClicked = onLogoutClicked
+                )
+            }
 
             composable(ScreenNavItems.Home.route) {
                 HomeMainScreen(

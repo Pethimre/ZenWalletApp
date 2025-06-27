@@ -9,6 +9,7 @@ import com.aestroon.common.utilities.network.ConnectivityObserver
 import com.aestroon.common.utilities.network.NetworkConnectivityObserver
 import com.aestroon.home.news.data.RssNewsRepository
 import com.aestroon.home.news.domain.NewsViewModel
+import com.aestroon.profile.domain.ProfileViewModel
 import io.github.jan.supabase.gotrue.auth
 import org.koin.android.ext.koin.androidContext
 import org.koin.androidx.viewmodel.dsl.viewModel
@@ -49,5 +50,6 @@ val appModule = module {
 
     // ViewModels
     viewModel { NewsViewModel(get()) }
+    viewModel { ProfileViewModel(get()) }
     viewModel { AuthViewModel(get(), get(), get()) }
 }

@@ -153,6 +153,14 @@ class AuthRepositoryImpl(
         return sharedPreferences.getString("refresh_token", null)
     }
 
+    override suspend fun updateUser(displayName: String): Result<UserInfo> = runCatching {
+        auth.updateUser {
+            data {
+                put("display_name", displayName)
+            }
+        }
+    }
+
     private fun hashPassword(password: String): String {
         val bytes = MessageDigest.getInstance("SHA-256").digest(password.toByteArray())
         return bytes.fold("") { str, it -> str + "%02x".format(it) }

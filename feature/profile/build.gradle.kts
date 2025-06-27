@@ -35,6 +35,7 @@ android {
 
 dependencies {
     implementation(project(":shared:common"))
+    implementation(project(":feature:authentication"))
 
     // Supabase setup
     implementation(platform("io.github.jan-tennert.supabase:bom:2.4.0"))
