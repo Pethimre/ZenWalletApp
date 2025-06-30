@@ -15,6 +15,7 @@ interface AuthRepository {
     suspend fun getUpdatedUser(): Result<UserInfo?>
     suspend fun clearPendingUsers()
     suspend fun logout()
-    suspend fun updateUser(displayName: String): Result<UserInfo>
+    suspend fun updateUser(displayName: String, phone: String): Result<UserInfo>
+    suspend fun updatePassword(newPassword: String): Result<UserInfo>
     fun sessionStatus(): Flow<SessionStatus>
 }

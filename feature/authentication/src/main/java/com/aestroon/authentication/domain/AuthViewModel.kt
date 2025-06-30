@@ -20,7 +20,6 @@ class AuthViewModel(
     private val connectivityObserver: ConnectivityObserver
 ) : ViewModel() {
 
-    // --- State Flows for UI content ---
     private val _loginUiState = MutableStateFlow<UiState>(UiState.Idle)
     val loginUiState: StateFlow<UiState> = _loginUiState
 
@@ -30,18 +29,15 @@ class AuthViewModel(
     private val _verificationUiState = MutableStateFlow<UiState>(UiState.Idle)
     val verificationUiState: StateFlow<UiState> = _verificationUiState
 
-    // --- State Flows for Authentication status ---
     private val _isLoggedIn = MutableStateFlow(false)
     val isLoggedIn: StateFlow<Boolean> = _isLoggedIn
 
     private val _restoreComplete = MutableStateFlow(false)
     val restoreComplete: StateFlow<Boolean> = _restoreComplete
 
-    // --- State Flow for Network status ---
     private val _networkStatus = MutableStateFlow(ConnectivityObserver.Status.Available)
     val networkStatus: StateFlow<ConnectivityObserver.Status> = _networkStatus
 
-    // --- Using a SharedFlow for one-time navigation events ---
     private val _navigationEvent = MutableSharedFlow<NavigationEvent>()
     val navigationEvent: SharedFlow<NavigationEvent> = _navigationEvent.asSharedFlow()
 
@@ -94,6 +90,7 @@ class AuthViewModel(
     fun signUp(displayName: String, email: String, password: String) {
         viewModelScope.launch {
             _signUpUiState.value = UiState.Loading
+
             authRepository.signUp(displayName, email, password)
                 .onSuccess { user ->
                     if (user != null) {
@@ -103,8 +100,8 @@ class AuthViewModel(
                         _signUpUiState.value = UiState.Success("Signup successful! You are offline. Please connect to verify your email.")
                     }
                 }
-                .onFailure {
-                    _signUpUiState.value = UiState.Error(it.message ?: "Unknown signup error")
+                .onFailure { error ->
+                    _signUpUiState.value = UiState.Error(error.message ?: "An unknown signup error occurred.")
                 }
         }
     }

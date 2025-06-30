@@ -1,6 +1,8 @@
 import androidx.room.Room
 import com.aestroon.authentication.data.AuthRepository
 import com.aestroon.authentication.data.AuthRepositoryImpl
+import com.aestroon.authentication.data.UserRepository
+import com.aestroon.authentication.data.UserRepositoryImpl
 import com.aestroon.authentication.domain.AuthViewModel
 import com.aestroon.authentication.domain.SupabaseClientProvider
 import com.aestroon.authentication.domain.UserManager
@@ -9,8 +11,11 @@ import com.aestroon.common.utilities.network.ConnectivityObserver
 import com.aestroon.common.utilities.network.NetworkConnectivityObserver
 import com.aestroon.home.news.data.RssNewsRepository
 import com.aestroon.home.news.domain.NewsViewModel
+import com.aestroon.profile.data.UserPreferencesRepository
+import com.aestroon.profile.data.UserPreferencesRepositoryImpl
 import com.aestroon.profile.domain.ProfileViewModel
 import io.github.jan.supabase.gotrue.auth
+import io.github.jan.supabase.postgrest.postgrest
 import org.koin.android.ext.koin.androidContext
 import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.dsl.module
@@ -18,6 +23,7 @@ import org.koin.dsl.module
 val appModule = module {
 
     // Supabase client and auth
+    single { SupabaseClientProvider.client.postgrest }
     single { SupabaseClientProvider.client }
     single { SupabaseClientProvider.client.auth }
 
@@ -30,6 +36,8 @@ val appModule = module {
             context = androidContext()
         )
     }
+    single<UserRepository> { UserRepositoryImpl(get()) }
+    single<UserPreferencesRepository> { UserPreferencesRepositoryImpl(androidContext()) }
     single { RssNewsRepository() }
 
     // Local database
@@ -49,7 +57,8 @@ val appModule = module {
     single { UserManager(get()) }
 
     // ViewModels
+    viewModel { ProfileViewModel(get(), get(), get()) }
     viewModel { NewsViewModel(get()) }
-    viewModel { ProfileViewModel(get()) }
+    viewModel { ProfileViewModel(get(), get(), get()) }
     viewModel { AuthViewModel(get(), get(), get()) }
 }

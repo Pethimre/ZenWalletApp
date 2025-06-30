@@ -2,9 +2,11 @@ import java.util.Properties
 
 plugins {
     id("com.google.devtools.ksp") version "2.1.0-1.0.29"
+
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+
     kotlin("plugin.serialization") version "1.9.0"
 }
 
@@ -63,6 +65,7 @@ dependencies {
     implementation("androidx.room:room-ktx:2.7.2")
 
     implementation(libs.androidx.security.crypto)
+    implementation(libs.androidx.biometric)
 
     // Supabase setup
     implementation(platform("io.github.jan-tennert.supabase:bom:2.4.0"))

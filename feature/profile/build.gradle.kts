@@ -44,6 +44,9 @@ dependencies {
     implementation(libs.postgrest.kt)
     implementation(libs.realtime.kt)
 
+    implementation(libs.androidx.security.crypto)
+    implementation(libs.androidx.biometric)
+
     implementation(libs.androidx.navigation.compose)
     implementation(libs.ktor.client.android)
     implementation(libs.ktor.utils)

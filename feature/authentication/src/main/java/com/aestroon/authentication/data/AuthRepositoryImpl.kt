@@ -3,21 +3,20 @@ package com.aestroon.authentication.data
 import android.content.Context
 import android.content.SharedPreferences
 import android.util.Log
+import androidx.security.crypto.EncryptedSharedPreferences
+import androidx.security.crypto.MasterKey
 import com.aestroon.common.data.dao.UserDao
-import com.aestroon.common.data.entity.LocalUser
 import com.aestroon.common.utilities.network.ConnectivityObserver
 import io.github.jan.supabase.gotrue.Auth
 import io.github.jan.supabase.gotrue.OtpType
-import io.github.jan.supabase.gotrue.providers.builtin.Email
-import kotlinx.coroutines.flow.first
-import java.security.MessageDigest
-import io.github.jan.supabase.gotrue.user.UserInfo
-import androidx.security.crypto.EncryptedSharedPreferences
-import androidx.security.crypto.MasterKey
 import io.github.jan.supabase.gotrue.SessionStatus
+import io.github.jan.supabase.gotrue.providers.builtin.Email
+import io.github.jan.supabase.gotrue.user.UserInfo
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
+import java.security.MessageDigest
 
 class AuthRepositoryImpl(
     private val auth: Auth,
@@ -53,36 +52,28 @@ class AuthRepositoryImpl(
     }
 
     override suspend fun signUp(displayName: String, email: String, password: String): Result<UserInfo?> = runCatching {
-        val passwordHash = hashPassword(password)
-        val localUser = LocalUser(
-            displayName = displayName,
-            email = email,
-            passwordHash = passwordHash,
-            isSynced = false
-        )
-
-        userDao.insertUser(localUser)
-        Log.d("AuthRepository", "User saved to local DB: $email")
-
-        if (connectivityObserver.observe().first() != ConnectivityObserver.Status.Available) {
-            Log.d("AuthRepository", "No network connection. User $email will be synced later.")
-            return@runCatching null
-        }
-
-        val signedUpUser = auth.signUpWith(Email) {
-            this.email = email
-            this.password = password
-            this.data = buildJsonObject {
-                put("display_name", displayName)
+        try {
+            val signedUpUser = auth.signUpWith(Email) {
+                this.email = email
+                this.password = password
+                this.data = buildJsonObject {
+                    put("display_name", displayName)
+                }
             }
-        }
 
-        if (signedUpUser == null) {
-            throw Exception("Supabase did not return user information after signup.")
-        }
+            if (signedUpUser != null) {
+                Log.d("AuthRepository", "Supabase signUpWith call successful for: ${signedUpUser.email}")
+            } else {
+                throw Exception("Supabase returned no user information after signup.")
+            }
 
-        Log.d("AuthRepository", "Supabase signup successful for ${signedUpUser.email}. Awaiting verification.")
-        signedUpUser
+            signedUpUser
+
+        } catch (e: Exception) {
+            Log.e("AuthRepository", "${e.localizedMessage}")
+            Log.e("AuthRepository", "Stack Trace: ${e.stackTraceToString()}")
+            throw e
+        }
     }
 
     override suspend fun syncPendingUsers() {
@@ -153,11 +144,18 @@ class AuthRepositoryImpl(
         return sharedPreferences.getString("refresh_token", null)
     }
 
-    override suspend fun updateUser(displayName: String): Result<UserInfo> = runCatching {
+    override suspend fun updateUser(displayName: String, phone: String): Result<UserInfo> = runCatching {
         auth.updateUser {
             data {
                 put("display_name", displayName)
+                put("phone", phone)
             }
+        }
+    }
+
+    override suspend fun updatePassword(newPassword: String): Result<UserInfo> = runCatching {
+        auth.updateUser {
+            this.password = newPassword
         }
     }
 
