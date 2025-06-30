@@ -12,6 +12,7 @@ sealed class ScreenNavItems(val route: String) {
     object Portfolio : ScreenNavItems("portfolio")
     object Calendar : ScreenNavItems("calendar")
     object Settings : ScreenNavItems("settings")
+    object CurrencySelection : ScreenNavItems("currency_selection")
     object Shared : ScreenNavItems("shared")
     object Wallets : ScreenNavItems("wallets")
 }

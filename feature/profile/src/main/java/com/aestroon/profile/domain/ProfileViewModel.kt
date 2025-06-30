@@ -5,7 +5,10 @@ import androidx.lifecycle.viewModelScope
 import com.aestroon.authentication.data.AuthRepository
 import com.aestroon.authentication.data.UserRepository
 import com.aestroon.authentication.data.model.UserProfile
+import com.aestroon.profile.data.CurrencyRepository
 import com.aestroon.profile.data.UserPreferencesRepository
+import com.aestroon.profile.data.serializable.Currency
+import com.aestroon.profile.data.serializable.ExchangeRateResponse
 import io.github.jan.supabase.gotrue.user.UserInfo
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -14,6 +17,7 @@ import kotlinx.serialization.json.jsonPrimitive
 class ProfileViewModel(
     private val authRepository: AuthRepository,
     private val userRepository: UserRepository,
+    private val currencyRepository: CurrencyRepository,
     private val userPreferencesRepository: UserPreferencesRepository
 ) : ViewModel() {
 
@@ -23,6 +27,30 @@ class ProfileViewModel(
     private val _user = MutableStateFlow<UserInfo?>(null)
     val user: StateFlow<UserInfo?> = _user.asStateFlow()
 
+    private val _baseCurrency = MutableStateFlow("HUF")
+    val baseCurrency: StateFlow<String> = _baseCurrency.asStateFlow()
+
+    private val _allCurrencies = MutableStateFlow<List<Currency>>(emptyList())
+    val allCurrencies: StateFlow<List<Currency>> = _allCurrencies.asStateFlow()
+
+    private val _currencySearchQuery = MutableStateFlow("")
+    val currencySearchQuery: StateFlow<String> = _currencySearchQuery.asStateFlow()
+
+    private val _exchangeRates = MutableStateFlow<ExchangeRateResponse?>(null)
+    val exchangeRates: StateFlow<ExchangeRateResponse?> = _exchangeRates.asStateFlow()
+
+    val filteredCurrencies: StateFlow<List<Currency>> =
+        combine(allCurrencies, currencySearchQuery) { currencies, query ->
+            if (query.isBlank()) {
+                currencies
+            } else {
+                currencies.filter {
+                    it.name.contains(query, ignoreCase = true) ||
+                            it.code.contains(query, ignoreCase = true)
+                }
+            }
+        }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+
     val isBiometricLockEnabled: StateFlow<Boolean> = userPreferencesRepository.isBiometricLockEnabled
 
     val displayName = MutableStateFlow("")
@@ -31,6 +59,7 @@ class ProfileViewModel(
 
     init {
         loadInitialData()
+        loadAllCurrencies()
     }
 
     private fun loadInitialData() {
@@ -47,6 +76,7 @@ class ProfileViewModel(
                             .onSuccess { userProfile ->
                                 worthGoal.value = userProfile?.worth_goal?.toString() ?: "0"
                                 _profileSettingsUiState.value = ProfileSettingsUiState.Idle
+                                _baseCurrency.value = userProfile?.base_currency ?: "EUR"
                             }
                             .onFailure {
                                 worthGoal.value = "0"
@@ -58,6 +88,38 @@ class ProfileViewModel(
                 }
                 .onFailure {
                     _profileSettingsUiState.value = ProfileSettingsUiState.Error("Failed to fetch user data. Please restart the app.")
+                }
+        }
+    }
+
+    private fun loadAllCurrencies() {
+        viewModelScope.launch {
+            currencyRepository.getSupportedCurrencies()
+                .onSuccess { _allCurrencies.value = it }
+                .onFailure {
+                    // Handle error, maybe show a snackbar
+                }
+        }
+    }
+
+    fun onCurrencySearchQueryChanged(query: String) {
+        _currencySearchQuery.value = query
+    }
+
+    fun onBaseCurrencySelected(currencyCode: String) {
+        _baseCurrency.value = currencyCode
+    }
+
+    fun fetchExchangeRates() {
+        viewModelScope.launch {
+            _profileSettingsUiState.value = ProfileSettingsUiState.Loading
+            currencyRepository.getExchangeRates(baseCurrency.value)
+                .onSuccess {
+                    _exchangeRates.value = it
+                    _profileSettingsUiState.value = ProfileSettingsUiState.Idle
+                }
+                .onFailure {
+                    _profileSettingsUiState.value = ProfileSettingsUiState.Error("Failed to fetch exchange rates.")
                 }
         }
     }
@@ -79,6 +141,7 @@ class ProfileViewModel(
                 worth_goal = goalLong,
                 email = user.value?.email ?: "unknown_email_provided@error.com",
                 display_name = displayName.value,
+                base_currency = baseCurrency.value,
             )
             val profileResult = userRepository.upsertUserProfile(profileToSave)
 

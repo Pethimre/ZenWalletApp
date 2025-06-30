@@ -1,5 +1,7 @@
 package com.aestroon.profile.presentation
 
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,11 +16,13 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -36,6 +40,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -50,7 +55,8 @@ import com.aestroon.profile.domain.ProfileViewModel
 @Composable
 fun ProfileScreen(
     viewModel: ProfileViewModel,
-    onLogoutClicked: () -> Unit
+    onLogoutClicked: () -> Unit,
+    onNavigateToCurrencySelection: () -> Unit,
 ) {
     val uiState by viewModel.profileSettingsUiState.collectAsState()
     val user by viewModel.user.collectAsState()
@@ -59,6 +65,8 @@ fun ProfileScreen(
     val displayName by viewModel.displayName.collectAsState()
     val phone by viewModel.phone.collectAsState()
     val worthGoal by viewModel.worthGoal.collectAsState()
+    val baseCurrency by viewModel.baseCurrency.collectAsState()
+    var showCurrencyOverview by rememberSaveable { mutableStateOf(false) }
 
     val snackbarHostState = remember { SnackbarHostState() }
     var showPasswordDialog by remember { mutableStateOf(false) }
@@ -72,6 +80,13 @@ fun ProfileScreen(
             snackbarHostState.showSnackbar(currentState.message, withDismissAction = true, duration = SnackbarDuration.Long)
             viewModel.resetUiState()
         }
+    }
+
+    if (showCurrencyOverview) {
+        CurrencyOverviewSheet(
+            viewModel = viewModel,
+            onDismiss = { showCurrencyOverview = false }
+        )
     }
 
     if (showPasswordDialog) {
@@ -134,14 +149,30 @@ fun ProfileScreen(
                         keyboardType = KeyboardType.Number
                     )
                     OutlinedTextField(
-                        value = "HUF",
+                        value = baseCurrency,
                         onValueChange = {},
-                        label = { Text("Currency") },
-                        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                        label = { Text("Base Currency") },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp)
+                            .clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null, // No ripple effect
+                                onClick = onNavigateToCurrencySelection
+                            ),
                         readOnly = true,
-                        trailingIcon = { Icon(Icons.Default.ArrowDropDown, contentDescription = "dropdown") },
-                        colors = settingsTextFieldColors()
+                        enabled = false, // To make it non-focusable but clickable
+                        trailingIcon = {
+                            IconButton(onClick = {
+                                viewModel.fetchExchangeRates()
+                                showCurrencyOverview = true
+                            }) {
+                                Icon(Icons.Default.Info, "Currency rates overview")
+                            }
+                        },
+                        colors = settingsTextFieldColors(enabled = false)
                     )
+
                     TextButton(onClick = { showPasswordDialog = true }) {
                         Text("Change Password")
                     }

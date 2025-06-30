@@ -32,6 +32,7 @@ import com.aestroon.home.news.ui.NewsDetailScreen
 import com.aestroon.home.widgets.HomeScreenType
 import com.aestroon.portfolio.PortfolioOverviewScreen
 import com.aestroon.profile.domain.ProfileViewModel
+import com.aestroon.profile.presentation.CurrencySelectionScreen
 import com.aestroon.profile.presentation.ProfileScreen
 import com.aestroon.wallets.WalletsScreen
 import org.koin.androidx.compose.getViewModel
@@ -89,7 +90,16 @@ fun AuthenticatedNavGraph(onLogoutClicked: () -> Unit) {
             composable(ScreenNavItems.Settings.route) {
                 ProfileScreen(
                     viewModel = profileViewModel,
-                    onLogoutClicked = onLogoutClicked
+                    onLogoutClicked = onLogoutClicked,onNavigateToCurrencySelection = {
+                        navController.navigate(ScreenNavItems.CurrencySelection.route)
+                    },
+                )
+            }
+
+            composable(ScreenNavItems.CurrencySelection.route) {
+                CurrencySelectionScreen(
+                    viewModel = profileViewModel,
+                    onNavigateUp = { navController.navigateUp() }
                 )
             }
 

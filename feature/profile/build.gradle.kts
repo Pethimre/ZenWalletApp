@@ -1,7 +1,11 @@
+import java.util.Properties
+import kotlin.apply
+
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    kotlin("plugin.serialization") version "1.9.0"
 }
 
 android {
@@ -11,8 +15,18 @@ android {
     defaultConfig {
         minSdk = 24
 
+        val properties = Properties().apply {
+            load(rootProject.file("local.properties").inputStream())
+        }
+        buildConfigField("String", "EXCHANGE_RATE_API_KEY", "\"${properties.getProperty("EXCHANGE_RATE_API_KEY")}\"")
+        buildConfigField("String", "EXCHANGE_RATE_API_URL", "\"${properties.getProperty("EXCHANGE_RATE_API_URL")}\"")
+
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles("consumer-rules.pro")
+    }
+
+    buildFeatures {
+        buildConfig = true
     }
 
     buildTypes {

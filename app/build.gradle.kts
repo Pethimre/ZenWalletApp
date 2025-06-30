@@ -10,10 +10,6 @@ plugins {
     kotlin("plugin.serialization") version "1.9.0"
 }
 
-val localProperties = Properties().apply {
-    load(rootProject.file("local.properties").inputStream())
-}
-
 android {
     namespace = "com.aestroon.zenwallet"
     compileSdk = 35
