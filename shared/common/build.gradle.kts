@@ -1,5 +1,10 @@
+import java.util.Properties
+import kotlin.apply
+
 plugins {
     id("com.google.devtools.ksp") version "2.1.0-1.0.29"
+    id("org.jetbrains.kotlin.plugin.serialization") version "2.1.20"
+
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
@@ -9,8 +14,19 @@ android {
     namespace = "com.aestroon.common"
     compileSdk = 35
 
+    buildFeatures {
+        buildConfig = true
+    }
+
     defaultConfig {
         minSdk = 24
+
+        val properties = Properties().apply {
+            load(rootProject.file("local.properties").inputStream())
+        }
+
+        buildConfigField("String", "EXCHANGE_RATE_API_KEY", "\"${properties.getProperty("EXCHANGE_RATE_API_KEY")}\"")
+        buildConfigField("String", "EXCHANGE_RATE_API_URL", "\"${properties.getProperty("EXCHANGE_RATE_API_URL")}\"")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles("consumer-rules.pro")

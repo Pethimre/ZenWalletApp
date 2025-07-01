@@ -11,11 +11,14 @@ import com.aestroon.common.utilities.network.ConnectivityObserver
 import com.aestroon.common.utilities.network.NetworkConnectivityObserver
 import com.aestroon.home.news.data.RssNewsRepository
 import com.aestroon.home.news.domain.NewsViewModel
-import com.aestroon.profile.data.CurrencyRepository
-import com.aestroon.profile.data.CurrencyRepositoryImpl
+import com.aestroon.common.data.repository.CurrencyRepository
+import com.aestroon.common.data.repository.CurrencyRepositoryImpl
 import com.aestroon.profile.data.UserPreferencesRepository
 import com.aestroon.profile.data.UserPreferencesRepositoryImpl
 import com.aestroon.profile.domain.ProfileViewModel
+import com.aestroon.wallets.data.WalletRepository
+import com.aestroon.wallets.data.WalletRepositoryImpl
+import com.aestroon.wallets.domain.WalletsViewModel
 import io.github.jan.supabase.gotrue.auth
 import io.github.jan.supabase.postgrest.postgrest
 import io.ktor.client.HttpClient
@@ -44,32 +47,26 @@ val appModule = module {
 
     // Supabase client and auth
     single { SupabaseClientProvider.client.postgrest }
-    single { SupabaseClientProvider.client }
     single { SupabaseClientProvider.client.auth }
-
-    // Repositories
-    single<AuthRepository> {
-        AuthRepositoryImpl(
-            auth = get(),
-            userDao = get(),
-            connectivityObserver = get(),
-            context = androidContext()
-        )
-    }
-    single<CurrencyRepository> { CurrencyRepositoryImpl(get()) }
-    single<UserRepository> { UserRepositoryImpl(get()) }
-    single<UserPreferencesRepository> { UserPreferencesRepositoryImpl(androidContext()) }
-    single { RssNewsRepository() }
 
     // Local database
     single {
-        Room.databaseBuilder(
-            androidContext(),
-            AppDatabase::class.java,
-            "app_database"
-        ).build()
+        Room.databaseBuilder(androidContext(), AppDatabase::class.java, "app_database")
+            .fallbackToDestructiveMigration() // Important for development schema changes
+            .build()
     }
+
+    // DAOs
     single { get<AppDatabase>().userDao() }
+    single { get<AppDatabase>().walletDao() }
+
+    // Repositories
+    single<AuthRepository> { AuthRepositoryImpl(get(), get(), get(), androidContext()) }
+    single<CurrencyRepository> { CurrencyRepositoryImpl(get()) }
+    single<UserRepository> { UserRepositoryImpl(get()) }
+    single<UserPreferencesRepository> { UserPreferencesRepositoryImpl(androidContext()) }
+    single<WalletRepository> { WalletRepositoryImpl(get(), get(), get()) }
+    single { RssNewsRepository() }
 
     // Connectivity observer
     single<ConnectivityObserver> { NetworkConnectivityObserver(androidContext()) }
@@ -78,8 +75,8 @@ val appModule = module {
     single { UserManager(get()) }
 
     // ViewModels
-    viewModel { ProfileViewModel(get(), get(), get(), get()) }
+    viewModel { AuthViewModel(get(), get(), get()) }
     viewModel { NewsViewModel(get()) }
     viewModel { ProfileViewModel(get(), get(), get(), get()) }
-    viewModel { AuthViewModel(get(), get(), get()) }
+    viewModel { WalletsViewModel(get(), get(), get(), get()) }
 }

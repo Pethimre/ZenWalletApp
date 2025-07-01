@@ -1,4 +1,7 @@
 plugins {
+    id("com.google.devtools.ksp") version "2.1.0-1.0.29"
+    id("org.jetbrains.kotlin.plugin.serialization") version "2.1.20"
+
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
@@ -35,11 +38,17 @@ android {
 
 dependencies {
     implementation(project(":shared:common"))
+    implementation(project(":feature:authentication"))
+
     implementation ("io.github.ehsannarmani:compose-charts:0.1.7")
     implementation("com.google.accompanist:accompanist-pager:0.32.0")
     implementation("com.google.accompanist:accompanist-pager-indicators:0.32.0")
 
     implementation("androidx.compose.material3:material3:1.2.1")
+
+    implementation("androidx.room:room-runtime:2.7.2")
+    ksp("androidx.room:room-compiler:2.7.2")
+    implementation("androidx.room:room-ktx:2.7.2")
 
     // Supabase setup
     implementation(platform("io.github.jan-tennert.supabase:bom:2.4.0"))

@@ -34,7 +34,7 @@ import com.aestroon.portfolio.PortfolioOverviewScreen
 import com.aestroon.profile.domain.ProfileViewModel
 import com.aestroon.profile.presentation.CurrencySelectionScreen
 import com.aestroon.profile.presentation.ProfileScreen
-import com.aestroon.wallets.WalletsScreen
+import com.aestroon.wallets.presentation.WalletsScreen
 import org.koin.androidx.compose.getViewModel
 
 @Composable

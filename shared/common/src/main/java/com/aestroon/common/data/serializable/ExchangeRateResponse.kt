@@ -1,4 +1,4 @@
-package com.aestroon.profile.data.serializable
+package com.aestroon.common.data.serializable
 
 import kotlinx.serialization.Serializable
 

@@ -1,11 +1,11 @@
-package com.aestroon.profile.data
+package com.aestroon.common.data.repository
 
 import android.util.Log
+import com.aestroon.common.BuildConfig
 import com.aestroon.common.utilities.Tags.CURRENCY_REPOSITORY
-import com.aestroon.profile.BuildConfig
-import com.aestroon.profile.data.serializable.Currency
-import com.aestroon.profile.data.serializable.ExchangeRateResponse
-import com.aestroon.profile.data.serializable.SupportedCodesResponse
+import com.aestroon.common.data.serializable.Currency
+import com.aestroon.common.data.serializable.ExchangeRateResponse
+import com.aestroon.common.data.serializable.SupportedCodesResponse
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.get

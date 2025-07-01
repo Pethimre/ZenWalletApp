@@ -1,0 +1,7 @@
+package com.aestroon.wallets.domain
+
+sealed interface WalletsUiState {
+    object Idle : WalletsUiState
+    object Loading : WalletsUiState
+    data class Error(val message: String) : WalletsUiState
+}

@@ -1,14 +1,15 @@
 package com.aestroon.common.data.database
 
-import androidx.room.AutoMigration
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import com.aestroon.common.data.dao.UserDao
+import com.aestroon.common.data.dao.WalletDao
 import com.aestroon.common.data.entity.LocalUser
+import com.aestroon.common.data.entity.WalletEntity
 
 @Database(
-    entities = [LocalUser::class],
-    version = 1, // <-- INCREMENT VERSION
+    entities = [LocalUser::class, WalletEntity::class],
+    version = 2, // <-- INCREMENT VERSION
     autoMigrations = [
         //AutoMigration(from = 1, to = 2) // <-- ADD AUTO MIGRATION
     ],
@@ -16,4 +17,5 @@ import com.aestroon.common.data.entity.LocalUser
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun userDao(): UserDao
+    abstract fun walletDao(): WalletDao
 }

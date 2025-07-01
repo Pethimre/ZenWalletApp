@@ -6,10 +6,10 @@ import com.aestroon.authentication.data.AuthRepository
 import com.aestroon.authentication.data.UserRepository
 import com.aestroon.authentication.data.model.UserProfile
 import com.aestroon.common.utilities.DEFAULT_BASE_CURRENCY
-import com.aestroon.profile.data.CurrencyRepository
+import com.aestroon.common.data.repository.CurrencyRepository
 import com.aestroon.profile.data.UserPreferencesRepository
-import com.aestroon.profile.data.serializable.Currency
-import com.aestroon.profile.data.serializable.ExchangeRateResponse
+import com.aestroon.common.data.serializable.Currency
+import com.aestroon.common.data.serializable.ExchangeRateResponse
 import io.github.jan.supabase.gotrue.user.UserInfo
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
