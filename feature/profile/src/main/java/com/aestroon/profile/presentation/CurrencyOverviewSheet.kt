@@ -30,7 +30,7 @@ import java.text.DecimalFormat
 @Composable
 fun CurrencyOverviewSheet(
     viewModel: ProfileViewModel,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
 ) {
     val ratesResponse by viewModel.exchangeRates.collectAsState()
     val uiState by viewModel.profileSettingsUiState.collectAsState()
@@ -42,7 +42,6 @@ fun CurrencyOverviewSheet(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                // Updated title to be more descriptive
                 "Value of 1 Foreign Currency in ${ratesResponse?.base_code ?: ""}",
                 style = MaterialTheme.typography.titleLarge
             )

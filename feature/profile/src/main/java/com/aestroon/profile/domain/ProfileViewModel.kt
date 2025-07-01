@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.aestroon.authentication.data.AuthRepository
 import com.aestroon.authentication.data.UserRepository
 import com.aestroon.authentication.data.model.UserProfile
+import com.aestroon.common.utilities.DEFAULT_BASE_CURRENCY
 import com.aestroon.profile.data.CurrencyRepository
 import com.aestroon.profile.data.UserPreferencesRepository
 import com.aestroon.profile.data.serializable.Currency
@@ -76,7 +77,7 @@ class ProfileViewModel(
                             .onSuccess { userProfile ->
                                 worthGoal.value = userProfile?.worth_goal?.toString() ?: "0"
                                 _profileSettingsUiState.value = ProfileSettingsUiState.Idle
-                                _baseCurrency.value = userProfile?.base_currency ?: "EUR"
+                                _baseCurrency.value = userProfile?.base_currency ?: DEFAULT_BASE_CURRENCY
                             }
                             .onFailure {
                                 worthGoal.value = "0"

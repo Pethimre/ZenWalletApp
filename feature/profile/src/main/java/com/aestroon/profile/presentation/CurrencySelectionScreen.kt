@@ -20,7 +20,7 @@ import com.aestroon.profile.domain.ProfileViewModel
 @Composable
 fun CurrencySelectionScreen(
     viewModel: ProfileViewModel,
-    onNavigateUp: () -> Unit
+    onNavigateUp: () -> Unit,
 ) {
     val currencies by viewModel.filteredCurrencies.collectAsState()
     val searchQuery by viewModel.currencySearchQuery.collectAsState()
@@ -67,7 +67,7 @@ fun CurrencySelectionScreen(
 fun CurrencyItem(
     currency: Currency,
     isSelected: Boolean,
-    onSelect: () -> Unit
+    onSelect: () -> Unit,
 ) {
     Row(
         modifier = Modifier

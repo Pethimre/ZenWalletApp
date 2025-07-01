@@ -28,6 +28,7 @@ import com.aestroon.common.utilities.TextFormatter
 import com.aestroon.common.components.expandableListSection
 import com.aestroon.common.theme.AppDimensions.normal
 import com.aestroon.common.theme.PrimaryFontColor
+import com.aestroon.common.utilities.DEFAULT_BASE_CURRENCY
 
 @Composable
 fun CalendarScreen(){
@@ -40,7 +41,7 @@ fun CalendarScreen(){
     val outgoingTransactions = allTransactions[selectedCardIndex].filter { it.amount < 0 }
 
     val totalBalance = bankCards.sumOf { it.balance }
-    val baseCurrency = "EUR"
+    val baseCurrency = DEFAULT_BASE_CURRENCY
 
     Column(
         modifier = Modifier

@@ -15,10 +15,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.aestroon.common.utilities.DEFAULT_BASE_CURRENCY
+import com.aestroon.common.utilities.NUMBER_OF_CURRENCIES_ON_COMPACT
 import com.aestroon.home.mockProvider.CurrencyExchangeInfo
 import com.aestroon.home.mockProvider.RateTrend
-
-const val NUMBER_OF_CURRENCIES_ON_COMPACT = 3
+import com.aestroon.home.widgets.exchangeRow.mockProvider.sampleCollapsedRates
+import com.aestroon.home.widgets.exchangeRow.mockProvider.sampleExchangeRatesForWidget
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalAnimationApi::class)
 @Composable
@@ -26,7 +28,7 @@ fun ExpandableExchangeRateWidgetCard(
     modifier: Modifier = Modifier,
     allExchangeRates: List<CurrencyExchangeInfo>,
     ratesForCollapsedView: List<CurrencyExchangeInfo> = allExchangeRates.take(NUMBER_OF_CURRENCIES_ON_COMPACT),
-    baseCurrencySymbol: String = "Ft",
+    baseCurrencySymbol: String = DEFAULT_BASE_CURRENCY,
     initiallyExpanded: Boolean = false,
     cardTitle: String = "Exchange Rates"
 ) {
@@ -106,15 +108,6 @@ fun ExpandableExchangeRateWidgetCard(
         }
     }
 }
-
-private val sampleExchangeRatesForWidget = listOf(
-    CurrencyExchangeInfo("EUR", "Euro", Icons.Filled.EuroSymbol, 403.85, RateTrend.UP),
-    CurrencyExchangeInfo("USD", "US Dollar", Icons.Filled.AttachMoney, 360.94, RateTrend.DOWN),
-    CurrencyExchangeInfo("GBP", "British Pound", Icons.Filled.CurrencyPound, 480.39, RateTrend.STABLE),
-    CurrencyExchangeInfo("CHF", "Swiss Franc", Icons.Filled.CurrencyFranc, 392.50, RateTrend.UP)
-)
-private val sampleCollapsedRates = sampleExchangeRatesForWidget.take(NUMBER_OF_CURRENCIES_ON_COMPACT)
-
 
 @Preview(showBackground = true, name = "Collapsed Exchange Rate Widget")
 @Composable
