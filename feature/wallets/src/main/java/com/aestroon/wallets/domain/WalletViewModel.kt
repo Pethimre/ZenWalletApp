@@ -36,6 +36,13 @@ class WalletsViewModel(
     private val _allCurrencies = MutableStateFlow<List<Currency>>(emptyList())
     val allCurrencies: StateFlow<List<Currency>> = _allCurrencies.asStateFlow()
 
+    val hasPendingSyncs: StateFlow<Boolean> = wallets.map { walletList ->
+        walletList.any { !it.isSynced }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    val networkStatus: StateFlow<ConnectivityObserver.Status> = connectivityObserver.observe()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), ConnectivityObserver.Status.Unavailable)
+
     val baseCurrency = MutableStateFlow("HUF")
 
     val summary: StateFlow<WalletsSummary> = wallets.map { walletList ->
@@ -47,13 +54,6 @@ class WalletsViewModel(
         WalletsSummary(totalBalance = total, balanceBreakdown = breakdown)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), WalletsSummary())
 
-    val hasPendingSyncs: StateFlow<Boolean> = wallets.map { walletList ->
-        walletList.any { !it.isSynced }
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
-
-    val networkStatus: StateFlow<ConnectivityObserver.Status> = connectivityObserver.observe()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), ConnectivityObserver.Status.Unavailable)
-
     init {
         observeWallets()
         observeNetworkAndSync()
@@ -62,8 +62,8 @@ class WalletsViewModel(
 
     private fun observeWallets() {
         viewModelScope.launch {
+            _uiState.value = WalletsUiState.Loading
             authRepository.getUpdatedUser().getOrNull()?.id?.let { userId ->
-                _uiState.value = WalletsUiState.Loading
                 walletRepository.getWalletsForUser(userId).collect { walletList ->
                     _wallets.value = walletList
                     _uiState.value = WalletsUiState.Idle
@@ -74,10 +74,19 @@ class WalletsViewModel(
         }
     }
 
+    private suspend fun fullSync() {
+        authRepository.getUpdatedUser().getOrNull()?.id?.let { userId ->
+            walletRepository.fetchRemoteWallets(userId)
+            walletRepository.syncPendingWallets()
+        }
+    }
+
     private fun observeNetworkAndSync() {
         viewModelScope.launch {
-            networkStatus.filter { it == ConnectivityObserver.Status.Available }.collect {
-                walletRepository.syncPendingWallets()
+            networkStatus.collect { status ->
+                if (status == ConnectivityObserver.Status.Available) {
+                    fullSync()
+                }
             }
         }
     }
@@ -89,11 +98,17 @@ class WalletsViewModel(
         }
     }
 
+    fun onEnterScreen() {
+        viewModelScope.launch {
+            fullSync()
+        }
+    }
+
     fun addOrUpdateWallet(
         existingWallet: WalletEntity?,
         name: String,
         balanceStr: String,
-        goalAmountStr: String, // New parameter
+        goalAmountStr: String,
         color: Color,
         currency: String,
         iconName: String,

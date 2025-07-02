@@ -41,7 +41,6 @@ class CurrencyRepositoryImpl(private val client: HttpClient) : CurrencyRepositor
             val response = client.get(url).body<ExchangeRateResponse>()
 
             if (response.result == "success") {
-                Log.d(CURRENCY_REPOSITORY, "Successfully parsed success response for base: ${response.base_code}")
                 Result.success(response)
             } else {
                 val errorMessage = "API returned a non-success result: ${response.result}"

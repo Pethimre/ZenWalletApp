@@ -16,6 +16,7 @@ interface WalletRepository {
     suspend fun updateWallet(wallet: WalletEntity): Result<Unit>
     suspend fun deleteWallet(wallet: WalletEntity): Result<Unit>
     suspend fun syncPendingWallets(): Result<Int>
+    suspend fun fetchRemoteWallets(userId: String): Result<Unit> // New function
 }
 
 class WalletRepositoryImpl(
@@ -34,6 +35,33 @@ class WalletRepositoryImpl(
 
     override suspend fun updateWallet(wallet: WalletEntity): Result<Unit> = runCatching {
         walletDao.insertWallet(wallet.copy(isSynced = false))
+    }
+
+    override suspend fun fetchRemoteWallets(userId: String): Result<Unit> = runCatching {
+        if (connectivityObserver.observe().first() != ConnectivityObserver.Status.Available) {
+            return@runCatching
+        }
+        Log.d("WalletRepository", "Fetching remote wallets for user: $userId")
+        val remoteWallets = postgrest.from(WALLETS_TABLE_NAME).select {
+            filter { eq("owner_id", userId) }
+        }.decodeList<Wallet>()
+
+        Log.d("WalletRepository", "Found ${remoteWallets.size} remote wallets. Merging with local DB.")
+        remoteWallets.forEach { networkWallet ->
+            val localEntity = WalletEntity(
+                id = networkWallet.id,
+                displayName = networkWallet.display_name,
+                balance = networkWallet.balance,
+                color = networkWallet.color,
+                currency = networkWallet.currency,
+                ownerId = networkWallet.owner_id,
+                iconName = networkWallet.icon_name,
+                included = networkWallet.included,
+                goalAmount = networkWallet.goal_amount,
+                isSynced = true ,
+            )
+            walletDao.insertWallet(localEntity)
+        }
     }
 
     override suspend fun syncPendingWallets(): Result<Int> = runCatching {

@@ -67,6 +67,10 @@ fun WalletsScreen(
 
     val snackbarHostState = remember { SnackbarHostState() }
 
+    LaunchedEffect(Unit) {
+        viewModel.onEnterScreen()
+    }
+
     LaunchedEffect(uiState) {
         if (uiState is WalletsUiState.Error) {
             snackbarHostState.showSnackbar((uiState as WalletsUiState.Error).message)
