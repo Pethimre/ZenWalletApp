@@ -15,4 +15,5 @@ sealed class ScreenNavItems(val route: String) {
     object CurrencySelection : ScreenNavItems("currency_selection")
     object Shared : ScreenNavItems("shared")
     object Wallets : ScreenNavItems("wallets")
+    object Categories : ScreenNavItems("categories")
 }

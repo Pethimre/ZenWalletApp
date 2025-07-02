@@ -9,18 +9,14 @@ import androidx.room.PrimaryKey
 import com.aestroon.common.presentation.IconProvider
 import java.util.UUID
 
-@Entity(tableName = "wallets")
-data class WalletEntity(
+@Entity(tableName = "categories")
+data class CategoryEntity(
     @PrimaryKey
     val id: String = UUID.randomUUID().toString(),
-    val displayName: String,
-    val balance: Long,
-    val color: String,
-    val currency: String,
-    val ownerId: String,
+    val name: String,
     val iconName: String,
-    val included: Boolean,
-    val goalAmount: Long,
+    val color: String,
+    val userId: String,
     val isSynced: Boolean = false
 ) {
     @get:Ignore
@@ -29,5 +25,5 @@ data class WalletEntity(
 
     @get:Ignore
     val icon: ImageVector
-        get() = IconProvider.getWalletIcon(iconName)
+        get() = IconProvider.getCategoryIcon(iconName)
 }

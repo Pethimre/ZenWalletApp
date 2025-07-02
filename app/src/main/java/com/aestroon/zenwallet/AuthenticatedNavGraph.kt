@@ -34,6 +34,7 @@ import com.aestroon.portfolio.PortfolioOverviewScreen
 import com.aestroon.profile.domain.ProfileViewModel
 import com.aestroon.profile.presentation.CurrencySelectionScreen
 import com.aestroon.profile.presentation.ProfileScreen
+import com.aestroon.wallets.presentation.CategoriesScreen
 import com.aestroon.wallets.presentation.WalletsScreen
 import org.koin.androidx.compose.getViewModel
 
@@ -84,7 +85,6 @@ fun AuthenticatedNavGraph(onLogoutClicked: () -> Unit) {
             startDestination = ScreenNavItems.Home.route,
             modifier = Modifier.padding(padding)
         ) {
-            composable(ScreenNavItems.Wallets.route) { WalletsScreen() }
             composable(ScreenNavItems.Portfolio.route) { PortfolioOverviewScreen() }
             composable(ScreenNavItems.Calendar.route) { CalendarScreen() }
             composable(ScreenNavItems.Settings.route) {
@@ -127,6 +127,20 @@ fun AuthenticatedNavGraph(onLogoutClicked: () -> Unit) {
                         navController.popBackStack()
                     })
                 }
+            }
+
+            composable(ScreenNavItems.Wallets.route) {
+                WalletsScreen(
+                    onNavigateToCategories = {
+                        navController.navigate("categories")
+                    }
+                )
+            }
+
+            composable(ScreenNavItems.Categories.route) {
+                CategoriesScreen(
+                    onNavigateUp = { navController.navigateUp() }
+                )
             }
         }
     }

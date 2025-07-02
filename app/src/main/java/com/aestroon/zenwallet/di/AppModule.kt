@@ -7,6 +7,8 @@ import com.aestroon.authentication.domain.AuthViewModel
 import com.aestroon.authentication.domain.SupabaseClientProvider
 import com.aestroon.authentication.domain.UserManager
 import com.aestroon.common.data.database.AppDatabase
+import com.aestroon.common.data.repository.CategoryRepository
+import com.aestroon.common.data.repository.CategoryRepositoryImpl
 import com.aestroon.common.utilities.network.ConnectivityObserver
 import com.aestroon.common.utilities.network.NetworkConnectivityObserver
 import com.aestroon.home.news.data.RssNewsRepository
@@ -18,6 +20,7 @@ import com.aestroon.profile.data.UserPreferencesRepositoryImpl
 import com.aestroon.profile.domain.ProfileViewModel
 import com.aestroon.wallets.data.WalletRepository
 import com.aestroon.wallets.data.WalletRepositoryImpl
+import com.aestroon.wallets.domain.CategoriesViewModel
 import com.aestroon.wallets.domain.WalletsViewModel
 import io.github.jan.supabase.gotrue.auth
 import io.github.jan.supabase.postgrest.postgrest
@@ -36,11 +39,7 @@ val appModule = module {
     single {
         HttpClient(Android) {
             install(ContentNegotiation) {
-                json(Json {
-                    prettyPrint = true
-                    isLenient = true
-                    ignoreUnknownKeys = true
-                })
+                json(Json { isLenient = true; ignoreUnknownKeys = true })
             }
         }
     }
@@ -59,6 +58,7 @@ val appModule = module {
     // DAOs
     single { get<AppDatabase>().userDao() }
     single { get<AppDatabase>().walletDao() }
+    single { get<AppDatabase>().categoryDao() }
 
     // Repositories
     single<AuthRepository> { AuthRepositoryImpl(get(), get(), get(), androidContext()) }
@@ -66,6 +66,7 @@ val appModule = module {
     single<UserRepository> { UserRepositoryImpl(get()) }
     single<UserPreferencesRepository> { UserPreferencesRepositoryImpl(androidContext()) }
     single<WalletRepository> { WalletRepositoryImpl(get(), get(), get()) }
+    single<CategoryRepository> { CategoryRepositoryImpl(get(), get(), get()) } // CRITICAL FIX
     single { RssNewsRepository() }
 
     // Connectivity observer
@@ -79,4 +80,5 @@ val appModule = module {
     viewModel { NewsViewModel(get()) }
     viewModel { ProfileViewModel(get(), get(), get(), get()) }
     viewModel { WalletsViewModel(get(), get(), get(), get()) }
+    viewModel { CategoriesViewModel(get(), get()) }
 }

@@ -16,7 +16,7 @@ interface WalletRepository {
     suspend fun updateWallet(wallet: WalletEntity): Result<Unit>
     suspend fun deleteWallet(wallet: WalletEntity): Result<Unit>
     suspend fun syncPendingWallets(): Result<Int>
-    suspend fun fetchRemoteWallets(userId: String): Result<Unit> // New function
+    suspend fun fetchRemoteWallets(userId: String): Result<Unit>
 }
 
 class WalletRepositoryImpl(

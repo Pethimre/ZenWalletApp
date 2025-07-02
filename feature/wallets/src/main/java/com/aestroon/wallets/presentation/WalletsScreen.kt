@@ -20,14 +20,18 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Category
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -48,10 +52,11 @@ import com.aestroon.wallets.domain.WalletsUiState
 import com.aestroon.wallets.domain.WalletsViewModel
 import org.koin.androidx.compose.koinViewModel
 
-@OptIn(ExperimentalFoundationApi::class)
+@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun WalletsScreen(
-    viewModel: WalletsViewModel = koinViewModel()
+    viewModel: WalletsViewModel = koinViewModel(),
+    onNavigateToCategories: () -> Unit,
 ) {
     val wallets: List<WalletEntity> by viewModel.wallets.collectAsState()
     val uiState: WalletsUiState by viewModel.uiState.collectAsState()
@@ -82,6 +87,16 @@ fun WalletsScreen(
     val pagerState = rememberPagerState(pageCount = { pageCount })
 
     Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Categories") },
+                actions = {
+                    IconButton(onClick = onNavigateToCategories) {
+                        Icon(Icons.Default.Category, contentDescription = "Manage Categories")
+                    }
+                }
+            )
+        },
         snackbarHost = { SnackbarHost(snackbarHostState) },
         floatingActionButton = {
             FloatingActionButton(
@@ -185,7 +200,9 @@ fun SpendingWalletCardPreview() {
         currency = "HUF",
         ownerId = "user1",
         isSynced = false,
-        iconName = "CreditCard"
+        iconName = "CreditCard",
+        included = true,
+        goalAmount = 1200,
     )
     SpendingWalletCard(wallet = wallet, onEdit = {}, onDelete = {})
 }
@@ -205,9 +222,9 @@ fun AddWalletDialogPreview() {
 @Composable
 fun WalletsOverviewPreview() {
     val wallets = listOf(
-        WalletEntity("1", "Cash", 5000000L, "#4CAF50", "HUF", "user1", "Payments"),
-        WalletEntity("2", "Debit Card", 15000000L, "#2196F3", "HUF", "user1", "CreditCard"),
-        WalletEntity("3", "Savings", 30000000L, "#F44336", "HUF", "user1", "Savings")
+        WalletEntity("1", "Cash", 5000000L, "#4CAF50", "HUF", "user1", "Payments", true, 3242),
+        WalletEntity("2", "Debit Card", 15000000L, "#2196F3", "HUF", "user1", "CreditCard", true, 2122),
+        WalletEntity("3", "Savings", 30000000L, "#F44336", "HUF", "user1", "Savings", true, 82421)
     )
     val summary = WalletsSummary(
         totalBalance = 50000000L,
