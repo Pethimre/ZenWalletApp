@@ -53,8 +53,6 @@ android {
 dependencies {
     implementation(project(":shared:common"))
 
-    implementation(libs.androidx.security.crypto)
-
     // Supabase setup
     implementation("androidx.room:room-runtime:2.7.2")
     ksp("androidx.room:room-compiler:2.7.2")

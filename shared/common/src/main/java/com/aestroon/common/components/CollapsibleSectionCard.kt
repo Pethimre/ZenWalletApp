@@ -11,12 +11,9 @@ import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
@@ -31,16 +28,13 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AttachMoney
-import androidx.compose.material.icons.filled.CallMade
-import androidx.compose.material.icons.filled.CallReceived
+import androidx.compose.material.icons.filled.ArrowDownward
+import androidx.compose.material.icons.filled.ArrowUpward
+import androidx.compose.material.icons.filled.CompareArrows
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
-import androidx.compose.material.icons.filled.MoneyOff
 import androidx.compose.material.icons.filled.UnfoldLess
 import androidx.compose.material.icons.filled.UnfoldMore
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -59,19 +53,20 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.aestroon.common.components.mockProvider.TransactionItemData
 import com.aestroon.common.components.mockProvider.TransactionTag
-import com.aestroon.common.components.mockProvider.TransactionType
 import com.aestroon.common.components.mockProvider.sampleDailyTransactions
 import com.aestroon.common.components.mockProvider.sampleOverdueTransactions
 import com.aestroon.common.components.mockProvider.sampleUpcomingTransactions
+import com.aestroon.common.data.entity.TransactionEntity
+import com.aestroon.common.data.entity.TransactionType.EXPENSE
+import com.aestroon.common.data.entity.TransactionType.INCOME
+import com.aestroon.common.data.entity.TransactionType.TRANSFER
 import com.aestroon.common.theme.DarkGreenChipColor
 import com.aestroon.common.theme.GreenChipColor
 import com.aestroon.common.theme.RedChipColor
-import java.text.DecimalFormat
+import com.aestroon.common.utilities.TextFormatter
 
 @Composable
 fun CollapsibleSectionCard(
@@ -156,158 +151,54 @@ fun CollapsibleSectionCard(
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun TransactionListItem(
-    modifier: Modifier = Modifier,
-    transaction: TransactionItemData,
-    onClick: (() -> Unit)? = null,
+    transaction: TransactionEntity,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
-    val amountColor = when (transaction.transactionType) {
-        TransactionType.INCOME -> GreenChipColor
-        TransactionType.EXPENSE -> RedChipColor
+    val (icon, color) = when (transaction.transactionType) {
+        INCOME -> Icons.Default.ArrowUpward to GreenChipColor
+        EXPENSE -> Icons.Default.ArrowDownward to RedChipColor
+        TRANSFER -> Icons.Default.CompareArrows to Color.Gray
     }
-    val currencyFormatter = remember { DecimalFormat("#,##0.00") }
-    var expanded by remember { mutableStateOf(false) }
 
     Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .padding(bottom = 8.dp)
-            .then(if (onClick != null) Modifier.clickable(
-                onClick = {
-                    expanded = !expanded
-                    onClick()
-                }
-            ) else Modifier.clickable { expanded = !expanded }),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.onBackground.copy(alpha = .075f)
-        ),
+        modifier = modifier.fillMaxWidth().clickable(onClick = onClick),
+        shape = MaterialTheme.shapes.medium,
+        elevation = CardDefaults.cardElevation(2.dp)
     ) {
-        Column(modifier = Modifier.padding(12.dp)) {
-            Row(verticalAlignment = Alignment.Top) {
-                Box(
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(CircleShape)
-                        .background(transaction.categoryIconBackgroundColor),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = transaction.categoryIcon,
-                        contentDescription = transaction.title,
-                        tint = transaction.categoryIconContentColor,
-                        modifier = Modifier.size(20.dp)
-                    )
-                }
+        Row(
+            modifier = Modifier.padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = transaction.transactionType.name,
+                    tint = Color.White,
+                    modifier = Modifier.size(40.dp).background(color, CircleShape).padding(8.dp)
+                )
                 Spacer(modifier = Modifier.width(12.dp))
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = transaction.title,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    transaction.subtitle?.let {
-                        Text(
-                            text = it,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
-                    transaction.dueDate?.let {
-                        Text(
-                            text = it.uppercase(),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.primary,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(top = 2.dp)
-                        )
-                    }
-                }
-                if (transaction.actions.isEmpty()) {
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = "${if (transaction.transactionType == TransactionType.INCOME) "+" else "-"} ${
-                            currencyFormatter.format(
-                                transaction.amount
-                            )
-                        } ${transaction.currencySymbol}",
-                        style = MaterialTheme.typography.bodyLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = amountColor,
-                        textAlign = TextAlign.End,
-                    )
-                }
-            }
-
-            if (transaction.tags.isNotEmpty()) {
-                Spacer(modifier = Modifier.height(8.dp))
-                FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    verticalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    transaction.tags.forEach { tag ->
-                        TransactionTagChip(tag = tag)
+                Column {
+                    Text(transaction.name, fontWeight = FontWeight.SemiBold)
+                    transaction.description?.let {
+                        Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             }
-
-            if (transaction.actions.isNotEmpty()) {
-                Spacer(modifier = Modifier.height(10.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = if (transaction.transactionType == TransactionType.INCOME) Icons.Filled.CallReceived else Icons.Filled.CallMade,
-                        contentDescription = "Amount",
-                        tint = amountColor,
-                        modifier = Modifier.size(28.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = "${currencyFormatter.format(transaction.amount)} ${transaction.currencySymbol}",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = amountColor
-                    )
-                }
-            }
-
-            if (expanded && transaction.actions.isNotEmpty()) {
-                Spacer(modifier = Modifier.height(12.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(
-                        8.dp,
-                        Alignment.End
-                    ),
-                ) {
-                    transaction.actions.forEach { action ->
-                        Button(
-                            onClick = action.onClick,
-                            colors = if (action.isPrimary) ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.primary
-                            )
-                            else ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
-                            shape = RoundedCornerShape(8.dp),
-                            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
-                        ) {
-                            action.icon?.let {
-                                Icon(
-                                    imageVector = it,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                                Spacer(modifier = Modifier.width(6.dp))
-                            }
-                            Text(text = action.label, style = MaterialTheme.typography.labelLarge)
-                        }
-                    }
-                }
-            }
+            Text(
+                text = TextFormatter.toPrettyAmountWithCurrency(
+                    amount = transaction.amount / 100.0,
+                    currency = transaction.currency,
+                    currencyPosition = TextFormatter.CurrencyPosition.AFTER,
+                ),
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.End,
+                color = color
+            )
         }
     }
 }
-
 @Composable
 fun TransactionTagChip(tag: TransactionTag) {
     Row(
@@ -383,7 +274,8 @@ fun CollapsibleUpcomingPreview() {
             sampleUpcomingTransactions.forEach { transaction ->
                 TransactionListItem(
                     transaction = transaction,
-                    modifier = Modifier.padding(bottom = 8.dp)
+                    modifier = Modifier.padding(bottom = 8.dp),
+                    onClick = {},
                 )
             }
         }
@@ -407,7 +299,8 @@ fun CollapsibleOverduePreview() {
             sampleOverdueTransactions.forEach { transaction ->
                 TransactionListItem(
                     transaction = transaction,
-                    modifier = Modifier.padding(bottom = 8.dp)
+                    modifier = Modifier.padding(bottom = 8.dp),
+                    onClick = {},
                 )
             }
             if (sampleOverdueTransactions.isEmpty()) {
@@ -460,7 +353,7 @@ fun DailyTransactionsPreview() {
                 Spacer(modifier = Modifier.height(10.dp))
             }
             items(sampleDailyTransactions) { transaction ->
-                TransactionListItem(transaction = transaction)
+                TransactionListItem(transaction = transaction, onClick = {})
             }
         }
     }
@@ -472,7 +365,8 @@ fun SingleTransactionItemPreview() {
     MaterialTheme {
         TransactionListItem(
             transaction = sampleUpcomingTransactions.first(),
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(16.dp),
+            onClick = {},
         )
     }
 }

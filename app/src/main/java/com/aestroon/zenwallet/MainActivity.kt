@@ -20,6 +20,7 @@ import androidx.fragment.app.FragmentActivity
 import appModule
 import com.aestroon.authentication.domain.AuthViewModel
 import com.aestroon.authentication.ui.BiometricPromptManager
+import com.aestroon.common.navigation.ScreenNavItems
 import com.aestroon.common.theme.ZenWalletTheme
 import com.aestroon.home.news.di.newsModule
 import com.aestroon.profile.data.UserPreferencesRepository
@@ -55,7 +56,6 @@ class MainActivity : FragmentActivity() {
                 var biometricUnlockAttempted by rememberSaveable { mutableStateOf(false) }
                 var biometricUnlockSuccess by rememberSaveable { mutableStateOf(false) }
 
-                // CRITICAL: This was missing. It triggers the session restore process.
                 LaunchedEffect(Unit) {
                     authViewModel.restoreSession()
                 }
@@ -75,24 +75,22 @@ class MainActivity : FragmentActivity() {
 
                 // A clear, multi-stage check to decide what to show.
                 when {
-                    // Stage 1: Wait for the session restore attempt to finish.
                     !restoreComplete -> {
                         SplashScreen()
                     }
-                    // Stage 2: If biometrics are required, wait for a successful unlock.
                     needsBiometricUnlock && !biometricUnlockSuccess -> {
                         Box(
-                            modifier = Modifier.fillMaxSize().background(Color.Black),
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(Color.Black),
                             contentAlignment = Alignment.Center
                         ) {
                             CircularProgressIndicator()
                         }
                     }
-                    // Stage 3: If logged in (and biometric check passed if needed), show main app.
                     isLoggedIn -> {
                         AuthenticatedNavGraph(onLogoutClicked = { authViewModel.logout() })
                     }
-                    // Stage 4: If not logged in, show login flow.
                     else -> {
                         UnauthenticatedNavGraph(authViewModel)
                     }

@@ -10,7 +10,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.aestroon.common.data.entity.CategoryEntity
-import com.aestroon.wallets.domain.CategoriesViewModel
+import com.aestroon.common.domain.CategoriesViewModel
 import com.aestroon.wallets.presentation.composables.AddEditCategoryDialog
 import com.aestroon.wallets.presentation.composables.CategoryListItem
 import org.koin.androidx.compose.koinViewModel

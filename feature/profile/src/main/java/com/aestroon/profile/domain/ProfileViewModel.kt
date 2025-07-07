@@ -2,7 +2,7 @@ package com.aestroon.profile.domain
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.aestroon.authentication.data.AuthRepository
+import com.aestroon.common.data.repository.AuthRepository
 import com.aestroon.authentication.data.UserRepository
 import com.aestroon.authentication.data.model.UserProfile
 import com.aestroon.common.utilities.DEFAULT_BASE_CURRENCY

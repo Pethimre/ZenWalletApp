@@ -1,5 +1,6 @@
 package com.aestroon.portfolio
 
+import android.annotation.SuppressLint
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -37,6 +38,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import com.aestroon.common.presentation.components.ConfirmDeleteDialog
 import com.aestroon.portfolio.mockProvider.HeldInstrument
 import com.aestroon.portfolio.mockProvider.Instrument
 import com.aestroon.portfolio.mockProvider.PortfolioAccount
@@ -590,31 +592,8 @@ fun AddInstrumentDialog(
     }
 }
 
-@Composable
-fun ConfirmDeleteDialog(
-    itemName: String,
-    itemType: String,
-    onDismiss: () -> Unit,
-    onConfirm: () -> Unit,
-) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-        titleContentColor = MaterialTheme.colorScheme.error,
-        textContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-        title = { Text("Confirm Deletion", color = MaterialTheme.colorScheme.error) },
-        text = { Text("Are you sure you want to delete the $itemType \"$itemName\"? This action cannot be undone.") },
-        confirmButton = {
-            Button(
-                onClick = { onConfirm(); onDismiss() },
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
-            ) { Text("Delete", color = MaterialTheme.colorScheme.onError) }
-        },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
-    )
-}
-
 @OptIn(ExperimentalMaterial3Api::class)
+@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 fun PortfolioOverviewScreen(
     initialAccounts: List<PortfolioAccount> = mockPortfolioAccounts(),

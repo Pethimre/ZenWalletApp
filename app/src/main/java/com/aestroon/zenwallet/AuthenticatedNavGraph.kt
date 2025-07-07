@@ -1,8 +1,8 @@
 package com.aestroon.zenwallet
 
-import com.aestroon.home.HomeMainScreen
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Settings
@@ -13,19 +13,23 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.aestroon.calendar.CalendarScreen
-import com.aestroon.common.navigation.ScreenNavItems
+import com.aestroon.common.domain.TransactionsViewModel
 import com.aestroon.common.navigation.AnimatedNavigationBar
 import com.aestroon.common.navigation.ButtonData
-import com.aestroon.common.theme.PrimaryColor
+import com.aestroon.common.navigation.ScreenNavItems
+import com.aestroon.common.presentation.AddEditTransactionSheet
+import com.aestroon.home.HomeMainScreen
 import com.aestroon.home.news.domain.NewsViewModel
 import com.aestroon.home.news.ui.NewsDetailErrorScreen
 import com.aestroon.home.news.ui.NewsDetailScreen
@@ -43,28 +47,45 @@ fun AuthenticatedNavGraph(onLogoutClicked: () -> Unit) {
     val navController = rememberNavController()
     val snackbarHostState = remember { SnackbarHostState() }
 
-    val selectedTab = rememberSaveable { mutableStateOf(HomeScreenType.OVERVIEW) }
     val newsViewModel: NewsViewModel = getViewModel()
     val profileViewModel: ProfileViewModel = getViewModel()
+    val transactionsViewModel: TransactionsViewModel = getViewModel()
 
-    val buttons = listOf(
-        ButtonData("Wallets", Icons.Default.Wallet),
-        ButtonData("Portfolio", Icons.Default.StackedLineChart),
-        ButtonData("Home", Icons.Default.Home),
-        ButtonData("Calendar", Icons.Default.DateRange),
-        ButtonData("Settings", Icons.Default.Settings),
-    )
+    var selectedIndex by remember { mutableStateOf(2) }
+    var showAddTransactionSheet by remember { mutableStateOf(false) }
+
+    val wallets by transactionsViewModel.wallets.collectAsState()
+    val categories by transactionsViewModel.categories.collectAsState()
+
+    val buttons = remember(selectedIndex) {
+        listOf(
+            ButtonData("Wallets", Icons.Default.Wallet),
+            ButtonData("Portfolio", Icons.Default.StackedLineChart),
+            ButtonData("Home", if (selectedIndex == 2) Icons.Default.Add else Icons.Default.Home),
+            ButtonData("Calendar", Icons.Default.DateRange),
+            ButtonData("Settings", Icons.Default.Settings),
+        )
+    }
+
+    if (showAddTransactionSheet) {
+        AddEditTransactionSheet(
+            wallets = wallets,
+            categories = categories,
+            onDismiss = { showAddTransactionSheet = false },
+            onConfirm = { amount, name, description, date, fromWallet, category, type, toWallet ->
+                transactionsViewModel.addTransaction(amount, name, description, date, fromWallet, category, type, toWallet)
+                showAddTransactionSheet = false
+            }
+        )
+    }
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         bottomBar = {
             AnimatedNavigationBar(
-                buttons = buttons,
-                barColor = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = .6f),
-                circleColor = MaterialTheme.colorScheme.onPrimary,
-                selectedColor = PrimaryColor,
-                unselectedColor = Color.Gray,
-                onItemClick = { index ->
+                selectedIndex = selectedIndex,
+                onSelectedIndexChange = { index ->
+                    selectedIndex = index
                     val route = when (index) {
                         0 -> ScreenNavItems.Wallets.route
                         1 -> ScreenNavItems.Portfolio.route
@@ -74,9 +95,21 @@ fun AuthenticatedNavGraph(onLogoutClicked: () -> Unit) {
                         else -> ScreenNavItems.Home.route
                     }
                     navController.navigate(route) {
+                        popUpTo(navController.graph.startDestinationId) { saveState = true }
                         launchSingleTop = true
+                        restoreState = true
                     }
-                }
+                },
+                onCircleClick = {
+                    if (selectedIndex == 2) {
+                        showAddTransactionSheet = true
+                    }
+                },
+                buttons = buttons,
+                barColor = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = .9f),
+                circleColor = MaterialTheme.colorScheme.primary,
+                selectedColor = MaterialTheme.colorScheme.onPrimary,
+                unselectedColor = Color.Gray,
             )
         }
     ) { padding ->
@@ -90,57 +123,36 @@ fun AuthenticatedNavGraph(onLogoutClicked: () -> Unit) {
             composable(ScreenNavItems.Settings.route) {
                 ProfileScreen(
                     viewModel = profileViewModel,
-                    onLogoutClicked = onLogoutClicked,onNavigateToCurrencySelection = {
+                    onLogoutClicked = onLogoutClicked, onNavigateToCurrencySelection = {
                         navController.navigate(ScreenNavItems.CurrencySelection.route)
                     },
                 )
             }
-
             composable(ScreenNavItems.CurrencySelection.route) {
-                CurrencySelectionScreen(
-                    viewModel = profileViewModel,
-                    onNavigateUp = { navController.navigateUp() }
-                )
+                CurrencySelectionScreen(viewModel = profileViewModel, onNavigateUp = { navController.navigateUp() })
             }
-
             composable(ScreenNavItems.Home.route) {
+                var selectedTab by remember { mutableStateOf(HomeScreenType.OVERVIEW) }
                 HomeMainScreen(
-                    viewModel = newsViewModel,
-                    selectedHomeScreenType = selectedTab.value,
-                    onTabSelected = { selectedTab.value = it },
-                    onArticleClick = { articleId ->
-                        navController.navigate("news_detail/$articleId")
-                    }
+                    selectedHomeScreenType = selectedTab,
+                    onTabSelected = { selectedTab = it },
+                    onArticleClick = { articleId -> navController.navigate("news_detail/$articleId") }
                 )
             }
-
             composable("news_detail/{articleId}") { backStackEntry ->
                 val articleId = backStackEntry.arguments?.getString("articleId") ?: ""
                 val article = newsViewModel.findArticleById(articleId)
-
                 if (article != null) {
-                    NewsDetailScreen(article = article, onBackClick = {
-                        navController.popBackStack()
-                    })
+                    NewsDetailScreen(article = article, onBackClick = { navController.popBackStack() })
                 } else {
-                    NewsDetailErrorScreen(onBackClick = {
-                        navController.popBackStack()
-                    })
+                    NewsDetailErrorScreen(onBackClick = { navController.popBackStack() })
                 }
             }
-
             composable(ScreenNavItems.Wallets.route) {
-                WalletsScreen(
-                    onNavigateToCategories = {
-                        navController.navigate("categories")
-                    }
-                )
+                WalletsScreen(onNavigateToCategories = { navController.navigate(ScreenNavItems.Categories.route) })
             }
-
             composable(ScreenNavItems.Categories.route) {
-                CategoriesScreen(
-                    onNavigateUp = { navController.navigateUp() }
-                )
+                CategoriesScreen(onNavigateUp = { navController.navigateUp() })
             }
         }
     }

@@ -3,7 +3,7 @@ package com.aestroon.authentication.domain
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.aestroon.authentication.data.AuthRepository
+import com.aestroon.common.data.repository.AuthRepository
 import com.aestroon.common.utilities.network.ConnectivityObserver
 import io.github.jan.supabase.gotrue.SessionStatus
 import kotlinx.coroutines.Dispatchers

@@ -1,21 +1,20 @@
-package com.aestroon.wallets.domain
+package com.aestroon.common.domain
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.aestroon.authentication.data.AuthRepository
+import com.aestroon.common.data.repository.AuthRepository
 import com.aestroon.common.data.entity.WalletEntity
 import com.aestroon.common.data.model.WalletsSummary
 import com.aestroon.common.data.repository.CurrencyRepository
 import com.aestroon.common.data.serializable.Currency
 import com.aestroon.common.utilities.network.ConnectivityObserver
-import com.aestroon.wallets.data.WalletRepository
+import com.aestroon.common.data.repository.WalletRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch

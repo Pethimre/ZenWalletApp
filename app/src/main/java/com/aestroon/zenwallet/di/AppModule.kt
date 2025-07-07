@@ -1,6 +1,6 @@
 import androidx.room.Room
-import com.aestroon.authentication.data.AuthRepository
-import com.aestroon.authentication.data.AuthRepositoryImpl
+import com.aestroon.common.data.repository.AuthRepository
+import com.aestroon.common.data.repository.AuthRepositoryImpl
 import com.aestroon.authentication.data.UserRepository
 import com.aestroon.authentication.data.UserRepositoryImpl
 import com.aestroon.authentication.domain.AuthViewModel
@@ -15,13 +15,16 @@ import com.aestroon.home.news.data.RssNewsRepository
 import com.aestroon.home.news.domain.NewsViewModel
 import com.aestroon.common.data.repository.CurrencyRepository
 import com.aestroon.common.data.repository.CurrencyRepositoryImpl
+import com.aestroon.common.data.repository.TransactionRepository
+import com.aestroon.common.data.repository.TransactionRepositoryImpl
 import com.aestroon.profile.data.UserPreferencesRepository
 import com.aestroon.profile.data.UserPreferencesRepositoryImpl
 import com.aestroon.profile.domain.ProfileViewModel
-import com.aestroon.wallets.data.WalletRepository
-import com.aestroon.wallets.data.WalletRepositoryImpl
-import com.aestroon.wallets.domain.CategoriesViewModel
-import com.aestroon.wallets.domain.WalletsViewModel
+import com.aestroon.common.data.repository.WalletRepository
+import com.aestroon.common.data.repository.WalletRepositoryImpl
+import com.aestroon.common.domain.TransactionsViewModel
+import com.aestroon.common.domain.CategoriesViewModel
+import com.aestroon.common.domain.WalletsViewModel
 import io.github.jan.supabase.gotrue.auth
 import io.github.jan.supabase.postgrest.postgrest
 import io.ktor.client.HttpClient
@@ -59,14 +62,16 @@ val appModule = module {
     single { get<AppDatabase>().userDao() }
     single { get<AppDatabase>().walletDao() }
     single { get<AppDatabase>().categoryDao() }
+    single { get<AppDatabase>().transactionDao() }
 
     // Repositories
+    single<TransactionRepository> { TransactionRepositoryImpl(get(), get(), get(), get(), get()) }
     single<AuthRepository> { AuthRepositoryImpl(get(), get(), get(), androidContext()) }
     single<CurrencyRepository> { CurrencyRepositoryImpl(get()) }
     single<UserRepository> { UserRepositoryImpl(get()) }
     single<UserPreferencesRepository> { UserPreferencesRepositoryImpl(androidContext()) }
     single<WalletRepository> { WalletRepositoryImpl(get(), get(), get()) }
-    single<CategoryRepository> { CategoryRepositoryImpl(get(), get(), get()) } // CRITICAL FIX
+    single<CategoryRepository> { CategoryRepositoryImpl(get(), get(), get()) }
     single { RssNewsRepository() }
 
     // Connectivity observer
@@ -76,6 +81,7 @@ val appModule = module {
     single { UserManager(get()) }
 
     // ViewModels
+    viewModel { TransactionsViewModel(get(), get(), get(), get()) }
     viewModel { AuthViewModel(get(), get(), get()) }
     viewModel { NewsViewModel(get()) }
     viewModel { ProfileViewModel(get(), get(), get(), get()) }

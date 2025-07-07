@@ -16,6 +16,8 @@ import com.aestroon.common.components.mockProvider.MOCK_BASE_CURRENCY
 import com.aestroon.common.components.mockProvider.TransactionItemData
 import com.aestroon.common.components.mockProvider.sampleOverdueTransactions
 import com.aestroon.common.components.mockProvider.sampleUpcomingTransactions
+import com.aestroon.common.data.entity.TransactionEntity
+import com.aestroon.common.data.model.WalletsSummary
 import com.aestroon.common.theme.OrangeChipColor
 import com.aestroon.common.theme.RedChipColor
 import com.aestroon.common.utilities.TextFormatter
@@ -28,26 +30,37 @@ import com.aestroon.home.widgets.exchangeRow.ExpandableExchangeRateWidgetCard
 import com.aestroon.home.widgets.savingSummary.SavingsSummaryCard
 
 fun LazyListScope.addHomeScreenContent(
-    groupedTransactions:  List<TransactionItemData>,
+    groupedTransactions: List<TransactionEntity>,
+    summary: WalletsSummary,
+    onTransactionClick: (String) -> Unit,
 ){
     item(key = "home_screen_total_balance_overview") {
+        val goal = 100000000L // Example Goal
+        val totalBalance = summary.totalBalance
+        val progress = if (goal > 0) (totalBalance.toFloat() / goal.toFloat()).coerceIn(0f, 1f) else 0f
+
         BalanceOverviewCard(
             totalBalance = TextFormatter.toPrettyAmountWithCurrency(
-                amount = TOTAL_BALANCE,
-                currencyPosition = TextFormatter.CurrencyPosition.AFTER,
-                currency = MOCK_BASE_CURRENCY,
+                amount = totalBalance / 100.0,
+                currency = "HUF",
+                currencyPosition = TextFormatter.CurrencyPosition.AFTER
             ),
             amountUntilGoal = TextFormatter.toPrettyAmountWithCurrency(
-                amount = GOAL - TOTAL_BALANCE,
-                currencyPosition = TextFormatter.CurrencyPosition.AFTER,
-                currency = MOCK_BASE_CURRENCY,
+                amount = (goal - totalBalance) / 100.0,
+                currency = "HUF",
+                currencyPosition = TextFormatter.CurrencyPosition.AFTER
             ),
-            goalAmountValue = GOAL.toFloat(),
-            goalProgress = (1 - (GOAL - TOTAL_BALANCE) / GOAL).toFloat(),
-            statusMessage = "This is a status message",
+            goalAmountValue = goal / 100.0f,
+            goalProgress = progress,
+            statusMessage = "You are on track!",
             statusIcon = Icons.Default.Star,
         )
     }
+
+    dailyTransactionItems(
+        transactions = groupedTransactions,
+        onTransactionClick = onTransactionClick
+    )
 
     item(key = "home_screen_savings_summary") {
         SavingsSummaryCard(
@@ -79,7 +92,7 @@ fun LazyListScope.addHomeScreenContent(
             initiallyExpanded = false,
         ) {
             sampleUpcomingTransactions.forEach {
-                TransactionListItem(Modifier.padding(bottom = 8.dp), it)
+                TransactionListItem(it, modifier = Modifier.padding(bottom = 8.dp), onClick = {})
             }
         }
     }
@@ -98,7 +111,7 @@ fun LazyListScope.addHomeScreenContent(
             initiallyExpanded = false,
         ) {
             sampleOverdueTransactions.forEach {
-                TransactionListItem(Modifier.padding(bottom = 8.dp), it)
+                TransactionListItem(it, modifier = Modifier.padding(bottom = 8.dp), onClick = {})
             }
 
             if (sampleOverdueTransactions.isEmpty()) {

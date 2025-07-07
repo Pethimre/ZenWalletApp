@@ -1,4 +1,4 @@
-package com.aestroon.authentication.data
+package com.aestroon.common.data.repository
 
 import io.github.jan.supabase.gotrue.SessionStatus
 import io.github.jan.supabase.gotrue.user.UserInfo

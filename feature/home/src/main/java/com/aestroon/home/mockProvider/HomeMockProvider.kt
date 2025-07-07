@@ -32,7 +32,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import com.aestroon.common.components.mockProvider.TransactionAction
 import com.aestroon.common.components.mockProvider.TransactionItemData
 import com.aestroon.common.components.mockProvider.TransactionTag
-import com.aestroon.common.components.mockProvider.TransactionType
+import com.aestroon.common.data.entity.TransactionType
 import com.aestroon.common.theme.PrimaryColor
 import com.aestroon.common.theme.PrimaryFontColor
 import java.text.SimpleDateFormat

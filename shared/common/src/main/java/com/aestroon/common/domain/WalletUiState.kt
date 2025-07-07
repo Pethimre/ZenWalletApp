@@ -1,4 +1,4 @@
-package com.aestroon.wallets.domain
+package com.aestroon.common.domain
 
 sealed interface WalletsUiState {
     object Idle : WalletsUiState

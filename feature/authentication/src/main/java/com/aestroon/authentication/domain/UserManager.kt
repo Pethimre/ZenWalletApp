@@ -1,8 +1,6 @@
 package com.aestroon.authentication.domain
 
-import com.aestroon.authentication.data.AuthRepository
-import io.github.jan.supabase.gotrue.Auth
-import io.github.jan.supabase.gotrue.user.UserInfo
+import com.aestroon.common.data.repository.AuthRepository
 
 class UserManager(private val authRepository: AuthRepository) {
     suspend fun logout() {

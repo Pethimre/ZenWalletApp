@@ -3,4 +3,14 @@
     <domain-config cleartextTrafficPermitted="true">
         <domain includeSubdomains="true">feeds.reuters.com</domain>
     </domain-config>
+    <!--
+        This configuration allows the app to connect to localhost using HTTP.
+        This is typically required during development when running a local server
+        on your machine for testing purposes. It only allows this for the debug
+        build and does not affect the release build's security.
+    -->
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">127.0.0.1</domain>
+        <domain includeSubdomains="true">localhost</domain>
+    </domain-config>
 </network-security-config>

@@ -33,18 +33,6 @@ import com.aestroon.common.presentation.IconProvider
 import java.text.NumberFormat
 import java.util.Locale
 
-fun Color.toHexString(): String {
-    return String.format("#%08X", this.toArgb())
-}
-
-fun String.toColor(): Color {
-    return try {
-        if (this.startsWith("#")) Color(android.graphics.Color.parseColor(this)) else Color(android.graphics.Color.parseColor("#$this"))
-    } catch (e: IllegalArgumentException) {
-        Color.Gray
-    }
-}
-
 val defaultWalletColors = listOf(
     Color(0xFF4CAF50), Color(0xFF2196F3), Color(0xFFF44336),
     Color(0xFFFF9800), Color(0xFF9C27B0), Color(0xFF009688)

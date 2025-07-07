@@ -1,14 +1,14 @@
-package com.aestroon.wallets.domain
+package com.aestroon.common.domain
 
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.aestroon.authentication.data.AuthRepository
+import com.aestroon.common.data.repository.AuthRepository
 import com.aestroon.common.data.entity.CategoryEntity
 import com.aestroon.common.data.repository.CategoryRepository
+import com.aestroon.common.utilities.toHexString
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import toHexString
 
 class CategoriesViewModel(
     private val categoryRepository: CategoryRepository,

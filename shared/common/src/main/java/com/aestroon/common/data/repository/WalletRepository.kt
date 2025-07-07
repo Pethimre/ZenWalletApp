@@ -1,4 +1,4 @@
-package com.aestroon.wallets.data
+package com.aestroon.common.data.repository
 
 import android.util.Log
 import com.aestroon.common.data.WALLETS_TABLE_NAME
@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.first
 
 interface WalletRepository {
     fun getWalletsForUser(userId: String): Flow<List<WalletEntity>>
+    fun getWalletById(walletId: String): Flow<WalletEntity?>
     suspend fun addWallet(wallet: WalletEntity): Result<Unit>
     suspend fun updateWallet(wallet: WalletEntity): Result<Unit>
     suspend fun deleteWallet(wallet: WalletEntity): Result<Unit>
@@ -29,24 +30,28 @@ class WalletRepositoryImpl(
         return walletDao.getWalletsForUser(userId)
     }
 
+    override fun getWalletById(walletId: String): Flow<WalletEntity?> {
+        return walletDao.getWalletById(walletId)
+    }
+
     override suspend fun addWallet(wallet: WalletEntity): Result<Unit> = runCatching {
-        walletDao.insertWallet(wallet)
+        walletDao.insertWallet(wallet.copy(isSynced = false))
+        syncPendingWallets()
     }
 
     override suspend fun updateWallet(wallet: WalletEntity): Result<Unit> = runCatching {
         walletDao.insertWallet(wallet.copy(isSynced = false))
+        syncPendingWallets()
     }
 
     override suspend fun fetchRemoteWallets(userId: String): Result<Unit> = runCatching {
         if (connectivityObserver.observe().first() != ConnectivityObserver.Status.Available) {
             return@runCatching
         }
-        Log.d("WalletRepository", "Fetching remote wallets for user: $userId")
         val remoteWallets = postgrest.from(WALLETS_TABLE_NAME).select {
             filter { eq("owner_id", userId) }
         }.decodeList<Wallet>()
 
-        Log.d("WalletRepository", "Found ${remoteWallets.size} remote wallets. Merging with local DB.")
         remoteWallets.forEach { networkWallet ->
             val localEntity = WalletEntity(
                 id = networkWallet.id,
@@ -72,8 +77,6 @@ class WalletRepositoryImpl(
         val unsyncedWallets = walletDao.getUnsyncedWallets().first()
         if (unsyncedWallets.isEmpty()) return@runCatching 0
 
-        Log.d("WalletRepository", "Syncing ${unsyncedWallets.size} pending wallets.")
-
         val networkWallets = unsyncedWallets.map { entity ->
             Wallet(
                 id = entity.id,
@@ -89,9 +92,7 @@ class WalletRepositoryImpl(
         }
 
         postgrest.from(WALLETS_TABLE_NAME).upsert(networkWallets)
-
         unsyncedWallets.forEach { walletDao.markWalletAsSynced(it.id) }
-        Log.d("WalletRepository", "Sync complete for ${unsyncedWallets.size} wallets.")
         unsyncedWallets.size
     }
 

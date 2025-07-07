@@ -9,6 +9,9 @@ interface WalletDao {
     @Query("SELECT * FROM wallets WHERE ownerId = :userId ORDER BY displayName ASC")
     fun getWalletsForUser(userId: String): Flow<List<WalletEntity>>
 
+    @Query("SELECT * FROM wallets WHERE id = :walletId")
+    fun getWalletById(walletId: String): Flow<WalletEntity?>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertWallet(wallet: WalletEntity)
 

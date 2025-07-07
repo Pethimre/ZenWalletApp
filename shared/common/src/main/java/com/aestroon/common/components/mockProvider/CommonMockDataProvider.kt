@@ -20,135 +20,238 @@ import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import com.aestroon.common.data.entity.TransactionEntity
+import com.aestroon.common.data.entity.TransactionType
 import com.aestroon.common.theme.FaintBlueChipColor
 import com.aestroon.common.theme.PrimaryColor
+import java.util.Calendar
 import java.util.Date
+import java.util.UUID
 
 const val MOCK_BASE_CURRENCY = "HUF"
 
-val sampleUpcomingTransactions = listOf(
-    TransactionItemData(
-        id = "1",
-        title = "CR Discount",
-        subtitle = "University Credit Fee Rebate",
-        amount = 362.00,
-        transactionType = TransactionType.INCOME,
-        dueDate = "DUE ON TUE, 20 MAY",
-        categoryIcon = Icons.Filled.School,
-        categoryIconBackgroundColor = Color(0xFF6F42C1), // Purple like
-        categoryIconContentColor = Color.White,
-        tags = listOf(
-            TransactionTag(
-                "Fees",
-                Icons.AutoMirrored.Filled.ReceiptLong,
-                backgroundColor = Color(0xFFDC3545).copy(alpha = 0.8f),
-                contentColor = Color.White
-            ), // Reddish
-            TransactionTag(
-                "UniCredit",
-                Icons.Filled.AccountBalance,
-                backgroundColor = Color.DarkGray.copy(alpha = 0.5f),
-                contentColor = Color.White
-            )
-        ),
-        actions = listOf(
-            TransactionAction("Skip", {}, icon = Icons.Filled.SkipNext),
-            TransactionAction("Get", {}, isPrimary = true, icon = Icons.Filled.CheckCircle)
-        ),
-    ),
-    TransactionItemData(
-        id = "2",
-        title = "Gym Membership",
-        subtitle = "Monthly subscription",
-        amount = 5000.00,
-        transactionType = TransactionType.EXPENSE,
-        dueDate = "DUE ON FRI, 23 MAY",
-        categoryIcon = Icons.Filled.FitnessCenter,
-        tags = listOf(
-            TransactionTag("Subscription", Icons.Filled.Autorenew),
-            TransactionTag("Bank", Icons.Default.AttachMoney)
-        ),
-        actions = listOf(
-            TransactionAction("Skip", {}, icon = Icons.Filled.SkipNext),
-            TransactionAction("Pay", {}, isPrimary = true, icon = Icons.Filled.CheckCircle)
-        ),
-    )
-)
-
-val sampleOverdueTransactions = listOf(
-    TransactionItemData(
-        id = "3",
-        title = "Electricity Bill",
-        amount = 4499.00,
-        transactionType = TransactionType.EXPENSE,
-        categoryIcon = Icons.Filled.Lightbulb,
-        tags = listOf(TransactionTag("Utilities", Icons.Filled.HomeWork), TransactionTag("T212", Icons.Default.Museum)),
-        actions = listOf(
-            TransactionAction("Skip", {}, icon = Icons.Filled.SkipNext),
-            TransactionAction("Pay", {}, isPrimary = true, icon = Icons.Filled.CheckCircle)
-        ),
-    )
-)
-
-val sampleDailyTransactions = listOf(
-    TransactionItemData(
-        id = "4",
-        title = "RHM",
-        subtitle = "Dividend from Rheinmetall",
-        amount = 135.50,
-        transactionType = TransactionType.INCOME,
-        categoryIcon = Icons.Filled.TrendingUp, // Using a generic icon
-        tags = listOf(
-            TransactionTag(
-                "Dividends",
-                Icons.Filled.PieChart,
-                backgroundColor = Color(0xFF007BFF).copy(alpha = 0.8f),
-                contentColor = Color.White
-            ), // Blueish
-            TransactionTag(
-                "QMMF",
-                Icons.Filled.AccountBalanceWallet,
-                backgroundColor = Color.DarkGray.copy(alpha = 0.5f),
-                contentColor = Color.White
-            )
-        )
-    ),
-    TransactionItemData(
-        id = "5",
-        title = "SAP",
-        subtitle = "Stock Dividend",
-        amount = 39.39,
-        transactionType = TransactionType.INCOME,
-        categoryIcon = Icons.Filled.TrendingUp,
-        tags = listOf(
-            TransactionTag(
-                "Dividends",
-                Icons.Filled.PieChart,
-                backgroundColor = Color(0xFF007BFF).copy(alpha = 0.8f),
-                contentColor = Color.White
-            ),
-            TransactionTag(
-                "QMMF",
-                Icons.Filled.AccountBalanceWallet,
-                backgroundColor = Color.DarkGray.copy(alpha = 0.5f),
-                contentColor = Color.White
-            )
-        )
-    ),
-    TransactionItemData(
-        id = "6",
-        title = "Lunch at Cafe",
-        subtitle = "With colleagues",
-        amount = 3500.00,
-        transactionType = TransactionType.EXPENSE,
-        categoryIcon = Icons.Filled.Fastfood,
-        tags = listOf(TransactionTag("Food", Icons.Filled.Restaurant))
-    )
-)
-
-enum class TransactionType {
-    INCOME, EXPENSE
+/**
+ * Helper function to create dates relative to the current day for realistic previews.
+ * @param offsetDays Number of days to offset from today. 0 is today, -1 is yesterday, etc.
+ * @param hour The hour of the day (0-23).
+ * @param minute The minute of the hour (0-59).
+ * @return A Date object with the specified offset.
+ */
+private fun createDate(offsetDays: Int, hour: Int, minute: Int): Date {
+    return Calendar.getInstance().apply {
+        add(Calendar.DAY_OF_YEAR, offsetDays)
+        set(Calendar.HOUR_OF_DAY, hour)
+        set(Calendar.MINUTE, minute)
+    }.time
 }
+
+/**
+ * A list of sample transactions used for UI previews and testing.
+ */
+val sampleDailyTransactions: List<TransactionEntity> = listOf(
+    // Today's Transactions
+    TransactionEntity(
+        id = UUID.randomUUID().toString(),
+        amount = 550000, // 5500.00
+        currency = "HUF",
+        name = "Lunch at Vapiano",
+        description = "Pasta and pizza",
+        date = createDate(0, 13, 15),
+        userId = "user1",
+        walletId = "wallet1",
+        categoryId = "cat_food",
+        transactionType = TransactionType.EXPENSE,
+        toWalletId = null
+    ),
+    TransactionEntity(
+        id = UUID.randomUUID().toString(),
+        amount = 12000000, // 120000.00
+        currency = "HUF",
+        name = "Salary",
+        description = "July Salary",
+        date = createDate(0, 9, 5),
+        userId = "user1",
+        walletId = "wallet1",
+        categoryId = "cat_income",
+        transactionType = TransactionType.INCOME,
+        toWalletId = null
+    ),
+    // Yesterday's Transactions
+    TransactionEntity(
+        id = UUID.randomUUID().toString(),
+        amount = 250000, // 2500.00
+        currency = "HUF",
+        name = "Groceries from Lidl",
+        description = "Weekly shopping",
+        date = createDate(-1, 18, 30),
+        userId = "user1",
+        walletId = "wallet1",
+        categoryId = "cat_shopping",
+        transactionType = TransactionType.EXPENSE,
+        toWalletId = null
+    ),
+    TransactionEntity(
+        id = UUID.randomUUID().toString(),
+        amount = 1000000, // 10000.00
+        currency = "HUF",
+        name = "Transfer to Savings",
+        description = null,
+        date = createDate(-1, 10, 0),
+        userId = "user1",
+        walletId = "wallet1",
+        toWalletId = "wallet2",
+        categoryId = null,
+        transactionType = TransactionType.TRANSFER
+    ),
+    // Two days ago
+    TransactionEntity(
+        id = UUID.randomUUID().toString(),
+        amount = 899000, // 8990.00
+        currency = "HUF",
+        name = "Cinema City",
+        description = "Movie night",
+        date = createDate(-2, 20, 45),
+        userId = "user1",
+        walletId = "wallet2",
+        categoryId = "cat_entertainment",
+        transactionType = TransactionType.EXPENSE,
+        toWalletId = null
+    ),
+    // A week ago
+    TransactionEntity(
+        id = UUID.randomUUID().toString(),
+        amount = 1500000, // 15000.00
+        currency = "HUF",
+        name = "Freelance Project Payment",
+        description = "Logo design",
+        date = createDate(-7, 15, 0),
+        userId = "user1",
+        walletId = "wallet1",
+        categoryId = "cat_income",
+        transactionType = TransactionType.INCOME,
+        toWalletId = null
+    )
+)
+
+/**
+ * A list of sample transactions used for UI previews and testing.
+ */
+val sampleUpcomingTransactions: List<TransactionEntity> = listOf(
+    // Today's Transactions
+    TransactionEntity(
+        id = UUID.randomUUID().toString(),
+        amount = 550000, // 5500.00
+        currency = "HUF",
+        name = "Lunch at Vapiano",
+        description = "Pasta and pizza",
+        date = createDate(0, 13, 15),
+        userId = "user1",
+        walletId = "wallet1",
+        categoryId = "cat_food",
+        transactionType = TransactionType.EXPENSE,
+        toWalletId = null
+    ),
+    TransactionEntity(
+        id = UUID.randomUUID().toString(),
+        amount = 12000000, // 120000.00
+        currency = "HUF",
+        name = "Salary",
+        description = "July Salary",
+        date = createDate(0, 9, 5),
+        userId = "user1",
+        walletId = "wallet1",
+        categoryId = "cat_income",
+        transactionType = TransactionType.INCOME,
+        toWalletId = null
+    ),
+    // Yesterday's Transactions
+    TransactionEntity(
+        id = UUID.randomUUID().toString(),
+        amount = 250000, // 2500.00
+        currency = "HUF",
+        name = "Groceries from Lidl",
+        description = "Weekly shopping",
+        date = createDate(-1, 18, 30),
+        userId = "user1",
+        walletId = "wallet1",
+        categoryId = "cat_shopping",
+        transactionType = TransactionType.EXPENSE,
+        toWalletId = null
+    ),
+    TransactionEntity(
+        id = UUID.randomUUID().toString(),
+        amount = 1000000, // 10000.00
+        currency = "HUF",
+        name = "Transfer to Savings",
+        description = null,
+        date = createDate(-1, 10, 0),
+        userId = "user1",
+        walletId = "wallet1",
+        toWalletId = "wallet2",
+        categoryId = null,
+        transactionType = TransactionType.TRANSFER
+    ),
+    // Two days ago
+    TransactionEntity(
+        id = UUID.randomUUID().toString(),
+        amount = 899000, // 8990.00
+        currency = "HUF",
+        name = "Cinema City",
+        description = "Movie night",
+        date = createDate(-2, 20, 45),
+        userId = "user1",
+        walletId = "wallet2",
+        categoryId = "cat_entertainment",
+        transactionType = TransactionType.EXPENSE,
+        toWalletId = null
+    ),
+    // A week ago
+    TransactionEntity(
+        id = UUID.randomUUID().toString(),
+        amount = 1500000, // 15000.00
+        currency = "HUF",
+        name = "Freelance Project Payment",
+        description = "Logo design",
+        date = createDate(-7, 15, 0),
+        userId = "user1",
+        walletId = "wallet1",
+        categoryId = "cat_income",
+        transactionType = TransactionType.INCOME,
+        toWalletId = null
+    )
+)
+
+/**
+ * A list of sample overdue transactions for UI previews.
+ */
+val sampleOverdueTransactions: List<TransactionEntity> = listOf(
+    TransactionEntity(
+        id = UUID.randomUUID().toString(),
+        amount = 15000000, // 150000.00
+        currency = "HUF",
+        name = "Rent Payment",
+        description = "July Rent",
+        date = createDate(-5, 9, 0),
+        userId = "user1",
+        walletId = "wallet1",
+        categoryId = "cat_bills",
+        transactionType = TransactionType.EXPENSE,
+        toWalletId = null
+    ),
+    TransactionEntity(
+        id = UUID.randomUUID().toString(),
+        amount = 350000, // 3500.00
+        currency = "HUF",
+        name = "Internet Bill",
+        description = "Digi Internet",
+        date = createDate(-2, 11, 0),
+        userId = "user1",
+        walletId = "wallet1",
+        categoryId = "cat_bills",
+        transactionType = TransactionType.EXPENSE,
+        toWalletId = null
+    )
+)
 
 data class TransactionTag(
     val label: String,
