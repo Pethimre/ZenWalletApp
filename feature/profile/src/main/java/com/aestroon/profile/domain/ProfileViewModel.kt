@@ -11,6 +11,7 @@ import com.aestroon.profile.data.UserPreferencesRepository
 import com.aestroon.common.data.serializable.Currency
 import com.aestroon.common.data.serializable.ExchangeRateResponse
 import io.github.jan.supabase.gotrue.user.UserInfo
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.jsonPrimitive
@@ -25,12 +26,6 @@ class ProfileViewModel(
     private val _profileSettingsUiState = MutableStateFlow<ProfileSettingsUiState>(ProfileSettingsUiState.Idle)
     val profileSettingsUiState: StateFlow<ProfileSettingsUiState> = _profileSettingsUiState.asStateFlow()
 
-    private val _user = MutableStateFlow<UserInfo?>(null)
-    val user: StateFlow<UserInfo?> = _user.asStateFlow()
-
-    private val _baseCurrency = MutableStateFlow("HUF")
-    val baseCurrency: StateFlow<String> = _baseCurrency.asStateFlow()
-
     private val _allCurrencies = MutableStateFlow<List<Currency>>(emptyList())
     val allCurrencies: StateFlow<List<Currency>> = _allCurrencies.asStateFlow()
 
@@ -39,6 +34,18 @@ class ProfileViewModel(
 
     private val _exchangeRates = MutableStateFlow<ExchangeRateResponse?>(null)
     val exchangeRates: StateFlow<ExchangeRateResponse?> = _exchangeRates.asStateFlow()
+
+    val isBiometricLockEnabled: StateFlow<Boolean> = userPreferencesRepository.isBiometricLockEnabled
+
+    val displayName = MutableStateFlow("")
+    val phone = MutableStateFlow("")
+    val worthGoal = MutableStateFlow("")
+    val baseCurrency = MutableStateFlow("HUF")
+
+    val user: StateFlow<UserInfo?> = authRepository.userIdFlow.map { userId ->
+        if (userId != null) authRepository.getUpdatedUser().getOrNull() else null
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
 
     val filteredCurrencies: StateFlow<List<Currency>> =
         combine(allCurrencies, currencySearchQuery) { currencies, query ->
@@ -52,44 +59,23 @@ class ProfileViewModel(
             }
         }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
-    val isBiometricLockEnabled: StateFlow<Boolean> = userPreferencesRepository.isBiometricLockEnabled
-
-    val displayName = MutableStateFlow("")
-    val phone = MutableStateFlow("")
-    val worthGoal = MutableStateFlow("")
-
     init {
-        loadInitialData()
         loadAllCurrencies()
+        observeUserProfile()
     }
 
-    private fun loadInitialData() {
+    private fun observeUserProfile() {
         viewModelScope.launch {
-            _profileSettingsUiState.value = ProfileSettingsUiState.Loading
-            authRepository.getUpdatedUser()
-                .onSuccess { userInfo ->
-                    _user.value = userInfo
-                    displayName.value = userInfo?.userMetadata?.get("display_name")?.jsonPrimitive?.content ?: ""
-                    phone.value = userInfo?.userMetadata?.get("phone")?.jsonPrimitive?.content ?: ""
-
-                    userInfo?.id?.let { userId ->
-                        userRepository.getUserProfile(userId)
-                            .onSuccess { userProfile ->
-                                worthGoal.value = userProfile?.worth_goal?.toString() ?: "0"
-                                _profileSettingsUiState.value = ProfileSettingsUiState.Idle
-                                _baseCurrency.value = userProfile?.base_currency ?: DEFAULT_BASE_CURRENCY
-                            }
-                            .onFailure {
-                                worthGoal.value = "0"
-                                _profileSettingsUiState.value = ProfileSettingsUiState.Idle
-                            }
-                    } ?: run {
-                        _profileSettingsUiState.value = ProfileSettingsUiState.Error("Could not verify user ID.")
+            user.collect { userInfo ->
+                if (userInfo != null) {
+                    displayName.value = userInfo.userMetadata?.get("display_name")?.toString()?.trim('"') ?: ""
+                    phone.value = userInfo.userMetadata?.get("phone")?.toString()?.trim('"') ?: ""
+                    userRepository.getUserProfile(userInfo.id).getOrNull()?.let { profile ->
+                        worthGoal.value = profile.worth_goal.toString()
+                        baseCurrency.value = profile.base_currency
                     }
                 }
-                .onFailure {
-                    _profileSettingsUiState.value = ProfileSettingsUiState.Error("Failed to fetch user data. Please restart the app.")
-                }
+            }
         }
     }
 
@@ -97,9 +83,6 @@ class ProfileViewModel(
         viewModelScope.launch {
             currencyRepository.getSupportedCurrencies()
                 .onSuccess { _allCurrencies.value = it }
-                .onFailure {
-                    // Handle error, maybe show a snackbar
-                }
         }
     }
 
@@ -108,7 +91,7 @@ class ProfileViewModel(
     }
 
     fun onBaseCurrencySelected(currencyCode: String) {
-        _baseCurrency.value = currencyCode
+        baseCurrency.value = currencyCode
     }
 
     fun fetchExchangeRates() {

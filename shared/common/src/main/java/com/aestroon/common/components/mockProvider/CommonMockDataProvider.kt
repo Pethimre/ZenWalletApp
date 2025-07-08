@@ -28,8 +28,6 @@ import java.util.Calendar
 import java.util.Date
 import java.util.UUID
 
-const val MOCK_BASE_CURRENCY = "HUF"
-
 /**
  * Helper function to create dates relative to the current day for realistic previews.
  * @param offsetDays Number of days to offset from today. 0 is today, -1 is yesterday, etc.

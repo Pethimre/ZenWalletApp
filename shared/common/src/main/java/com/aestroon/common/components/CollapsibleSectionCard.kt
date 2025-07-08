@@ -199,32 +199,6 @@ fun TransactionListItem(
         }
     }
 }
-@Composable
-fun TransactionTagChip(tag: TransactionTag) {
-    Row(
-        modifier = Modifier
-            .clip(RoundedCornerShape(8.dp))
-            .background(tag.backgroundColor)
-            .padding(horizontal = 8.dp, vertical = 4.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        tag.icon?.let {
-            Icon(
-                imageVector = it,
-                contentDescription = tag.label,
-                tint = tag.contentColor,
-                modifier = Modifier.size(14.dp)
-            )
-            Spacer(modifier = Modifier.width(4.dp))
-        }
-        Text(
-            text = tag.label,
-            color = tag.contentColor,
-            style = MaterialTheme.typography.labelSmall,
-            fontWeight = FontWeight.Medium,
-        )
-    }
-}
 
 @Composable
 fun ExpandableTransactionHeader(income: String, expense: String) {

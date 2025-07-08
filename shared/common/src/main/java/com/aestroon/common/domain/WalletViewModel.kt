@@ -11,10 +11,15 @@ import com.aestroon.common.data.repository.CurrencyRepository
 import com.aestroon.common.data.serializable.Currency
 import com.aestroon.common.utilities.network.ConnectivityObserver
 import com.aestroon.common.data.repository.WalletRepository
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -26,14 +31,21 @@ class WalletsViewModel(
     private val connectivityObserver: ConnectivityObserver
 ) : ViewModel() {
 
-    private val _wallets = MutableStateFlow<List<WalletEntity>>(emptyList())
-    val wallets: StateFlow<List<WalletEntity>> = _wallets.asStateFlow()
-
     private val _uiState = MutableStateFlow<WalletsUiState>(WalletsUiState.Idle)
     val uiState: StateFlow<WalletsUiState> = _uiState.asStateFlow()
 
     private val _allCurrencies = MutableStateFlow<List<Currency>>(emptyList())
     val allCurrencies: StateFlow<List<Currency>> = _allCurrencies.asStateFlow()
+
+    val baseCurrency = MutableStateFlow("HUF")
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val wallets: StateFlow<List<WalletEntity>> = authRepository.userIdFlow
+        .filterNotNull()
+        .flatMapLatest { userId ->
+            walletRepository.getWalletsForUser(userId)
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val hasPendingSyncs: StateFlow<Boolean> = wallets.map { walletList ->
         walletList.any { !it.isSynced }
@@ -41,8 +53,6 @@ class WalletsViewModel(
 
     val networkStatus: StateFlow<ConnectivityObserver.Status> = connectivityObserver.observe()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), ConnectivityObserver.Status.Unavailable)
-
-    val baseCurrency = MutableStateFlow("HUF")
 
     val summary: StateFlow<WalletsSummary> = wallets.map { walletList ->
         val includedWallets = walletList.filter { it.included }
@@ -54,30 +64,8 @@ class WalletsViewModel(
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), WalletsSummary())
 
     init {
-        observeWallets()
-        observeNetworkAndSync()
         loadAllCurrencies()
-    }
-
-    private fun observeWallets() {
-        viewModelScope.launch {
-            _uiState.value = WalletsUiState.Loading
-            authRepository.getUpdatedUser().getOrNull()?.id?.let { userId ->
-                walletRepository.getWalletsForUser(userId).collect { walletList ->
-                    _wallets.value = walletList
-                    _uiState.value = WalletsUiState.Idle
-                }
-            } ?: run {
-                _uiState.value = WalletsUiState.Error("Could not find user.")
-            }
-        }
-    }
-
-    private suspend fun fullSync() {
-        authRepository.getUpdatedUser().getOrNull()?.id?.let { userId ->
-            walletRepository.fetchRemoteWallets(userId)
-            walletRepository.syncPendingWallets()
-        }
+        observeNetworkAndSync()
     }
 
     private fun observeNetworkAndSync() {
@@ -103,6 +91,13 @@ class WalletsViewModel(
         }
     }
 
+    private suspend fun fullSync() {
+        authRepository.userIdFlow.firstOrNull()?.let { userId ->
+            walletRepository.fetchRemoteWallets(userId)
+            walletRepository.syncPendingWallets()
+        }
+    }
+
     fun addOrUpdateWallet(
         existingWallet: WalletEntity?,
         name: String,
@@ -114,13 +109,13 @@ class WalletsViewModel(
         included: Boolean
     ) {
         viewModelScope.launch {
-            val userId = authRepository.getUpdatedUser().getOrNull()?.id
+            val userId = authRepository.userIdFlow.first()
             if (userId == null) {
                 _uiState.value = WalletsUiState.Error("User not found."); return@launch
             }
 
-            val balanceInCents = (balanceStr.replace(",", ".").toDoubleOrNull() ?: 0.0).toLong() * 100
-            val goalAmountInCents = (goalAmountStr.replace(",", ".").toDoubleOrNull() ?: 0.0).toLong() * 100
+            val balanceInCents = (balanceStr.replace(",", ".").toDoubleOrNull() ?: 0.0).times(100).toLong()
+            val goalAmountInCents = (goalAmountStr.replace(",", ".").toDoubleOrNull() ?: 0.0).times(100).toLong()
 
             val result = if (existingWallet == null) {
                 val walletEntity = WalletEntity(
@@ -163,7 +158,7 @@ class WalletsViewModel(
         }
     }
 
-    fun Color.toHexString(): String {
+    private fun Color.toHexString(): String {
         return String.format("#%08X", this.toArgb())
     }
 }

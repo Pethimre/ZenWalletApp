@@ -42,6 +42,9 @@ dependencies {
     implementation(libs.lottie.compose)
     implementation(project(":shared:common"))
 
+    implementation("com.google.accompanist:accompanist-pager:0.32.0")
+    implementation("com.google.accompanist:accompanist-pager-indicators:0.32.0")
+
     // Supabase setup
     implementation(platform("io.github.jan-tennert.supabase:bom:2.4.0"))
     implementation("io.github.jan-tennert.supabase:storage-kt")

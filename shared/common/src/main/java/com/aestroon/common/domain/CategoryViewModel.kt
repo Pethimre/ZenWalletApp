@@ -1,12 +1,14 @@
 package com.aestroon.common.domain
 
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.aestroon.common.data.repository.AuthRepository
 import com.aestroon.common.data.entity.CategoryEntity
 import com.aestroon.common.data.repository.CategoryRepository
 import com.aestroon.common.utilities.toHexString
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
@@ -15,30 +17,21 @@ class CategoriesViewModel(
     private val authRepository: AuthRepository
 ) : ViewModel() {
 
-    private val _categories = MutableStateFlow<List<CategoryEntity>>(emptyList())
-    val categories: StateFlow<List<CategoryEntity>> = _categories.asStateFlow()
-
     private val _uiState = MutableStateFlow<WalletsUiState>(WalletsUiState.Idle)
     val uiState: StateFlow<WalletsUiState> = _uiState.asStateFlow()
 
-    init {
-        observeCategories()
-    }
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val categories: StateFlow<List<CategoryEntity>> = authRepository.userIdFlow
+        .filterNotNull()
+        .flatMapLatest { userId ->
+            categoryRepository.getCategoriesForUser(userId)
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     fun onEnterScreen() {
         viewModelScope.launch {
-            authRepository.getUpdatedUser().getOrNull()?.id?.let {
+            authRepository.userIdFlow.firstOrNull()?.let {
                 categoryRepository.syncCategories(it)
-            }
-        }
-    }
-
-    private fun observeCategories() {
-        viewModelScope.launch {
-            authRepository.getUpdatedUser().getOrNull()?.id?.let { userId ->
-                categoryRepository.getCategoriesForUser(userId).collect {
-                    _categories.value = it
-                }
             }
         }
     }
@@ -50,7 +43,7 @@ class CategoriesViewModel(
         iconName: String
     ) {
         viewModelScope.launch {
-            val userId = authRepository.getUpdatedUser().getOrNull()?.id
+            val userId = authRepository.userIdFlow.first()
             if (userId == null) {
                 _uiState.value = WalletsUiState.Error("User not found."); return@launch
             }
@@ -76,5 +69,9 @@ class CategoriesViewModel(
             categoryRepository.deleteCategory(category)
                 .onFailure { _uiState.value = WalletsUiState.Error("Failed to delete category.") }
         }
+    }
+
+    private fun Color.toHexString(): String {
+        return String.format("#%08X", this.toArgb())
     }
 }

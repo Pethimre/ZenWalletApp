@@ -1,7 +1,9 @@
 package com.aestroon.common.data.repository
 
+import androidx.room.withTransaction
 import com.aestroon.common.data.TRANSACTIONS_TABLE_NAME
 import com.aestroon.common.data.dao.TransactionDao
+import com.aestroon.common.data.database.AppDatabase
 import com.aestroon.common.data.entity.TransactionEntity
 import com.aestroon.common.data.entity.TransactionType
 import com.aestroon.common.data.serializable.Transaction
@@ -20,6 +22,7 @@ interface TransactionRepository {
 }
 
 class TransactionRepositoryImpl(
+    private val db: AppDatabase,
     private val postgrest: Postgrest,
     private val transactionDao: TransactionDao,
     private val walletRepository: WalletRepository,
@@ -36,23 +39,30 @@ class TransactionRepositoryImpl(
     }
 
     override suspend fun addTransaction(transaction: TransactionEntity): Result<Unit> = runCatching {
-        updateWalletBalancesForTransaction(transaction, isReverting = false)
-        transactionDao.insertTransaction(transaction.copy(isSynced = false))
+        db.withTransaction {
+            updateWalletBalancesForTransaction(transaction, isReverting = false)
+            transactionDao.insertTransaction(transaction.copy(isSynced = false))
+        }
         syncTransactions(transaction.userId)
     }
 
-    override suspend fun updateTransaction(transaction: TransactionEntity): Result<Unit> {
-        return runCatching {
+    override suspend fun updateTransaction(transaction: TransactionEntity): Result<Unit> = runCatching {
+        db.withTransaction {
             transactionDao.updateTransaction(transaction.copy(isSynced = false))
-            syncTransactions(transaction.userId)
         }
+        syncTransactions(transaction.userId)
     }
 
     override suspend fun deleteTransaction(transaction: TransactionEntity): Result<Unit> = runCatching {
-        updateWalletBalancesForTransaction(transaction, isReverting = true)
-        transactionDao.deleteTransactionById(transaction.id)
+        db.withTransaction {
+            updateWalletBalancesForTransaction(transaction, isReverting = true)
+            transactionDao.deleteTransactionById(transaction.id)
+        }
+
         if (connectivityObserver.observe().first() == ConnectivityObserver.Status.Available) {
-            postgrest.from(TRANSACTIONS_TABLE_NAME).delete { filter { eq("id", transaction.id) } }
+            postgrest.from(TRANSACTIONS_TABLE_NAME).delete {
+                filter { eq("id", transaction.id) }
+            }
         }
     }
 
@@ -65,10 +75,12 @@ class TransactionRepositoryImpl(
                 val updatedWallet = fromWallet.copy(balance = fromWallet.balance + (transaction.amount * sign))
                 walletRepository.updateWallet(updatedWallet).getOrThrow()
             }
+
             TransactionType.EXPENSE -> {
                 val updatedWallet = fromWallet.copy(balance = fromWallet.balance - (transaction.amount * sign))
                 walletRepository.updateWallet(updatedWallet).getOrThrow()
             }
+
             TransactionType.TRANSFER -> {
                 val toWalletId = transaction.toWalletId ?: return
                 val toWallet = walletRepository.getWalletById(toWalletId).first() ?: return
@@ -98,37 +110,53 @@ class TransactionRepositoryImpl(
     }
 
     override suspend fun syncTransactions(userId: String): Result<Unit> = runCatching {
-        if (connectivityObserver.observe().first() != ConnectivityObserver.Status.Available) {
-            return@runCatching
-        }
+        if (connectivityObserver.observe().first() != ConnectivityObserver.Status.Available) return@runCatching
 
+        // Upload unsynced
         val unsynced = transactionDao.getUnsyncedTransactions().first()
         if (unsynced.isNotEmpty()) {
             val networkTransactions = unsynced.map {
                 Transaction(
-                    id = it.id, amount = it.amount, currency = it.currency, name = it.name,
-                    description = it.description, created_at = it.date, user_id = it.userId,
-                    wallet_id = it.walletId, category_id = it.categoryId,
-                    transaction_type = it.transactionType.name, to_wallet_id = it.toWalletId
+                    id = it.id,
+                    amount = it.amount,
+                    currency = it.currency,
+                    name = it.name,
+                    description = it.description,
+                    created_at = it.date,
+                    user_id = it.userId,
+                    wallet_id = it.walletId,
+                    category_id = it.categoryId,
+                    transaction_type = it.transactionType.name,
+                    to_wallet_id = it.toWalletId
                 )
             }
             postgrest.from(TRANSACTIONS_TABLE_NAME).upsert(networkTransactions)
             unsynced.forEach { transactionDao.markTransactionAsSynced(it.id) }
         }
 
+        // Download and insert missing remote transactions
         val remote = postgrest.from(TRANSACTIONS_TABLE_NAME).select {
             filter { eq("user_id", userId) }
         }.decodeList<Transaction>()
 
-        remote.forEach {
-            val entity = TransactionEntity(
-                id = it.id, amount = it.amount, currency = it.currency, name = it.name,
-                description = it.description, date = it.created_at, userId = it.user_id,
-                walletId = it.wallet_id, categoryId = it.category_id,
-                transactionType = TransactionType.valueOf(it.transaction_type),
-                toWalletId = it.to_wallet_id, isSynced = true
-            )
-            transactionDao.insertTransaction(entity)
+        db.withTransaction {
+            remote.forEach {
+                val entity = TransactionEntity(
+                    id = it.id,
+                    amount = it.amount,
+                    currency = it.currency,
+                    name = it.name,
+                    description = it.description,
+                    date = it.created_at,
+                    userId = it.user_id,
+                    walletId = it.wallet_id,
+                    categoryId = it.category_id,
+                    transactionType = TransactionType.valueOf(it.transaction_type),
+                    toWalletId = it.to_wallet_id,
+                    isSynced = true
+                )
+                transactionDao.insertTransaction(entity)
+            }
         }
     }
 }

@@ -5,6 +5,7 @@ import io.github.jan.supabase.gotrue.user.UserInfo
 import kotlinx.coroutines.flow.Flow
 
 interface AuthRepository {
+    val userIdFlow: Flow<String?>
     suspend fun login(email: String, password: String): Result<UserInfo?>
     suspend fun signUp(displayName: String, email: String, password: String): Result<UserInfo?>
     suspend fun syncPendingUsers()

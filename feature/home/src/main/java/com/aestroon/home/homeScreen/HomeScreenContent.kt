@@ -1,132 +1,414 @@
 package com.aestroon.home.homeScreen
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.ArrowDownward
+import androidx.compose.material.icons.filled.ArrowOutward
+import androidx.compose.material.icons.filled.ArrowUpward
+import androidx.compose.material.icons.filled.CompareArrows
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.aestroon.common.components.CollapsibleSectionCard
-import com.aestroon.common.components.ExpandableTransactionHeader
-import com.aestroon.common.components.TransactionListItem
-import com.aestroon.common.components.mockProvider.MOCK_BASE_CURRENCY
-import com.aestroon.common.components.mockProvider.TransactionItemData
-import com.aestroon.common.components.mockProvider.sampleOverdueTransactions
-import com.aestroon.common.components.mockProvider.sampleUpcomingTransactions
+import androidx.compose.ui.unit.sp
+import com.aestroon.common.data.entity.CategoryEntity
 import com.aestroon.common.data.entity.TransactionEntity
+import com.aestroon.common.data.entity.TransactionType
 import com.aestroon.common.data.model.WalletsSummary
+import com.aestroon.common.theme.GreenChipColor
 import com.aestroon.common.theme.OrangeChipColor
 import com.aestroon.common.theme.RedChipColor
 import com.aestroon.common.utilities.TextFormatter
-import com.aestroon.home.dailyTransactions.dailyTransactionItems
-import com.aestroon.home.mockProvider.GOAL
-import com.aestroon.home.mockProvider.TOTAL_BALANCE
-import com.aestroon.home.mockProvider.sampleExchangeRates
+import com.aestroon.common.utilities.formatDayAndMonth
 import com.aestroon.home.widgets.balanceOverview.BalanceOverviewCard
-import com.aestroon.home.widgets.exchangeRow.ExpandableExchangeRateWidgetCard
 import com.aestroon.home.widgets.savingSummary.SavingsSummaryCard
+import java.text.DecimalFormat
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
 
 fun LazyListScope.addHomeScreenContent(
-    groupedTransactions: List<TransactionEntity>,
     summary: WalletsSummary,
-    onTransactionClick: (String) -> Unit,
-){
-    item(key = "home_screen_total_balance_overview") {
-        val goal = 100000000L // Example Goal
-        val totalBalance = summary.totalBalance
-        val progress = if (goal > 0) (totalBalance.toFloat() / goal.toFloat()).coerceIn(0f, 1f) else 0f
-
+    dailyTransactions: List<TransactionEntity>,
+    upcomingTransactions: List<TransactionEntity>,
+    overdueTransactions: List<TransactionEntity>,
+    categoriesMap: Map<String, CategoryEntity>,
+    onEdit: (TransactionEntity) -> Unit,
+    onDelete: (TransactionEntity) -> Unit
+) {
+    item(key = "balance_overview_card") {
         BalanceOverviewCard(
-            totalBalance = TextFormatter.toPrettyAmountWithCurrency(
-                amount = totalBalance / 100.0,
-                currency = "HUF",
-                currencyPosition = TextFormatter.CurrencyPosition.AFTER
-            ),
-            amountUntilGoal = TextFormatter.toPrettyAmountWithCurrency(
-                amount = (goal - totalBalance) / 100.0,
-                currency = "HUF",
-                currencyPosition = TextFormatter.CurrencyPosition.AFTER
-            ),
-            goalAmountValue = goal / 100.0f,
-            goalProgress = progress,
-            statusMessage = "You are on track!",
-            statusIcon = Icons.Default.Star,
+            totalBalance = TextFormatter.toPrettyAmountWithCurrency(summary.totalBalance / 100.0, "HUF", currencyPosition = TextFormatter.CurrencyPosition.AFTER),
+            amountUntilGoal = TextFormatter.toPrettyAmountWithCurrency(2080000.0, "HUF", currencyPosition = TextFormatter.CurrencyPosition.AFTER),
+            goalAmountValue = 7500000f,
+            goalProgress = 0.72f,
+            statusMessage = "This is a status message"
         )
     }
 
-    dailyTransactionItems(
-        transactions = groupedTransactions,
-        onTransactionClick = onTransactionClick
-    )
-
-    item(key = "home_screen_savings_summary") {
+    item(key = "savings_summary_card") {
         SavingsSummaryCard(
-            income = TextFormatter.toPrettyAmountWithCurrency(12300.42, MOCK_BASE_CURRENCY, false, TextFormatter.CurrencyPosition.AFTER),
-            expense = TextFormatter.toPrettyAmountWithCurrency(845.72, MOCK_BASE_CURRENCY, false, TextFormatter.CurrencyPosition.AFTER),
-            savingsGoalPercentage = 0.75f,
+            income = TextFormatter.toPrettyAmountWithCurrency(12300.42, "HUF", currencyPosition = TextFormatter.CurrencyPosition.AFTER),
+            expense = TextFormatter.toPrettyAmountWithCurrency(845.72, "HUF", currencyPosition = TextFormatter.CurrencyPosition.AFTER),
+            savingsGoalPercentage = 0.75f
         )
     }
 
-    item(key = "home_screen_exchange_rate_overview") {
-        ExpandableExchangeRateWidgetCard(
-            allExchangeRates = sampleExchangeRates,
-            ratesForCollapsedView = sampleExchangeRates.take(3),
-            initiallyExpanded = false
-        )
-    }
-
-    item(key = "home_screen_upcoming_transactions") {
+    item(key = "upcoming_transactions_section") {
         CollapsibleSectionCard(
             title = "Upcoming",
-            summary = {
-                ExpandableTransactionHeader(
-                    income = TextFormatter.toPrettyAmountWithCurrency(812.72, MOCK_BASE_CURRENCY, false, TextFormatter.CurrencyPosition.AFTER),
-                    expense = TextFormatter.toPrettyAmountWithCurrency(362.1, MOCK_BASE_CURRENCY, false, TextFormatter.CurrencyPosition.AFTER),
-                )
-            },
+            transactions = upcomingTransactions,
             headerBackgroundColor = OrangeChipColor.copy(alpha = 0.3f),
-            headerContentColor = MaterialTheme.colorScheme.onBackground,
-            initiallyExpanded = false,
-        ) {
-            sampleUpcomingTransactions.forEach {
-                TransactionListItem(it, modifier = Modifier.padding(bottom = 8.dp), onClick = {})
-            }
-        }
+            isInitiallyExpanded = false,
+            categoriesMap = categoriesMap,
+            isPlanned = true,
+            onEdit = onEdit,
+            onDelete = onDelete
+        )
     }
 
-    item(key = "home_screen_overdue_transactions") {
+    item(key = "overdue_transactions_section") {
         CollapsibleSectionCard(
             title = "Overdue",
-            summary = {
-                ExpandableTransactionHeader(
-                    income = TextFormatter.toPrettyAmountWithCurrency(8120.72, MOCK_BASE_CURRENCY, false, TextFormatter.CurrencyPosition.AFTER),
-                    expense = TextFormatter.toPrettyAmountWithCurrency(2382.12, MOCK_BASE_CURRENCY, false, TextFormatter.CurrencyPosition.AFTER),
-                )
-            },
-            headerBackgroundColor = RedChipColor.copy(alpha = .3f),
-            headerContentColor = MaterialTheme.colorScheme.onBackground,
-            initiallyExpanded = false,
-        ) {
-            sampleOverdueTransactions.forEach {
-                TransactionListItem(it, modifier = Modifier.padding(bottom = 8.dp), onClick = {})
-            }
+            transactions = overdueTransactions,
+            headerBackgroundColor = RedChipColor.copy(alpha = 0.3f),
+            isInitiallyExpanded = false,
+            categoriesMap = categoriesMap,
+            isPlanned = true,
+            onEdit = onEdit,
+            onDelete = onDelete
+        )
+    }
 
-            if (sampleOverdueTransactions.isEmpty()) {
+    if (dailyTransactions.isEmpty()) {
+        item(key = "no_transactions_fallback") {
+            Text(
+                text = "No transactions found.",
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 24.dp),
+                textAlign = TextAlign.Center,
+                style = MaterialTheme.typography.bodyLarge
+            )
+        }
+        return
+    }
+
+    val groupedDailyTransactions: Map<Long, List<TransactionEntity>> =
+        dailyTransactions.sortedByDescending { it.date }.groupBy {
+            val cal = Calendar.getInstance().apply { time = it.date }
+            cal.set(Calendar.HOUR_OF_DAY, 0)
+            cal.set(Calendar.MINUTE, 0)
+            cal.set(Calendar.SECOND, 0)
+            cal.set(Calendar.MILLISECOND, 0)
+            cal.timeInMillis
+        }
+
+    groupedDailyTransactions.forEach { (dateMillis, transactionsOnDay) ->
+        val date = Date(dateMillis)
+        item(key = "daily_header_$dateMillis") {
+            DayTransactionHeader(date = date, transactionsOnDay = transactionsOnDay)
+        }
+
+        items(transactionsOnDay, key = { "daily_tx_${it.id}" }) { transaction ->
+            TransactionCard(
+                transaction = transaction,
+                category = transaction.categoryId?.let { categoriesMap[it] },
+                isPlanned = false,
+                onEditClick = { onEdit(transaction) },
+                onDeleteClick = { onDelete(transaction) },
+                modifier = Modifier.padding(bottom = 12.dp)
+            )
+        }
+    }
+}
+
+@Composable
+fun CollapsibleSectionCard(
+    title: String,
+    transactions: List<TransactionEntity>,
+    headerBackgroundColor: Color,
+    isInitiallyExpanded: Boolean,
+    categoriesMap: Map<String, CategoryEntity>,
+    isPlanned: Boolean,
+    onEdit: (TransactionEntity) -> Unit,
+    onDelete: (TransactionEntity) -> Unit,
+) {
+    var isExpanded by remember { mutableStateOf(isInitiallyExpanded) }
+    val income = transactions.filter { it.transactionType == TransactionType.INCOME }
+        .sumOf { it.amount } / 100.0
+    val expense = transactions.filter { it.transactionType == TransactionType.EXPENSE }
+        .sumOf { it.amount } / 100.0
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(headerBackgroundColor)
+            .clickable { isExpanded = !isExpanded }
+    ) {
+        Row(
+            modifier = Modifier
+                .padding(horizontal = 16.dp, vertical = 12.dp)
+                .fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (income > 0) {
+                    Icon(
+                        Icons.Default.ArrowUpward,
+                        contentDescription = "Income",
+                        tint = GreenChipColor,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Text(
+                        TextFormatter.toPrettyAmount(income),
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+                if (expense > 0) {
+                    Spacer(Modifier.width(8.dp))
+                    Icon(
+                        Icons.Default.ArrowDownward,
+                        contentDescription = "Expense",
+                        tint = RedChipColor,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Text(
+                        TextFormatter.toPrettyAmount(expense),
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+            }
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    "No overdue items.",
-                    modifier = Modifier.align(Alignment.CenterHorizontally),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onBackground,
+                    title,
+                )
+                Icon(
+                    imageVector = if (isExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                    contentDescription = "Expand section"
                 )
             }
         }
+        AnimatedVisibility(visible = isExpanded) {
+            Column(
+                modifier = Modifier
+                    .background(MaterialTheme.colorScheme.surface)
+                    .padding(16.dp)
+            ) {
+                if (transactions.isEmpty()) {
+                    Text(
+                        "No $title items.",
+                        modifier = Modifier.align(Alignment.CenterHorizontally)
+                    )
+                } else {
+                    transactions.forEach { transaction ->
+                        TransactionCard(
+                            transaction = transaction,
+                            category = transaction.categoryId?.let { categoriesMap[it] },
+                            isPlanned = isPlanned,
+                            onEditClick = { onEdit(transaction) },
+                            onDeleteClick = { onDelete(transaction) },
+                            modifier = Modifier.padding(bottom = 12.dp)
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+fun TransactionCard(
+    transaction: TransactionEntity,
+    category: CategoryEntity?,
+    isPlanned: Boolean,
+    onEditClick: () -> Unit,
+    onDeleteClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var isExpanded by remember { mutableStateOf(false) }
+    val amountColor = when (transaction.transactionType) {
+        TransactionType.INCOME -> GreenChipColor
+        TransactionType.EXPENSE -> MaterialTheme.colorScheme.onSurface
+        TransactionType.TRANSFER -> MaterialTheme.colorScheme.primary
     }
 
-    dailyTransactionItems(
-        transactions = groupedTransactions,
-        onTransactionClick = { id -> /* handle click */ }
-    )
+    Card(
+        modifier = modifier.fillMaxWidth().clickable { isExpanded = !isExpanded },
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+
+                Text(transaction.name, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+            }
+            Spacer(Modifier.height(4.dp))
+            transaction.description?.let {
+                Text(it, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            Spacer(Modifier.height(8.dp))
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                category?.let { CategoryChip(it) }
+            }
+            Spacer(Modifier.height(8.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                when (transaction.transactionType) {
+                    TransactionType.INCOME -> Icon(Icons.Default.ArrowOutward, contentDescription = "income", Modifier.padding(end = 4.dp).rotate(180f), tint = GreenChipColor)
+                    TransactionType.EXPENSE -> Icon(Icons.Default.ArrowOutward, contentDescription = "expense", Modifier.padding(end = 4.dp))
+                    TransactionType.TRANSFER -> Icon(Icons.Default.CompareArrows, contentDescription = "transfer", Modifier.padding(end = 4.dp), tint = MaterialTheme.colorScheme.primary)
+                }
+                Text(
+                    text = "${TextFormatter.toBasicFormat(transaction.amount / 100.0)} ${transaction.currency}",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = amountColor
+                )
+            }
+
+            AnimatedVisibility(visible = isExpanded) {
+                Column {
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = if (isPlanned) Arrangement.SpaceEvenly else Arrangement.End
+                    ) {
+                        if (isPlanned) {
+                            Button(onClick = { /*TODO*/ }, colors = ButtonDefaults.buttonColors(containerColor = GreenChipColor)) {
+                                Text("Get")
+                            }
+                            TextButton(onClick = { /*TODO*/ }) {
+                                Text("Skip")
+                            }
+                        } else {
+                            TextButton(onClick = onEditClick) {
+                                Icon(Icons.Default.Edit, contentDescription = "Edit", modifier = Modifier.size(18.dp))
+                                Spacer(Modifier.width(4.dp))
+                                Text("Edit")
+                            }
+                            TextButton(onClick = onDeleteClick, colors = ButtonDefaults.textButtonColors(contentColor = RedChipColor)) {
+                                Icon(Icons.Default.Delete, contentDescription = "Delete", modifier = Modifier.size(18.dp))
+                                Spacer(Modifier.width(4.dp))
+                                Text("Delete")
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun CategoryChip(category: CategoryEntity) {
+    Row(
+        modifier = Modifier
+            .clip(RoundedCornerShape(8.dp))
+            .background(category.composeColor.copy(alpha = 0.2f))
+            .padding(horizontal = 8.dp, vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            imageVector = category.icon,
+            contentDescription = null,
+            tint = category.composeColor,
+            modifier = Modifier.size(16.dp)
+        )
+        Spacer(Modifier.width(4.dp))
+        Text(
+            text = category.name,
+            color = category.composeColor,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.SemiBold
+        )
+    }
+}
+
+@Composable
+private fun DayTransactionHeader(
+    date: Date,
+    transactionsOnDay: List<TransactionEntity>,
+    locale: Locale = Locale.getDefault()
+) {
+    val dailyNet = transactionsOnDay.sumOf {
+        when (it.transactionType) {
+            TransactionType.INCOME -> it.amount
+            TransactionType.EXPENSE -> -it.amount
+            TransactionType.TRANSFER -> 0
+        }
+    }
+    val currencyFormatter = remember { DecimalFormat("#,##0.00") }
+    val netAmountColor = when {
+        dailyNet > 0 -> GreenChipColor
+        dailyNet < 0 -> RedChipColor
+        else -> MaterialTheme.colorScheme.onSurfaceVariant
+    }
+
+    Column {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp, horizontal = 4.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = formatDayAndMonth(date, locale),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            if (transactionsOnDay.isNotEmpty()) {
+                Text(
+                    text = "${if (dailyNet >= 0) "+" else ""}${currencyFormatter.format(dailyNet / 100.0)} ${transactionsOnDay.first().currency}",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = netAmountColor
+                )
+            }
+        }
+        HorizontalDivider(Modifier.fillMaxWidth())
+    }
 }

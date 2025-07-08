@@ -25,6 +25,7 @@ import com.aestroon.common.data.repository.WalletRepositoryImpl
 import com.aestroon.common.domain.TransactionsViewModel
 import com.aestroon.common.domain.CategoriesViewModel
 import com.aestroon.common.domain.WalletsViewModel
+import com.aestroon.home.news.domain.HomeViewModel
 import io.github.jan.supabase.gotrue.auth
 import io.github.jan.supabase.postgrest.postgrest
 import io.ktor.client.HttpClient
@@ -65,7 +66,7 @@ val appModule = module {
     single { get<AppDatabase>().transactionDao() }
 
     // Repositories
-    single<TransactionRepository> { TransactionRepositoryImpl(get(), get(), get(), get(), get()) }
+    single<TransactionRepository> { TransactionRepositoryImpl(get(), get(), get(), get(), get(), get()) }
     single<AuthRepository> { AuthRepositoryImpl(get(), get(), get(), androidContext()) }
     single<CurrencyRepository> { CurrencyRepositoryImpl(get()) }
     single<UserRepository> { UserRepositoryImpl(get()) }
@@ -81,6 +82,7 @@ val appModule = module {
     single { UserManager(get()) }
 
     // ViewModels
+    viewModel { HomeViewModel(get(), get(), get(), get()) }
     viewModel { TransactionsViewModel(get(), get(), get(), get()) }
     viewModel { AuthViewModel(get(), get(), get()) }
     viewModel { NewsViewModel(get()) }

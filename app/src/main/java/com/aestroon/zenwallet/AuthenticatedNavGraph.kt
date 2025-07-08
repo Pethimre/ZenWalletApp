@@ -108,7 +108,7 @@ fun AuthenticatedNavGraph(onLogoutClicked: () -> Unit) {
                 buttons = buttons,
                 barColor = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = .9f),
                 circleColor = MaterialTheme.colorScheme.primary,
-                selectedColor = MaterialTheme.colorScheme.onPrimary,
+                selectedColor = MaterialTheme.colorScheme.primary,
                 unselectedColor = Color.Gray,
             )
         }
