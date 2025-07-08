@@ -55,7 +55,6 @@ import org.koin.androidx.compose.koinViewModel
 @Composable
 fun WalletsScreen(
     viewModel: WalletsViewModel = koinViewModel(),
-    onNavigateToCategories: () -> Unit,
 ) {
     val wallets: List<WalletEntity> by viewModel.wallets.collectAsState()
     val uiState: WalletsUiState by viewModel.uiState.collectAsState()
@@ -83,16 +82,6 @@ fun WalletsScreen(
     val pagerState = rememberPagerState(pageCount = { pageCount })
 
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Wallets") },
-                actions = {
-                    IconButton(onClick = onNavigateToCategories) {
-                        Icon(Icons.Default.Category, contentDescription = "Manage Categories")
-                    }
-                }
-            )
-        },
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { paddingValues ->
         Column(modifier = Modifier.fillMaxSize().padding(paddingValues)) {

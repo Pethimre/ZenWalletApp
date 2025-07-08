@@ -55,7 +55,7 @@ val appModule = module {
     // Local database
     single {
         Room.databaseBuilder(androidContext(), AppDatabase::class.java, "app_database")
-            .fallbackToDestructiveMigration() // Important for development schema changes
+            .fallbackToDestructiveMigration()
             .build()
     }
 

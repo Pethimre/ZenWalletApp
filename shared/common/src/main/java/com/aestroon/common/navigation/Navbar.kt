@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Text
@@ -129,7 +130,7 @@ fun AnimatedNavigationBar(
                     label = { Text(button.label) },
                     colors = NavigationBarItemDefaults.colors(
                         selectedIconColor = selectedColor,
-                        selectedTextColor = selectedColor,
+                        selectedTextColor = MaterialTheme.colorScheme.primary,
                         unselectedIconColor = unselectedColor,
                         unselectedTextColor = unselectedColor,
                         indicatorColor = Color.Transparent,

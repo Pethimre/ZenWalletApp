@@ -1,5 +1,7 @@
 package com.aestroon.zenwallet
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -12,12 +14,14 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.navigation.compose.NavHost
@@ -57,6 +61,7 @@ fun AuthenticatedNavGraph(onLogoutClicked: () -> Unit) {
     val wallets by transactionsViewModel.wallets.collectAsState()
     val categories by transactionsViewModel.categories.collectAsState()
 
+    // Manually define the buttons with their UI properties
     val buttons = remember(selectedIndex) {
         listOf(
             ButtonData("Wallets", Icons.Default.Wallet),
@@ -108,7 +113,7 @@ fun AuthenticatedNavGraph(onLogoutClicked: () -> Unit) {
                 buttons = buttons,
                 barColor = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = .9f),
                 circleColor = MaterialTheme.colorScheme.primary,
-                selectedColor = MaterialTheme.colorScheme.primary,
+                selectedColor = MaterialTheme.colorScheme.onPrimary,
                 unselectedColor = Color.Gray,
             )
         }
@@ -123,7 +128,8 @@ fun AuthenticatedNavGraph(onLogoutClicked: () -> Unit) {
             composable(ScreenNavItems.Settings.route) {
                 ProfileScreen(
                     viewModel = profileViewModel,
-                    onLogoutClicked = onLogoutClicked, onNavigateToCurrencySelection = {
+                    onLogoutClicked = onLogoutClicked,
+                    onNavigateToCurrencySelection = {
                         navController.navigate(ScreenNavItems.CurrencySelection.route)
                     },
                 )
@@ -136,7 +142,8 @@ fun AuthenticatedNavGraph(onLogoutClicked: () -> Unit) {
                 HomeMainScreen(
                     selectedHomeScreenType = selectedTab,
                     onTabSelected = { selectedTab = it },
-                    onArticleClick = { articleId -> navController.navigate("news_detail/$articleId") }
+                    onArticleClick = { articleId -> navController.navigate("news_detail/$articleId") },
+                    navController = navController
                 )
             }
             composable("news_detail/{articleId}") { backStackEntry ->
@@ -149,10 +156,26 @@ fun AuthenticatedNavGraph(onLogoutClicked: () -> Unit) {
                 }
             }
             composable(ScreenNavItems.Wallets.route) {
-                WalletsScreen(onNavigateToCategories = { navController.navigate(ScreenNavItems.Categories.route) })
+                WalletsScreen()
             }
             composable(ScreenNavItems.Categories.route) {
-                CategoriesScreen(onNavigateUp = { navController.navigateUp() })
+                CategoriesScreen(onNavigateUp = { navController.popBackStack() })
+            }
+            // Placeholder screens for dashboard shortcuts
+            composable(ScreenNavItems.PlannedPayments.route) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text("Planned Payments Screen")
+                }
+            }
+            composable(ScreenNavItems.Loans.route) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text("Loans Screen")
+                }
+            }
+            composable(ScreenNavItems.SavingGoals.route) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text("Saving Goals Screen")
+                }
             }
         }
     }

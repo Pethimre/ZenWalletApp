@@ -17,10 +17,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
 import com.aestroon.common.components.mockProvider.sampleOverdueTransactions
 import com.aestroon.common.components.mockProvider.sampleUpcomingTransactions
 import com.aestroon.common.domain.TransactionsViewModel
 import com.aestroon.common.domain.WalletsViewModel
+import com.aestroon.home.dashboardScreen.addDashboardContent
 import com.aestroon.home.homeScreen.addHomeScreenContent
 import com.aestroon.home.news.domain.HomeViewModel
 import com.aestroon.home.news.domain.NewsViewModel
@@ -35,6 +37,7 @@ fun HomeMainScreen(
     selectedHomeScreenType: HomeScreenType,
     onTabSelected: (HomeScreenType) -> Unit,
     onArticleClick: (String) -> Unit,
+    navController: NavController,
     homeViewModel: HomeViewModel = getViewModel(),
     newsViewModel: NewsViewModel = getViewModel(),
     transactionsViewModel: TransactionsViewModel = getViewModel(),
@@ -49,14 +52,16 @@ fun HomeMainScreen(
 
     val pullRefreshState = rememberPullRefreshState(isRefreshing, { homeViewModel.refreshAllData() })
 
-    LaunchedEffect(Unit) {
-        homeViewModel.refreshAllData()
+    LaunchedEffect(selectedHomeScreenType) {
+        if (selectedHomeScreenType == HomeScreenType.NEWS && newsViewModel.news.value.isEmpty()) {
+            newsViewModel.loadNews()
+        }
     }
 
     Box(Modifier.fillMaxSize()) {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 80.dp), // Added bottom padding
+            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 80.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             item { Spacer(Modifier.height(8.dp)) }
@@ -79,6 +84,7 @@ fun HomeMainScreen(
                     onEdit = {},
                     onDelete = { transactionsViewModel.deleteTransaction(it) }
                 )
+                HomeScreenType.DASHBOARD -> addDashboardContent(navController = navController)
                 HomeScreenType.NEWS -> addNewsScreenContent(
                     newsArticles = articles,
                     isLoading = isLoadingNews,

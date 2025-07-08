@@ -23,6 +23,7 @@ import kotlin.collections.forEach
 
 enum class HomeScreenType(val displayName: String) {
     OVERVIEW("Overview"),
+    DASHBOARD("Dashboard"),
     NEWS("News"),
 }
 

@@ -22,11 +22,8 @@ class HomeViewModel(
     fun refreshAllData() {
         viewModelScope.launch {
             _isRefreshing.value = true
-            // These functions already use the reactive userIdFlow,
-            // so they will correctly fetch data for the logged-in user.
             walletsViewModel.onEnterScreen()
             categoriesViewModel.onEnterScreen()
-            // We need a public sync function in TransactionsViewModel
             transactionsViewModel.syncTransactions()
             newsViewModel.refresh()
             _isRefreshing.value = false
