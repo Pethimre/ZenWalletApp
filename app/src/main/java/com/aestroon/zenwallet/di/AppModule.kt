@@ -15,6 +15,8 @@ import com.aestroon.home.news.data.RssNewsRepository
 import com.aestroon.home.news.domain.NewsViewModel
 import com.aestroon.common.data.repository.CurrencyRepository
 import com.aestroon.common.data.repository.CurrencyRepositoryImpl
+import com.aestroon.common.data.repository.PlannedPaymentRepository
+import com.aestroon.common.data.repository.PlannedPaymentRepositoryImpl
 import com.aestroon.common.data.repository.TransactionRepository
 import com.aestroon.common.data.repository.TransactionRepositoryImpl
 import com.aestroon.profile.data.UserPreferencesRepository
@@ -24,6 +26,7 @@ import com.aestroon.common.data.repository.WalletRepository
 import com.aestroon.common.data.repository.WalletRepositoryImpl
 import com.aestroon.common.domain.TransactionsViewModel
 import com.aestroon.common.domain.CategoriesViewModel
+import com.aestroon.common.domain.PlannedPaymentsViewModel
 import com.aestroon.common.domain.WalletsViewModel
 import com.aestroon.home.news.domain.HomeViewModel
 import io.github.jan.supabase.gotrue.auth
@@ -64,8 +67,10 @@ val appModule = module {
     single { get<AppDatabase>().walletDao() }
     single { get<AppDatabase>().categoryDao() }
     single { get<AppDatabase>().transactionDao() }
+    single { get<AppDatabase>().plannedPaymentDao() }
 
     // Repositories
+    single<PlannedPaymentRepository> { PlannedPaymentRepositoryImpl(get(), get(), get(), get()) }
     single<TransactionRepository> { TransactionRepositoryImpl(get(), get(), get(), get(), get(), get()) }
     single<AuthRepository> { AuthRepositoryImpl(get(), get(), get(), androidContext()) }
     single<CurrencyRepository> { CurrencyRepositoryImpl(get()) }
@@ -82,11 +87,12 @@ val appModule = module {
     single { UserManager(get()) }
 
     // ViewModels
+    viewModel { PlannedPaymentsViewModel(get(), get(), get(), get()) }
     viewModel { HomeViewModel(get(), get(), get(), get()) }
     viewModel { TransactionsViewModel(get(), get(), get(), get()) }
     viewModel { AuthViewModel(get(), get(), get()) }
     viewModel { NewsViewModel(get()) }
     viewModel { ProfileViewModel(get(), get(), get(), get()) }
-    viewModel { WalletsViewModel(get(), get(), get(), get()) }
+    viewModel { WalletsViewModel(get(), get(), get(), get(), get()) }
     viewModel { CategoriesViewModel(get(), get()) }
 }

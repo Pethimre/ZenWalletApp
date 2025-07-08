@@ -4,10 +4,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.aestroon.common.data.entity.TransactionType
 import com.aestroon.common.data.repository.AuthRepository
 import com.aestroon.common.data.entity.WalletEntity
 import com.aestroon.common.data.model.WalletsSummary
 import com.aestroon.common.data.repository.CurrencyRepository
+import com.aestroon.common.data.repository.TransactionRepository
 import com.aestroon.common.data.serializable.Currency
 import com.aestroon.common.utilities.network.ConnectivityObserver
 import com.aestroon.common.data.repository.WalletRepository
@@ -23,12 +25,19 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import java.util.Calendar
+
+data class WalletMonthlySummary(
+    val income: Double,
+    val expense: Double
+)
 
 class WalletsViewModel(
     private val walletRepository: WalletRepository,
     private val authRepository: AuthRepository,
     private val currencyRepository: CurrencyRepository,
-    private val connectivityObserver: ConnectivityObserver
+    private val connectivityObserver: ConnectivityObserver,
+    private val transactionRepository: TransactionRepository,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<WalletsUiState>(WalletsUiState.Idle)
@@ -36,6 +45,9 @@ class WalletsViewModel(
 
     private val _allCurrencies = MutableStateFlow<List<Currency>>(emptyList())
     val allCurrencies: StateFlow<List<Currency>> = _allCurrencies.asStateFlow()
+
+    private val _monthlySummary = MutableStateFlow<WalletMonthlySummary?>(null)
+    val monthlySummary: StateFlow<WalletMonthlySummary?> = _monthlySummary.asStateFlow()
 
     val baseCurrency = MutableStateFlow("HUF")
 
@@ -95,6 +107,35 @@ class WalletsViewModel(
         authRepository.userIdFlow.firstOrNull()?.let { userId ->
             walletRepository.fetchRemoteWallets(userId)
             walletRepository.syncPendingWallets()
+        }
+    }
+
+    fun loadMonthlySummaryFor(walletId: String?) {
+        if (walletId == null) {
+            _monthlySummary.value = null
+            return
+        }
+        viewModelScope.launch {
+            transactionRepository.getTransactionsForWallet(walletId).firstOrNull()?.let { transactions ->
+                val calendar = Calendar.getInstance()
+                val currentMonth = calendar.get(Calendar.MONTH)
+                val currentYear = calendar.get(Calendar.YEAR)
+
+                val monthlyTransactions = transactions.filter {
+                    calendar.time = it.date
+                    calendar.get(Calendar.MONTH) == currentMonth && calendar.get(Calendar.YEAR) == currentYear
+                }
+
+                val income = monthlyTransactions
+                    .filter { it.transactionType == TransactionType.INCOME }
+                    .sumOf { it.amount / 100.0 }
+
+                val expense = monthlyTransactions
+                    .filter { it.transactionType == TransactionType.EXPENSE }
+                    .sumOf { it.amount / 100.0 }
+
+                _monthlySummary.value = WalletMonthlySummary(income, expense)
+            }
         }
     }
 

@@ -26,6 +26,8 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.KeyboardDoubleArrowDown
+import androidx.compose.material.icons.filled.KeyboardDoubleArrowUp
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -50,6 +52,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.aestroon.common.data.entity.CategoryEntity
+import com.aestroon.common.data.entity.PlannedPaymentEntity
 import com.aestroon.common.data.entity.TransactionEntity
 import com.aestroon.common.data.entity.TransactionType
 import com.aestroon.common.data.model.WalletsSummary
@@ -61,9 +64,11 @@ import com.aestroon.common.utilities.formatDayAndMonth
 import com.aestroon.home.widgets.balanceOverview.BalanceOverviewCard
 import com.aestroon.home.widgets.savingSummary.SavingsSummaryCard
 import java.text.DecimalFormat
+import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
+import kotlin.collections.find
 
 fun LazyListScope.addHomeScreenContent(
     summary: WalletsSummary,
@@ -72,7 +77,11 @@ fun LazyListScope.addHomeScreenContent(
     overdueTransactions: List<TransactionEntity>,
     categoriesMap: Map<String, CategoryEntity>,
     onEdit: (TransactionEntity) -> Unit,
-    onDelete: (TransactionEntity) -> Unit
+    onDelete: (TransactionEntity) -> Unit,
+    onPayPlanned: (PlannedPaymentEntity) -> Unit,
+    onSkipPlanned: (PlannedPaymentEntity) -> Unit,
+    allUpcoming: List<PlannedPaymentEntity>,
+    allOverdue: List<PlannedPaymentEntity>
 ) {
     item(key = "balance_overview_card") {
         BalanceOverviewCard(
@@ -92,30 +101,38 @@ fun LazyListScope.addHomeScreenContent(
         )
     }
 
-    item(key = "upcoming_transactions_section") {
-        CollapsibleSectionCard(
-            title = "Upcoming",
-            transactions = upcomingTransactions,
-            headerBackgroundColor = OrangeChipColor.copy(alpha = 0.3f),
-            isInitiallyExpanded = false,
-            categoriesMap = categoriesMap,
-            isPlanned = true,
-            onEdit = onEdit,
-            onDelete = onDelete
-        )
+    if (upcomingTransactions.isNotEmpty()) {
+        item(key = "upcoming_transactions_section") {
+            CollapsibleSectionCard(
+                title = "Upcoming",
+                transactions = upcomingTransactions,
+                headerBackgroundColor = OrangeChipColor.copy(alpha = 0.3f),
+                isInitiallyExpanded = false,
+                categoriesMap = categoriesMap,
+                isPlanned = true,
+                onEdit = onEdit,
+                onDelete = onDelete,
+                onPay = { transaction -> allUpcoming.find { it.id == transaction.id }?.let(onPayPlanned) },
+                onSkip = { transaction -> allUpcoming.find { it.id == transaction.id }?.let(onSkipPlanned) }
+            )
+        }
     }
 
-    item(key = "overdue_transactions_section") {
-        CollapsibleSectionCard(
-            title = "Overdue",
-            transactions = overdueTransactions,
-            headerBackgroundColor = RedChipColor.copy(alpha = 0.3f),
-            isInitiallyExpanded = false,
-            categoriesMap = categoriesMap,
-            isPlanned = true,
-            onEdit = onEdit,
-            onDelete = onDelete
-        )
+    if (overdueTransactions.isNotEmpty()) {
+        item(key = "overdue_transactions_section") {
+            CollapsibleSectionCard(
+                title = "Overdue",
+                transactions = overdueTransactions,
+                headerBackgroundColor = RedChipColor.copy(alpha = 0.3f),
+                isInitiallyExpanded = false,
+                categoriesMap = categoriesMap,
+                isPlanned = true,
+                onEdit = onEdit,
+                onDelete = onDelete,
+                onPay = { transaction -> allOverdue.find { it.id == transaction.id }?.let(onPayPlanned) },
+                onSkip = { transaction -> allOverdue.find { it.id == transaction.id }?.let(onSkipPlanned) }
+            )
+        }
     }
 
     if (dailyTransactions.isEmpty()) {
@@ -155,6 +172,8 @@ fun LazyListScope.addHomeScreenContent(
                 isPlanned = false,
                 onEditClick = { onEdit(transaction) },
                 onDeleteClick = { onDelete(transaction) },
+                onPayClick = {},
+                onSkipClick = {},
                 modifier = Modifier.padding(bottom = 12.dp)
             )
         }
@@ -171,6 +190,8 @@ fun CollapsibleSectionCard(
     isPlanned: Boolean,
     onEdit: (TransactionEntity) -> Unit,
     onDelete: (TransactionEntity) -> Unit,
+    onPay: (TransactionEntity) -> Unit,
+    onSkip: (TransactionEntity) -> Unit,
 ) {
     var isExpanded by remember { mutableStateOf(isInitiallyExpanded) }
     val income = transactions.filter { it.transactionType == TransactionType.INCOME }
@@ -195,10 +216,10 @@ fun CollapsibleSectionCard(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 if (income > 0) {
                     Icon(
-                        Icons.Default.ArrowUpward,
+                        Icons.Default.KeyboardDoubleArrowUp,
                         contentDescription = "Income",
                         tint = GreenChipColor,
-                        modifier = Modifier.size(16.dp)
+                        modifier = Modifier.size(16.dp).padding(end = 4.dp)
                     )
                     Text(
                         TextFormatter.toPrettyAmount(income),
@@ -208,10 +229,10 @@ fun CollapsibleSectionCard(
                 if (expense > 0) {
                     Spacer(Modifier.width(8.dp))
                     Icon(
-                        Icons.Default.ArrowDownward,
+                        Icons.Default.KeyboardDoubleArrowDown,
                         contentDescription = "Expense",
                         tint = RedChipColor,
-                        modifier = Modifier.size(16.dp)
+                        modifier = Modifier.size(16.dp).padding(end = 4.dp)
                     )
                     Text(
                         TextFormatter.toPrettyAmount(expense),
@@ -248,6 +269,8 @@ fun CollapsibleSectionCard(
                             isPlanned = isPlanned,
                             onEditClick = { onEdit(transaction) },
                             onDeleteClick = { onDelete(transaction) },
+                            onPayClick = { onPay(transaction) },
+                            onSkipClick = { onSkip(transaction) },
                             modifier = Modifier.padding(bottom = 12.dp)
                         )
                     }
@@ -265,6 +288,8 @@ fun TransactionCard(
     isPlanned: Boolean,
     onEditClick: () -> Unit,
     onDeleteClick: () -> Unit,
+    onPayClick: () -> Unit,
+    onSkipClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     var isExpanded by remember { mutableStateOf(false) }
@@ -273,9 +298,12 @@ fun TransactionCard(
         TransactionType.EXPENSE -> MaterialTheme.colorScheme.onSurface
         TransactionType.TRANSFER -> MaterialTheme.colorScheme.primary
     }
+    val simpleDateFormat = remember { SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()) }
 
     Card(
-        modifier = modifier.fillMaxWidth().clickable { isExpanded = !isExpanded },
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable { isExpanded = !isExpanded },
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
     ) {
@@ -291,6 +319,18 @@ fun TransactionCard(
             transaction.description?.let {
                 Text(it, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
+
+            // Display the due date for planned items
+            if (isPlanned) {
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text = "Due: ${simpleDateFormat.format(transaction.date)}",
+                    style = MaterialTheme.typography.bodySmall,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
             Spacer(Modifier.height(8.dp))
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
                 category?.let { CategoryChip(it) }
@@ -318,10 +358,10 @@ fun TransactionCard(
                         horizontalArrangement = if (isPlanned) Arrangement.SpaceEvenly else Arrangement.End
                     ) {
                         if (isPlanned) {
-                            Button(onClick = { /*TODO*/ }, colors = ButtonDefaults.buttonColors(containerColor = GreenChipColor)) {
-                                Text("Get")
+                            Button(onClick = onPayClick, colors = ButtonDefaults.buttonColors(containerColor = GreenChipColor)) {
+                                Text("Pay")
                             }
-                            TextButton(onClick = { /*TODO*/ }) {
+                            TextButton(onClick = onSkipClick) {
                                 Text("Skip")
                             }
                         } else {

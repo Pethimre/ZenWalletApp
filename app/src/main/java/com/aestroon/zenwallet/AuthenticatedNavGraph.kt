@@ -33,6 +33,7 @@ import com.aestroon.common.navigation.AnimatedNavigationBar
 import com.aestroon.common.navigation.ButtonData
 import com.aestroon.common.navigation.ScreenNavItems
 import com.aestroon.common.presentation.AddEditTransactionSheet
+import com.aestroon.common.presentation.screen.PlannedPaymentsScreen
 import com.aestroon.home.HomeMainScreen
 import com.aestroon.home.news.domain.NewsViewModel
 import com.aestroon.home.news.ui.NewsDetailErrorScreen
@@ -176,6 +177,9 @@ fun AuthenticatedNavGraph(onLogoutClicked: () -> Unit) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Text("Saving Goals Screen")
                 }
+            }
+            composable(ScreenNavItems.PlannedPayments.route) {
+                PlannedPaymentsScreen(navController = navController)
             }
         }
     }

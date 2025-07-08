@@ -18,18 +18,16 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Category
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -45,6 +43,7 @@ import androidx.compose.ui.unit.dp
 import com.aestroon.common.data.entity.WalletEntity
 import com.aestroon.common.data.model.WalletsSummary
 import com.aestroon.common.data.serializable.Currency
+import com.aestroon.common.domain.WalletMonthlySummary
 import com.aestroon.common.domain.WalletsUiState
 import com.aestroon.common.domain.WalletsViewModel
 import com.aestroon.common.presentation.components.ConfirmDeleteDialog
@@ -63,14 +62,21 @@ fun WalletsScreen(
     val networkStatus: ConnectivityObserver.Status by viewModel.networkStatus.collectAsState()
     val summary: WalletsSummary by viewModel.summary.collectAsState()
     val baseCurrency: String by viewModel.baseCurrency.collectAsState()
+    val monthlySummary by viewModel.monthlySummary.collectAsState()
 
     var showAddEditDialog by remember { mutableStateOf(false) }
     var walletToEdit by remember { mutableStateOf<WalletEntity?>(null) }
     var showConfirmDeleteDialog by remember { mutableStateOf<WalletEntity?>(null) }
+    var expandedWalletId by remember { mutableStateOf<String?>(null) }
 
     val snackbarHostState = remember { SnackbarHostState() }
 
+    LaunchedEffect(expandedWalletId) {
+        viewModel.loadMonthlySummaryFor(expandedWalletId)
+    }
+
     LaunchedEffect(Unit) { viewModel.onEnterScreen() }
+
     LaunchedEffect(uiState) {
         if (uiState is WalletsUiState.Error) {
             snackbarHostState.showSnackbar((uiState as WalletsUiState.Error).message)
@@ -84,7 +90,11 @@ fun WalletsScreen(
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { paddingValues ->
-        Column(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+        ) {
             OfflineWarningBanner(isVisible = hasPendingSyncs && networkStatus == ConnectivityObserver.Status.Unavailable)
 
             if (uiState is WalletsUiState.Loading && wallets.isEmpty()) {
@@ -92,11 +102,19 @@ fun WalletsScreen(
                     CircularProgressIndicator()
                 }
             } else {
-                HorizontalPager(state = pagerState, modifier = Modifier.fillMaxSize()) { pageIndex ->
+                HorizontalPager(
+                    state = pagerState,
+                    modifier = Modifier.fillMaxSize()
+                ) { pageIndex ->
                     val page = if (showOverview) pageIndex else 0
                     if (page == 0 && showOverview) {
                         LazyColumn(contentPadding = PaddingValues(16.dp)) {
-                            item { OverallSummaryCard(summary = summary, baseCurrency = baseCurrency) }
+                            item {
+                                OverallSummaryCard(
+                                    summary = summary,
+                                    baseCurrency = baseCurrency
+                                )
+                            }
                         }
                     } else {
                         LazyColumn(
@@ -110,26 +128,50 @@ fun WalletsScreen(
                                     horizontalArrangement = Arrangement.SpaceBetween,
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Text("Your Wallets", style = MaterialTheme.typography.headlineSmall)
+                                    Text(
+                                        "Your Wallets",
+                                        style = MaterialTheme.typography.headlineSmall
+                                    )
                                     TextButton(onClick = {
                                         walletToEdit = null
                                         showAddEditDialog = true
                                     }) {
-                                        Text("Add Wallet")
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Icon(
+                                                Icons.Default.Add,
+                                                "Add Wallet",
+                                                Modifier.padding(end = 4.dp),
+                                                MaterialTheme.colorScheme.primary,
+                                            )
+                                            Text("Add Wallet")
+                                        }
                                     }
                                 }
                             }
                             if (wallets.isEmpty()) {
                                 item {
-                                    Text("No wallets yet. Tap 'Add Wallet' to create one!",
-                                        modifier = Modifier.fillMaxWidth().padding(top = 32.dp),
-                                        textAlign = TextAlign.Center)
+                                    Text(
+                                        "No wallets yet. Tap 'Add Wallet' to create one!",
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(top = 32.dp),
+                                        textAlign = TextAlign.Center
+                                    )
                                 }
                             } else {
                                 items(wallets, key = { it.id }) { wallet ->
                                     SpendingWalletCard(
                                         wallet = wallet,
-                                        onEdit = { walletToEdit = wallet; showAddEditDialog = true },
+                                        isExpanded = wallet.id == expandedWalletId,
+                                        monthlySummary = if (wallet.id == expandedWalletId) monthlySummary else null,
+                                        onClick = {
+                                            expandedWalletId =
+                                                if (expandedWalletId == wallet.id) null else wallet.id
+                                        },
+                                        onEdit = {
+                                            walletToEdit = wallet
+                                            showAddEditDialog = true
+                                        },
                                         onDelete = { showConfirmDeleteDialog = wallet }
                                     )
                                 }
@@ -147,7 +189,16 @@ fun WalletsScreen(
             allCurrencies = allCurrencies,
             onDismiss = { showAddEditDialog = false },
             onConfirm = { name, balanceStr, goalAmountStr, color, currency, iconName, included ->
-                viewModel.addOrUpdateWallet(walletToEdit, name, balanceStr, goalAmountStr, color, currency, iconName, included)
+                viewModel.addOrUpdateWallet(
+                    walletToEdit,
+                    name,
+                    balanceStr,
+                    goalAmountStr,
+                    color,
+                    currency,
+                    iconName,
+                    included
+                )
                 showAddEditDialog = false
             }
         )
@@ -180,7 +231,13 @@ fun SpendingWalletCardPreview() {
         included = true,
         goalAmount = 1200,
     )
-    SpendingWalletCard(wallet = wallet, onEdit = {}, onDelete = {})
+    SpendingWalletCard(
+        wallet = wallet,
+        onEdit = {},
+        onDelete = {},
+        isExpanded = true,
+        monthlySummary = WalletMonthlySummary(1500.0, 800.0),
+        onClick = {})
 }
 
 @Preview(showBackground = true)
@@ -199,7 +256,17 @@ fun AddWalletDialogPreview() {
 fun WalletsOverviewPreview() {
     val wallets = listOf(
         WalletEntity("1", "Cash", 5000000L, "#4CAF50", "HUF", "user1", "Payments", true, 3242),
-        WalletEntity("2", "Debit Card", 15000000L, "#2196F3", "HUF", "user1", "CreditCard", true, 2122),
+        WalletEntity(
+            "2",
+            "Debit Card",
+            15000000L,
+            "#2196F3",
+            "HUF",
+            "user1",
+            "CreditCard",
+            true,
+            2122
+        ),
         WalletEntity("3", "Savings", 30000000L, "#F44336", "HUF", "user1", "Savings", true, 82421)
     )
     val summary = WalletsSummary(
