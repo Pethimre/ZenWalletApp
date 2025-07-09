@@ -1,31 +1,31 @@
 package com.aestroon.wallets.presentation
 
 import AddEditWalletDialog
-import OfflineWarningBanner
 import OverallSummaryCard
 import SpendingWalletCard
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -37,135 +37,122 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.aestroon.common.data.entity.WalletEntity
+import com.aestroon.common.data.model.MonthlyCashFlow
 import com.aestroon.common.data.model.WalletsSummary
 import com.aestroon.common.data.serializable.Currency
 import com.aestroon.common.domain.WalletMonthlySummary
-import com.aestroon.common.domain.WalletsUiState
 import com.aestroon.common.domain.WalletsViewModel
 import com.aestroon.common.presentation.components.ConfirmDeleteDialog
-import com.aestroon.common.utilities.network.ConnectivityObserver
+import com.aestroon.common.theme.GreenChipColor
+import com.aestroon.common.theme.RedChipColor
 import org.koin.androidx.compose.koinViewModel
+import kotlin.math.max
 
-@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun WalletsScreen(
     viewModel: WalletsViewModel = koinViewModel(),
 ) {
-    val wallets: List<WalletEntity> by viewModel.wallets.collectAsState()
-    val uiState: WalletsUiState by viewModel.uiState.collectAsState()
-    val allCurrencies: List<Currency> by viewModel.allCurrencies.collectAsState()
-    val hasPendingSyncs: Boolean by viewModel.hasPendingSyncs.collectAsState()
-    val networkStatus: ConnectivityObserver.Status by viewModel.networkStatus.collectAsState()
-    val summary: WalletsSummary by viewModel.summary.collectAsState()
-
-    val baseCurrency: String by viewModel.baseCurrency.collectAsState()
-    val exchangeRates: Map<String, Double>? by viewModel.exchangeRates.collectAsState()
-
+    val wallets by viewModel.wallets.collectAsState()
+    val allCurrencies by viewModel.allCurrencies.collectAsState()
+    val summary by viewModel.summary.collectAsState()
+    val monthlyCashFlow by viewModel.monthlyCashFlow.collectAsState()
+    val baseCurrency by viewModel.baseCurrency.collectAsState()
+    val exchangeRates by viewModel.exchangeRates.collectAsState()
     val monthlySummary by viewModel.monthlySummary.collectAsState()
+    var expandedWalletId by remember { mutableStateOf<String?>(null) }
 
     var showAddEditDialog by remember { mutableStateOf(false) }
     var walletToEdit by remember { mutableStateOf<WalletEntity?>(null) }
-    var showConfirmDeleteDialog by remember { mutableStateOf<WalletEntity?>(null) }
-    var expandedWalletId by remember { mutableStateOf<String?>(null) }
 
-    val snackbarHostState = remember { SnackbarHostState() }
+    var showConfirmDeleteDialog by remember { mutableStateOf<WalletEntity?>(null) }
 
     LaunchedEffect(expandedWalletId) {
         viewModel.loadMonthlySummaryFor(expandedWalletId)
     }
 
-    LaunchedEffect(Unit) { viewModel.onEnterScreen() }
+    val tabs = listOf("Overview", "Wallets")
+    val pagerState = rememberPagerState(pageCount = { tabs.size })
 
-    LaunchedEffect(uiState) {
-        if (uiState is WalletsUiState.Error) {
-            snackbarHostState.showSnackbar((uiState as WalletsUiState.Error).message)
-        }
-    }
-
-    val showOverview = wallets.size >= 2
-    val pageCount = if (showOverview) 2 else 1
-    val pagerState = rememberPagerState(pageCount = { pageCount })
-
-    Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) }
-    ) { paddingValues ->
-        Column(modifier = Modifier
-            .fillMaxSize()
-            .padding(paddingValues)) {
-            OfflineWarningBanner(isVisible = hasPendingSyncs && networkStatus == ConnectivityObserver.Status.Unavailable)
-
-            if (uiState is WalletsUiState.Loading && wallets.isEmpty()) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator()
-                }
-            } else {
-                HorizontalPager(state = pagerState, modifier = Modifier.fillMaxSize()) { pageIndex ->
-                    val page = if (showOverview) pageIndex else 0
-                    if (page == 0 && showOverview) {
-                        LazyColumn(contentPadding = PaddingValues(16.dp)) {
-                            item { OverallSummaryCard(summary = summary, baseCurrency = baseCurrency) }
+    Column(modifier = Modifier.fillMaxSize()) {
+        HorizontalPager(
+            state = pagerState,
+            modifier = Modifier.weight(1f)
+        ) { page ->
+            when (page) {
+                0 -> {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        item {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text("Your Wallets", style = MaterialTheme.typography.headlineSmall)
+                                TextButton(onClick = {
+                                    walletToEdit = null
+                                    showAddEditDialog = true
+                                }) {
+                                    Text("Add Wallet")
+                                }
+                            }
                         }
-                    } else {
-                        LazyColumn(
-                            modifier = Modifier.fillMaxSize(),
-                            contentPadding = PaddingValues(16.dp),
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
+                        if (wallets.isEmpty()) {
                             item {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Text("Your Wallets", style = MaterialTheme.typography.headlineSmall)
-                                    TextButton(onClick = {
-                                        walletToEdit = null
+                                Text(
+                                    "No wallets found. Tap 'Add Wallet' to create one.",
+                                    modifier = Modifier.fillMaxWidth().padding(32.dp),
+                                    textAlign = TextAlign.Center
+                                )
+                            }
+                        } else {
+                            items(wallets, key = { it.id }) { wallet ->
+                                SpendingWalletCard(
+                                    wallet = wallet,
+                                    isExpanded = wallet.id == expandedWalletId,
+                                    monthlySummary = if (wallet.id == expandedWalletId) monthlySummary else null,
+                                    baseCurrency = baseCurrency,
+                                    exchangeRates = exchangeRates,
+                                    onClick = {
+                                        expandedWalletId = if (expandedWalletId == wallet.id) null else wallet.id
+                                    },
+                                    onEdit = {
+                                        walletToEdit = wallet
                                         showAddEditDialog = true
-                                    }) {
-                                        Row(verticalAlignment = Alignment.CenterVertically) {
-                                            Icon(
-                                                Icons.Default.Add,
-                                                "Add Wallet",
-                                                Modifier.padding(end = 4.dp),
-                                                MaterialTheme.colorScheme.primary,
-                                            )
-                                            Text("Add Wallet")
-                                        }
-                                    }
-                                }
+                                    },
+                                    onDelete = { showConfirmDeleteDialog = wallet }
+                                )
                             }
-                            if (wallets.isEmpty()) {
-                                item {
-                                    Text("No wallets yet. Tap 'Add Wallet' to create one!",
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(top = 32.dp),
-                                        textAlign = TextAlign.Center
-                                    )
-                                }
-                            } else {
-                                items(wallets, key = { it.id }) { wallet ->
-                                    SpendingWalletCard(
-                                        wallet = wallet,
-                                        isExpanded = wallet.id == expandedWalletId,
-                                        monthlySummary = if (wallet.id == expandedWalletId) monthlySummary else null,
-                                        baseCurrency = baseCurrency,
-                                        exchangeRates = exchangeRates,
-                                        onClick = {
-                                            expandedWalletId = if (expandedWalletId == wallet.id) null else wallet.id
-                                        },
-                                        onEdit = {
-                                            walletToEdit = wallet
-                                            showAddEditDialog = true
-                                        },
-                                        onDelete = { showConfirmDeleteDialog = wallet }
-                                    )
-                                }
-                            }
+                        }
+                    }
+                }
+                1 -> {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        item {
+                            OverallSummaryCard(
+                                summary = summary,
+                                monthlyIncome = monthlyCashFlow.lastOrNull()?.income ?: 0f,
+                                monthlyExpense = monthlyCashFlow.lastOrNull()?.expense ?: 0f,
+                                baseCurrency = baseCurrency
+                            )
+                        }
+                        item {
+                            MonthlyCashFlowChart(cashFlowData = monthlyCashFlow)
                         }
                     }
                 }
@@ -192,6 +179,89 @@ fun WalletsScreen(
             onConfirm = { viewModel.deleteWallet(walletToDelete) },
             itemType = "wallet",
         )
+    }
+}
+
+@Composable
+fun LegendItem(color: Color, label: String) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+    ) {
+        Box(modifier = Modifier
+            .size(8.dp)
+            .background(color, CircleShape))
+        Spacer(modifier = Modifier.width(6.dp))
+        Text(label, style = MaterialTheme.typography.labelSmall)
+    }
+}
+
+@Composable
+fun MonthlyCashFlowChart(
+    cashFlowData: List<MonthlyCashFlow>,
+    modifier: Modifier = Modifier
+) {
+    Card(modifier = modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp)) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text("Monthly Cash Flow (Last 4 Months):", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+            Spacer(modifier = Modifier.height(16.dp))
+
+            if (cashFlowData.isNotEmpty()) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(150.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.Bottom
+                ) {
+                    val maxFlow = remember(cashFlowData) {
+                        cashFlowData.maxOfOrNull { max(it.income, it.expense) }?.coerceAtLeast(1f) ?: 1f
+                    }
+
+                    cashFlowData.forEach { data ->
+                        Column(
+                            modifier = Modifier.weight(1f),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Bottom
+                        ) {
+                            Row(
+                                modifier = Modifier.height(120.dp),
+                                verticalAlignment = Alignment.Bottom,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .width(20.dp)
+                                        .fillMaxHeight(data.income / maxFlow)
+                                        .clip(RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp))
+                                        .background(GreenChipColor)
+                                )
+                                Box(
+                                    modifier = Modifier
+                                        .width(20.dp)
+                                        .fillMaxHeight(data.expense / maxFlow)
+                                        .clip(RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp))
+                                        .background(RedChipColor)
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(text = data.month, style = MaterialTheme.typography.labelSmall)
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+                    LegendItem(color = GreenChipColor, label = "Income")
+                    Spacer(modifier = Modifier.width(16.dp))
+                    LegendItem(color = RedChipColor, label = "Expense")
+                }
+            } else {
+                Box(modifier = Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
+                    Text("Not enough data for chart.")
+                }
+            }
+        }
     }
 }
 
@@ -257,5 +327,5 @@ fun WalletsOverviewPreview() {
         totalBalance = 50000000L,
         balanceBreakdown = wallets.map { it to (it.balance.toFloat() / 50000000.0f) }
     )
-    OverallSummaryCard(summary = summary, baseCurrency = "HUF")
+    OverallSummaryCard(summary = summary, baseCurrency = "HUF", monthlyIncome = 1200f, monthlyExpense = 800f)
 }

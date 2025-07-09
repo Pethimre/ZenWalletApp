@@ -73,6 +73,7 @@ import com.aestroon.common.presentation.IconProvider
 import com.aestroon.common.theme.GreenChipColor
 import com.aestroon.common.theme.RedChipColor
 import com.aestroon.common.utilities.TextFormatter
+import com.aestroon.wallets.presentation.LegendItem
 import java.text.DecimalFormat
 import java.text.DecimalFormatSymbols
 import java.util.Locale
@@ -428,17 +429,31 @@ fun PieChart(
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun OverallSummaryCard(summary: WalletsSummary, baseCurrency: String, modifier: Modifier = Modifier) {
+fun OverallSummaryCard(
+    summary: WalletsSummary,
+    monthlyIncome: Float,
+    monthlyExpense: Float,
+    baseCurrency: String,
+    modifier: Modifier = Modifier
+) {
     Card(modifier = modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp)) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text("Wallets Overview", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.height(12.dp))
-            SummaryRow("Total Balance:", formatBalance(summary.totalBalance, baseCurrency))
+
+            SummaryRow("Total Balance:", TextFormatter.toPrettyAmountWithCurrency(summary.totalBalance / 100.0, baseCurrency))
+            SummaryRow("Σ Income (m):", TextFormatter.toPrettyAmountWithCurrency(monthlyIncome.toDouble(), baseCurrency), valueColor = GreenChipColor)
+            SummaryRow("Σ Expense (m):", TextFormatter.toPrettyAmountWithCurrency(monthlyExpense.toDouble(), baseCurrency), valueColor = RedChipColor)
 
             if (summary.balanceBreakdown.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(16.dp))
                 Text("Balance Breakdown:", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                Box(modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp), contentAlignment = Alignment.Center) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 16.dp),
+                    contentAlignment = Alignment.Center
+                ) {
                     PieChart(
                         data = summary.balanceBreakdown.map { it.first.displayName to it.second },
                         colors = summary.balanceBreakdown.map { it.first.composeColor }
@@ -460,21 +475,13 @@ fun OverallSummaryCard(summary: WalletsSummary, baseCurrency: String, modifier: 
 }
 
 @Composable
-private fun SummaryRow(label: String, value: String) {
-    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-        Text(label, style = MaterialTheme.typography.bodyLarge)
-        Text(value, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-    }
-}
-
-@Composable
-private fun LegendItem(color: Color, label: String) {
+private fun SummaryRow(label: String, value: String, valueColor: Color = MaterialTheme.colorScheme.onSurface) {
     Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Box(modifier = Modifier.size(8.dp).background(color, CircleShape))
-        Spacer(modifier = Modifier.width(6.dp))
-        Text(label, style = MaterialTheme.typography.labelMedium)
+        Text(label, style = MaterialTheme.typography.bodyLarge)
+        Text(value, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = valueColor)
     }
 }

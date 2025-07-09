@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import com.aestroon.common.data.entity.TransactionType
 import com.aestroon.common.data.repository.AuthRepository
 import com.aestroon.common.data.entity.WalletEntity
+import com.aestroon.common.data.model.MonthlyCashFlow
 import com.aestroon.common.data.model.WalletsSummary
 import com.aestroon.common.data.repository.CurrencyConversionRepository
 import com.aestroon.common.data.repository.CurrencyRepository
@@ -27,20 +28,24 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
 import java.util.Calendar
+import java.util.Date
+import java.util.Locale
 
 data class WalletMonthlySummary(
     val income: Double,
     val expense: Double
 )
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class WalletsViewModel(
     private val walletRepository: WalletRepository,
-    private val authRepository: AuthRepository,
     private val currencyRepository: CurrencyRepository,
     private val currencyConversionRepository: CurrencyConversionRepository,
     private val connectivityObserver: ConnectivityObserver,
     private val transactionRepository: TransactionRepository,
+    private val authRepository: AuthRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<WalletsUiState>(WalletsUiState.Idle)
@@ -49,13 +54,12 @@ class WalletsViewModel(
     private val _allCurrencies = MutableStateFlow<List<Currency>>(emptyList())
     val allCurrencies: StateFlow<List<Currency>> = _allCurrencies.asStateFlow()
 
-    val baseCurrency: StateFlow<String> = currencyConversionRepository.baseCurrency
-    val exchangeRates: StateFlow<Map<String, Double>?> = currencyConversionRepository.exchangeRates
-
     private val _monthlySummary = MutableStateFlow<WalletMonthlySummary?>(null)
     val monthlySummary: StateFlow<WalletMonthlySummary?> = _monthlySummary.asStateFlow()
 
-    @OptIn(ExperimentalCoroutinesApi::class)
+    val baseCurrency: StateFlow<String> = currencyConversionRepository.baseCurrency
+    val exchangeRates: StateFlow<Map<String, Double>?> = currencyConversionRepository.exchangeRates
+
     val wallets: StateFlow<List<WalletEntity>> = authRepository.userIdFlow
         .filterNotNull()
         .flatMapLatest { userId ->
@@ -79,7 +83,6 @@ class WalletsViewModel(
                 totalInBase += (wallet.balance / 100.0) * conversionRate
             }
         }
-        // This breakdown is for the pie chart proportions and should use original values
         val totalOriginal = includedWallets.sumOf { it.balance }.toDouble()
         val breakdown = if (totalOriginal > 0) {
             includedWallets.map { it to (it.balance / totalOriginal).toFloat() }
@@ -88,9 +91,83 @@ class WalletsViewModel(
         WalletsSummary(totalBalance = (totalInBase * 100).toLong(), balanceBreakdown = breakdown)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), WalletsSummary())
 
+    val monthlyCashFlow: StateFlow<List<MonthlyCashFlow>> = authRepository.userIdFlow
+        .filterNotNull()
+        .flatMapLatest { userId ->
+            combine(
+                transactionRepository.getTransactionsForUser(userId),
+                baseCurrency,
+                exchangeRates
+            ) { transactions, base, rates ->
+                if (rates == null) return@combine emptyList()
+
+                val calendar = Calendar.getInstance()
+                (0..3).map { monthOffset ->
+                    calendar.time = Date()
+                    calendar.add(Calendar.MONTH, -monthOffset)
+                    val monthName = SimpleDateFormat("MMM", Locale.getDefault()).format(calendar.time)
+                    val month = calendar.get(Calendar.MONTH)
+                    val year = calendar.get(Calendar.YEAR)
+
+                    var income = 0.0
+                    var expense = 0.0
+
+                    transactions.filter {
+                        val transactionCal = Calendar.getInstance().apply { time = it.date }
+                        transactionCal.get(Calendar.MONTH) == month && transactionCal.get(Calendar.YEAR) == year
+                    }.forEach { transaction ->
+                        val amount = transaction.amount / 100.0
+                        val convertedAmount = if (transaction.currency == base) {
+                            amount
+                        } else {
+                            val rate = rates[transaction.currency] ?: 0.0
+                            if (rate != 0.0) amount / rate else 0.0
+                        }
+
+                        if (transaction.transactionType == TransactionType.INCOME) {
+                            income += convertedAmount
+                        } else if (transaction.transactionType == TransactionType.EXPENSE) {
+                            expense += convertedAmount
+                        }
+                    }
+                    MonthlyCashFlow(monthName, income.toFloat(), expense.toFloat())
+                }.reversed()
+            }
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
     init {
         loadAllCurrencies()
         observeNetworkAndSync()
+    }
+
+    fun loadMonthlySummaryFor(walletId: String?) {
+        if (walletId == null) {
+            _monthlySummary.value = null
+            return
+        }
+        viewModelScope.launch {
+            // This logic is specifically for a single wallet, used when a card is expanded.
+            transactionRepository.getTransactionsForWallet(walletId).firstOrNull()?.let { transactions ->
+                val calendar = Calendar.getInstance()
+                val currentMonth = calendar.get(Calendar.MONTH)
+                val currentYear = calendar.get(Calendar.YEAR)
+
+                val monthlyTransactions = transactions.filter {
+                    calendar.time = it.date
+                    calendar.get(Calendar.MONTH) == currentMonth && calendar.get(Calendar.YEAR) == currentYear
+                }
+
+                val income = monthlyTransactions
+                    .filter { it.transactionType == TransactionType.INCOME }
+                    .sumOf { it.amount / 100.0 }
+
+                val expense = monthlyTransactions
+                    .filter { it.transactionType == TransactionType.EXPENSE }
+                    .sumOf { it.amount / 100.0 }
+
+                _monthlySummary.value = WalletMonthlySummary(income, expense)
+            }
+        }
     }
 
     private fun observeNetworkAndSync() {
@@ -120,35 +197,6 @@ class WalletsViewModel(
         authRepository.userIdFlow.firstOrNull()?.let { userId ->
             walletRepository.fetchRemoteWallets(userId)
             walletRepository.syncPendingWallets()
-        }
-    }
-
-    fun loadMonthlySummaryFor(walletId: String?) {
-        if (walletId == null) {
-            _monthlySummary.value = null
-            return
-        }
-        viewModelScope.launch {
-            transactionRepository.getTransactionsForWallet(walletId).firstOrNull()?.let { transactions ->
-                val calendar = Calendar.getInstance()
-                val currentMonth = calendar.get(Calendar.MONTH)
-                val currentYear = calendar.get(Calendar.YEAR)
-
-                val monthlyTransactions = transactions.filter {
-                    calendar.time = it.date
-                    calendar.get(Calendar.MONTH) == currentMonth && calendar.get(Calendar.YEAR) == currentYear
-                }
-
-                val income = monthlyTransactions
-                    .filter { it.transactionType == TransactionType.INCOME }
-                    .sumOf { it.amount / 100.0 }
-
-                val expense = monthlyTransactions
-                    .filter { it.transactionType == TransactionType.EXPENSE }
-                    .sumOf { it.amount / 100.0 }
-
-                _monthlySummary.value = WalletMonthlySummary(income, expense)
-            }
         }
     }
 
