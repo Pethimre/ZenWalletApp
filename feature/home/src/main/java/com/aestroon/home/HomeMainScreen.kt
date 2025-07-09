@@ -64,6 +64,12 @@ fun HomeMainScreen(
         homeViewModel.refreshAllData()
     }
 
+    LaunchedEffect(selectedHomeScreenType) {
+        if (selectedHomeScreenType == HomeScreenType.NEWS) {
+            newsViewModel.loadNews()
+        }
+    }
+
     val upcomingPayments = remember(plannedPayments) {
         val now = Calendar.getInstance()
         val twoWeeksFromNow = Calendar.getInstance().apply { add(Calendar.WEEK_OF_YEAR, 2) }

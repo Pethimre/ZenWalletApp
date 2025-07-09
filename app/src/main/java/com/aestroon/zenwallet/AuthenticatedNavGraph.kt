@@ -29,12 +29,14 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.aestroon.calendar.CalendarScreen
 import com.aestroon.common.domain.TransactionsViewModel
+import com.aestroon.common.domain.WalletsViewModel
 import com.aestroon.common.navigation.AnimatedNavigationBar
 import com.aestroon.common.navigation.ButtonData
 import com.aestroon.common.navigation.ScreenNavItems
 import com.aestroon.common.presentation.AddEditTransactionSheet
 import com.aestroon.common.presentation.screen.PlannedPaymentsScreen
 import com.aestroon.home.HomeMainScreen
+import com.aestroon.home.news.domain.HomeViewModel
 import com.aestroon.home.news.domain.NewsViewModel
 import com.aestroon.home.news.ui.NewsDetailErrorScreen
 import com.aestroon.home.news.ui.NewsDetailScreen
@@ -55,6 +57,8 @@ fun AuthenticatedNavGraph(onLogoutClicked: () -> Unit) {
     val newsViewModel: NewsViewModel = getViewModel()
     val profileViewModel: ProfileViewModel = getViewModel()
     val transactionsViewModel: TransactionsViewModel = getViewModel()
+    val walletsViewModel: WalletsViewModel = getViewModel()
+    val homeViewModel: HomeViewModel = getViewModel()
 
     var selectedIndex by remember { mutableStateOf(2) }
     var showAddTransactionSheet by remember { mutableStateOf(false) }
@@ -62,7 +66,6 @@ fun AuthenticatedNavGraph(onLogoutClicked: () -> Unit) {
     val wallets by transactionsViewModel.wallets.collectAsState()
     val categories by transactionsViewModel.categories.collectAsState()
 
-    // Manually define the buttons with their UI properties
     val buttons = remember(selectedIndex) {
         listOf(
             ButtonData("Wallets", Icons.Default.Wallet),
@@ -144,7 +147,11 @@ fun AuthenticatedNavGraph(onLogoutClicked: () -> Unit) {
                     selectedHomeScreenType = selectedTab,
                     onTabSelected = { selectedTab = it },
                     onArticleClick = { articleId -> navController.navigate("news_detail/$articleId") },
-                    navController = navController
+                    navController = navController,
+                    homeViewModel = homeViewModel,
+                    newsViewModel = newsViewModel,
+                    transactionsViewModel = transactionsViewModel,
+                    walletsViewModel = walletsViewModel
                 )
             }
             composable("news_detail/{articleId}") { backStackEntry ->
@@ -162,11 +169,8 @@ fun AuthenticatedNavGraph(onLogoutClicked: () -> Unit) {
             composable(ScreenNavItems.Categories.route) {
                 CategoriesScreen(onNavigateUp = { navController.popBackStack() })
             }
-            // Placeholder screens for dashboard shortcuts
             composable(ScreenNavItems.PlannedPayments.route) {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("Planned Payments Screen")
-                }
+                PlannedPaymentsScreen(navController = navController)
             }
             composable(ScreenNavItems.Loans.route) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
