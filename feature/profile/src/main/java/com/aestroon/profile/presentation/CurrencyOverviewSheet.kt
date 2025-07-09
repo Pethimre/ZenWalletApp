@@ -26,7 +26,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.aestroon.common.data.serializable.Currency
-import com.aestroon.profile.domain.ExchangeRateUiState
+import com.aestroon.common.domain.ExchangeRateUiState
 import java.text.DecimalFormat
 
 @OptIn(ExperimentalMaterial3Api::class)

@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
@@ -24,6 +25,7 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import java.util.Calendar
 import java.util.Date
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -69,6 +71,39 @@ class TransactionsViewModel(
     val categoriesMap: StateFlow<Map<String, CategoryEntity>> = categories.map { list ->
         list.associateBy { it.id }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
+
+    val monthlyProgress: StateFlow<Double> = combine(
+        transactions,
+        baseCurrency,
+        exchangeRates
+    ) { transactions, base, rates ->
+        if (rates == null) return@combine 0.0
+
+        val calendar = Calendar.getInstance()
+        val currentMonth = calendar.get(Calendar.MONTH)
+        val currentYear = calendar.get(Calendar.YEAR)
+
+        val monthlyTransactions = transactions.filter {
+            calendar.time = it.date
+            calendar.get(Calendar.MONTH) == currentMonth && calendar.get(Calendar.YEAR) == currentYear
+        }
+
+        monthlyTransactions.sumOf { transaction ->
+            val amount = when (transaction.transactionType) {
+                TransactionType.INCOME -> transaction.amount / 100.0
+                TransactionType.EXPENSE -> -transaction.amount / 100.0
+                TransactionType.TRANSFER -> 0.0
+            }
+
+            if (transaction.currency == base) {
+                amount
+            } else {
+                val rate = rates[transaction.currency] ?: 0.0
+                if (rate != 0.0) amount / rate else 0.0
+            }
+        }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0.0)
+
 
     fun syncTransactions() {
         viewModelScope.launch {

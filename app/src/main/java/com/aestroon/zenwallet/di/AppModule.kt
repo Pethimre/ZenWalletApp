@@ -21,9 +21,9 @@ import com.aestroon.common.data.repository.PlannedPaymentRepository
 import com.aestroon.common.data.repository.PlannedPaymentRepositoryImpl
 import com.aestroon.common.data.repository.TransactionRepository
 import com.aestroon.common.data.repository.TransactionRepositoryImpl
-import com.aestroon.profile.data.UserPreferencesRepository
-import com.aestroon.profile.data.UserPreferencesRepositoryImpl
-import com.aestroon.profile.domain.ProfileViewModel
+import com.aestroon.common.data.repository.UserPreferencesRepository
+import com.aestroon.common.data.repository.UserPreferencesRepositoryImpl
+import com.aestroon.common.domain.ProfileViewModel
 import com.aestroon.common.data.repository.WalletRepository
 import com.aestroon.common.data.repository.WalletRepositoryImpl
 import com.aestroon.common.domain.TransactionsViewModel

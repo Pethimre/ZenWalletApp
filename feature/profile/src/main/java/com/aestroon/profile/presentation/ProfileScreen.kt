@@ -47,10 +47,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
-import com.aestroon.profile.domain.CurrencyListUiState
-import com.aestroon.profile.domain.ExchangeRateUiState
-import com.aestroon.profile.domain.ProfileSettingsUiState
-import com.aestroon.profile.domain.ProfileViewModel
+import com.aestroon.common.domain.CurrencyListUiState
+import com.aestroon.common.domain.ExchangeRateUiState
+import com.aestroon.common.domain.ProfileSettingsUiState
+import com.aestroon.common.domain.ProfileViewModel
 
 @Composable
 fun ProfileScreen(
@@ -66,7 +66,7 @@ fun ProfileScreen(
 
     val displayName by viewModel.displayName.collectAsState()
     val phone by viewModel.phone.collectAsState()
-    val worthGoal by viewModel.worthGoal.collectAsState()
+    val worthGoalInput by viewModel.worthGoalInput.collectAsState()
     val baseCurrency by viewModel.baseCurrency.collectAsState()
 
     val snackbarHostState = remember { SnackbarHostState() }
@@ -108,7 +108,7 @@ fun ProfileScreen(
         containerColor = Color.Black
     ) { paddingValues ->
         Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
-            if (profileUiState is ProfileSettingsUiState.Loading && worthGoal.isBlank()) {
+            if (profileUiState is ProfileSettingsUiState.Loading && worthGoalInput.isBlank()) {
                 CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
             } else {
                 Column(
@@ -147,8 +147,8 @@ fun ProfileScreen(
                         enabled = false
                     )
                     SettingsTextField(
-                        value = worthGoal,
-                        onValueChange = { viewModel.worthGoal.value = it },
+                        value = worthGoalInput,
+                        onValueChange = { viewModel.worthGoalInput.value = it },
                         label = "Net Worth Goal",
                         keyboardType = KeyboardType.Number
                     )

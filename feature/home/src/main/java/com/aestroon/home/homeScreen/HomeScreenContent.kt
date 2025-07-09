@@ -69,6 +69,9 @@ import java.util.Locale
 
 fun LazyListScope.addHomeScreenContent(
     summary: WalletsSummary,
+    worthGoal: Long,
+    worthGoalCurrency: String,
+    monthlyProgress: Double,
     dailyTransactions: List<TransactionEntity>,
     upcomingTransactions: List<TransactionEntity>,
     overdueTransactions: List<TransactionEntity>,
@@ -84,11 +87,12 @@ fun LazyListScope.addHomeScreenContent(
 ) {
     item(key = "balance_overview_card") {
         BalanceOverviewCard(
-            totalBalance = TextFormatter.toPrettyAmountWithCurrency(summary.totalBalance / 100.0, baseCurrency, currencyPosition = TextFormatter.CurrencyPosition.AFTER),
-            amountUntilGoal = TextFormatter.toPrettyAmountWithCurrency(2080000.0, baseCurrency, currencyPosition = TextFormatter.CurrencyPosition.AFTER),
-            goalAmountValue = 7500000f,
-            goalProgress = 0.72f,
-            statusMessage = "This is a status message"
+            totalBalance = summary.totalBalance / 100.0,
+            worthGoal = worthGoal,
+            worthGoalCurrency = worthGoalCurrency,
+            monthlyProgress = monthlyProgress,
+            baseCurrency = baseCurrency,
+            exchangeRates = exchangeRates,
         )
     }
 

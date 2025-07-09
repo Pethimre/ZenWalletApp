@@ -23,6 +23,7 @@ import com.aestroon.common.data.entity.PlannedPaymentEntity
 import com.aestroon.common.data.entity.TransactionEntity
 import com.aestroon.common.data.entity.TransactionType
 import com.aestroon.common.domain.PlannedPaymentsViewModel
+import com.aestroon.common.domain.ProfileViewModel
 import com.aestroon.common.domain.TransactionsViewModel
 import com.aestroon.common.domain.WalletsViewModel
 import com.aestroon.home.dashboardScreen.addDashboardContent
@@ -45,7 +46,8 @@ fun HomeMainScreen(
     newsViewModel: NewsViewModel,
     transactionsViewModel: TransactionsViewModel,
     walletsViewModel: WalletsViewModel,
-    plannedPaymentsViewModel: PlannedPaymentsViewModel
+    plannedPaymentsViewModel: PlannedPaymentsViewModel,
+    profileViewModel: ProfileViewModel
 ) {
     val transactions by transactionsViewModel.transactions.collectAsState()
     val articles by newsViewModel.news.collectAsState()
@@ -57,6 +59,10 @@ fun HomeMainScreen(
 
     val baseCurrency by transactionsViewModel.baseCurrency.collectAsState()
     val exchangeRates by transactionsViewModel.exchangeRates.collectAsState()
+    val monthlyProgress by transactionsViewModel.monthlyProgress.collectAsState()
+
+    val worthGoal by profileViewModel.savedWorthGoal.collectAsState()
+    val worthGoalCurrency by profileViewModel.savedWorthGoalCurrency.collectAsState()
 
     val pullRefreshState = rememberPullRefreshState(isRefreshing, { homeViewModel.refreshAllData() })
 
@@ -65,7 +71,7 @@ fun HomeMainScreen(
     }
 
     LaunchedEffect(selectedHomeScreenType) {
-        if (selectedHomeScreenType == HomeScreenType.NEWS) {
+        if (selectedHomeScreenType == HomeScreenType.NEWS && articles.isEmpty()) {
             newsViewModel.loadNews()
         }
     }
@@ -108,6 +114,9 @@ fun HomeMainScreen(
                 HomeScreenType.OVERVIEW -> {
                     addHomeScreenContent(
                         summary = summary,
+                        worthGoal = worthGoal,
+                        worthGoalCurrency = worthGoalCurrency,
+                        monthlyProgress = monthlyProgress,
                         dailyTransactions = transactions,
                         upcomingTransactions = upcomingPayments.map { it.toTransactionEntity() },
                         overdueTransactions = overduePayments.map { it.toTransactionEntity() },

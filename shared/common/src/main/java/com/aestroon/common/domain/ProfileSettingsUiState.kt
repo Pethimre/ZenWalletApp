@@ -1,4 +1,4 @@
-package com.aestroon.profile.domain
+package com.aestroon.common.domain
 
 sealed interface ProfileSettingsUiState {
     object Idle : ProfileSettingsUiState

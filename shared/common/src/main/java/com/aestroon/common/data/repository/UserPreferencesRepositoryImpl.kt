@@ -1,4 +1,4 @@
-package com.aestroon.profile.data
+package com.aestroon.common.data.repository
 
 import android.content.Context
 import androidx.security.crypto.EncryptedSharedPreferences

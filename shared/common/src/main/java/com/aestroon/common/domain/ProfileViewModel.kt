@@ -1,4 +1,4 @@
-package com.aestroon.profile.domain
+package com.aestroon.common.domain
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -7,8 +7,9 @@ import com.aestroon.common.data.repository.CurrencyConversionRepository
 import com.aestroon.common.data.repository.UserRepository
 import com.aestroon.common.data.serializable.UserProfile
 import com.aestroon.common.data.repository.CurrencyRepository
-import com.aestroon.profile.data.UserPreferencesRepository
+import com.aestroon.common.data.repository.UserPreferencesRepository
 import com.aestroon.common.data.serializable.Currency
+import com.aestroon.common.utilities.DEFAULT_BASE_CURRENCY
 import io.github.jan.supabase.gotrue.user.UserInfo
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -18,7 +19,7 @@ class ProfileViewModel(
     private val userRepository: UserRepository,
     private val currencyRepository: CurrencyRepository,
     private val userPreferencesRepository: UserPreferencesRepository,
-    private val currencyConversionRepository: CurrencyConversionRepository,
+    private val currencyConversionRepository: CurrencyConversionRepository
 ) : ViewModel() {
 
     private val _profileSettingsUiState = MutableStateFlow<ProfileSettingsUiState>(ProfileSettingsUiState.Idle)
@@ -32,10 +33,19 @@ class ProfileViewModel(
 
     private val _currencySearchQuery = MutableStateFlow("")
     val currencySearchQuery: StateFlow<String> = _currencySearchQuery.asStateFlow()
+    val worthGoalInput = MutableStateFlow("")
+
+    private val _savedWorthGoal = MutableStateFlow(0L)
+    val savedWorthGoal: StateFlow<Long> = _savedWorthGoal.asStateFlow()
+
+    private val _savedWorthGoalCurrency = MutableStateFlow(DEFAULT_BASE_CURRENCY)
+    val savedWorthGoalCurrency: StateFlow<String> = _savedWorthGoalCurrency.asStateFlow()
+
+    val baseCurrency: StateFlow<String> = currencyConversionRepository.baseCurrency
+    val exchangeRates: StateFlow<Map<String, Double>?> = currencyConversionRepository.exchangeRates
 
     val isBiometricLockEnabled: StateFlow<Boolean> = userPreferencesRepository.isBiometricLockEnabled
 
-    val baseCurrency: StateFlow<String> = currencyConversionRepository.baseCurrency
     val displayName = MutableStateFlow("")
     val phone = MutableStateFlow("")
     val worthGoal = MutableStateFlow("")
@@ -65,6 +75,29 @@ class ProfileViewModel(
         viewModelScope.launch {
             currencyConversionRepository.loadInitialCurrency()
         }
+
+        viewModelScope.launch {
+            combine(
+                baseCurrency,
+                exchangeRates,
+                _savedWorthGoal,
+                _savedWorthGoalCurrency
+            ) { currentBase, rates, savedGoal, savedCurrency ->
+                val goalAsDouble = savedGoal.toDouble()
+                if (rates == null || savedCurrency == currentBase) {
+                    worthGoalInput.value = savedGoal.toString()
+                } else {
+                    val baseRate = rates[currentBase]
+                    val goalRate = rates[savedCurrency]
+                    if (baseRate != null && goalRate != null && goalRate != 0.0) {
+                        val convertedValue = goalAsDouble * (baseRate / goalRate)
+                        worthGoalInput.value = convertedValue.toLong().toString()
+                    } else {
+                        worthGoalInput.value = savedGoal.toString()
+                    }
+                }
+            }.collect()
+        }
     }
 
     private fun observeUserProfile() {
@@ -74,7 +107,8 @@ class ProfileViewModel(
                     displayName.value = userInfo.userMetadata?.get("display_name")?.toString()?.trim('"') ?: ""
                     phone.value = userInfo.userMetadata?.get("phone")?.toString()?.trim('"') ?: ""
                     userRepository.getUserProfile(userInfo.id).getOrNull()?.let { profile ->
-                        worthGoal.value = profile.worth_goal.toString()
+                        _savedWorthGoal.value = profile.worth_goal
+                        _savedWorthGoalCurrency.value = profile.worth_goal_currency
                         currencyConversionRepository.setBaseCurrency(profile.base_currency)
                     }
                 }
@@ -131,18 +165,23 @@ class ProfileViewModel(
 
             val authResult = authRepository.updateUser(displayName.value, phone.value)
 
-            val goalLong = worthGoal.value.trim().toLongOrNull() ?: 0L
+            val goalLong = worthGoalInput.value.trim().toLongOrNull() ?: 0L
+            val currentBaseCurrency = currencyConversionRepository.baseCurrency.value
+
             val profileToSave = UserProfile(
                 id = userId,
                 worth_goal = goalLong,
                 email = user.value?.email ?: "unknown_email_provided@error.com",
                 display_name = displayName.value,
-                base_currency = currencyConversionRepository.baseCurrency.value,
+                base_currency = currentBaseCurrency,
+                worth_goal_currency = currentBaseCurrency
             )
             val profileResult = userRepository.upsertUserProfile(profileToSave)
 
             if (authResult.isSuccess && profileResult.isSuccess) {
                 _profileSettingsUiState.value = ProfileSettingsUiState.Success("Profile updated successfully!")
+                _savedWorthGoal.value = goalLong
+                _savedWorthGoalCurrency.value = currentBaseCurrency
             } else {
                 _profileSettingsUiState.value = ProfileSettingsUiState.Error("Failed to update profile.")
             }

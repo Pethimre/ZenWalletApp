@@ -1,4 +1,4 @@
-package com.aestroon.profile.domain
+package com.aestroon.common.domain
 
 import com.aestroon.common.data.serializable.Currency
 

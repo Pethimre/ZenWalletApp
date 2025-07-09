@@ -43,7 +43,7 @@ import com.aestroon.home.news.ui.NewsDetailErrorScreen
 import com.aestroon.home.news.ui.NewsDetailScreen
 import com.aestroon.home.widgets.HomeScreenType
 import com.aestroon.portfolio.PortfolioOverviewScreen
-import com.aestroon.profile.domain.ProfileViewModel
+import com.aestroon.common.domain.ProfileViewModel
 import com.aestroon.profile.presentation.CurrencySelectionScreen
 import com.aestroon.profile.presentation.ProfileScreen
 import com.aestroon.wallets.presentation.CategoriesScreen
@@ -154,7 +154,8 @@ fun AuthenticatedNavGraph(onLogoutClicked: () -> Unit) {
                     newsViewModel = newsViewModel,
                     transactionsViewModel = transactionsViewModel,
                     walletsViewModel = walletsViewModel,
-                    plannedPaymentsViewModel = plannedPaymentsViewModel
+                    plannedPaymentsViewModel = plannedPaymentsViewModel,
+                    profileViewModel = profileViewModel,
                 )
             }
             composable("news_detail/{articleId}") { backStackEntry ->
