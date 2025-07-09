@@ -1,8 +1,5 @@
 package com.aestroon.common.presentation
 
-import android.app.DatePickerDialog
-import android.widget.DatePicker
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -29,15 +26,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.aestroon.common.data.entity.CategoryEntity
 import com.aestroon.common.data.entity.TransactionType
 import com.aestroon.common.data.entity.WalletEntity
 import java.text.SimpleDateFormat
-import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
@@ -48,9 +44,14 @@ fun AddEditTransactionSheet(
     categories: List<CategoryEntity>,
     onDismiss: () -> Unit,
     onConfirm: (
-        amount: Long, name: String, description: String?, date: Date,
-        fromWallet: WalletEntity, category: CategoryEntity?,
-        type: TransactionType, toWallet: WalletEntity?
+        amount: Long,
+        name: String,
+        description: String?,
+        date: Date,
+        fromWallet: WalletEntity,
+        category: CategoryEntity?,
+        type: TransactionType,
+        toWallet: WalletEntity?
     ) -> Unit
 ) {
     var selectedType by remember { mutableStateOf(TransactionType.EXPENSE) }
@@ -62,24 +63,25 @@ fun AddEditTransactionSheet(
     var toWallet by remember { mutableStateOf<WalletEntity?>(null) }
     var category by remember { mutableStateOf<CategoryEntity?>(null) }
 
-    var date by remember { mutableStateOf(Date()) }
-    val context = LocalContext.current
-    val calendar = Calendar.getInstance()
+    val dateFormat = remember { SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).apply { isLenient = false } }
+    var dateInput by remember { mutableStateOf(dateFormat.format(Date())) }
+    var isDateInvalid by remember { mutableStateOf(false) }
 
-    val datePickerDialog = DatePickerDialog(
-        context,
-        { _: DatePicker, year: Int, month: Int, dayOfMonth: Int ->
-            calendar.set(year, month, dayOfMonth)
-            date = calendar.time
-        },
-        calendar.get(Calendar.YEAR),
-        calendar.get(Calendar.MONTH),
-        calendar.get(Calendar.DAY_OF_MONTH)
-    )
+    val parsedDate = remember(dateInput) {
+        try {
+            isDateInvalid = false
+            dateFormat.parse(dateInput)
+        } catch (e: Exception) {
+            isDateInvalid = true
+            null
+        }
+    }
 
     ModalBottomSheet(onDismissRequest = onDismiss) {
         LazyColumn(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 16.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp, vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             item { Text("New Transaction", style = MaterialTheme.typography.headlineSmall) }
@@ -96,39 +98,64 @@ fun AddEditTransactionSheet(
             }
             item { OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Name") }, modifier = Modifier.fillMaxWidth()) }
             item { OutlinedTextField(value = description, onValueChange = { description = it }, label = { Text("Description (Optional)") }, modifier = Modifier.fillMaxWidth()) }
+
             item {
-                DropdownSelector(label = "From Wallet", items = wallets, selectedItem = fromWallet,
-                    onItemSelected = { fromWallet = it }, itemToString = { it.displayName })
+                OutlinedTextField(
+                    value = dateInput,
+                    onValueChange = { dateInput = it },
+                    label = { Text("Date") },
+                    placeholder = { Text("YYYY-MM-DD") },
+                    supportingText = { if (isDateInvalid) Text("Please use YYYY-MM-DD format") },
+                    isError = isDateInvalid,
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+
+            item {
+                DropdownSelector(
+                    label = "From Wallet",
+                    items = wallets,
+                    selectedItem = fromWallet,
+                    onItemSelected = { fromWallet = it },
+                    itemToString = { it.displayName }
+                )
             }
             if (selectedType == TransactionType.TRANSFER) {
                 item {
                     val availableToWallets = wallets.filter { it.id != fromWallet?.id }
-                    DropdownSelector(label = "To Wallet", items = availableToWallets, selectedItem = toWallet,
-                        onItemSelected = { toWallet = it }, itemToString = { it.displayName })
+                    DropdownSelector(
+                        label = "To Wallet",
+                        items = availableToWallets,
+                        selectedItem = toWallet,
+                        onItemSelected = { toWallet = it },
+                        itemToString = { it.displayName }
+                    )
                 }
             }
             if (selectedType != TransactionType.TRANSFER) {
                 item {
-                    DropdownSelector(label = "Category", items = categories, selectedItem = category,
-                        onItemSelected = { category = it }, itemToString = { it.name })
+                    DropdownSelector(
+                        label = "Category",
+                        items = categories,
+                        selectedItem = category,
+                        onItemSelected = { category = it },
+                        itemToString = { it.name }
+                    )
                 }
             }
             item {
-                OutlinedTextField(
-                    value = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(date),
-                    onValueChange = {}, label = { Text("Date") }, readOnly = true,
-                    modifier = Modifier.fillMaxWidth().clickable { datePickerDialog.show() }
-                )
-            }
-            item {
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
                     TextButton(onClick = onDismiss) { Text("Cancel") }
-                    Button(onClick = {
-                        val amountLong = (amountStr.replace(",", ".").toDoubleOrNull() ?: 0.0).times(100).toLong()
-                        if (amountLong > 0 && name.isNotBlank() && fromWallet != null) {
-                            onConfirm(amountLong, name, description.ifBlank { null }, date, fromWallet!!, category, selectedType, toWallet)
+                    Button(
+                        enabled = !isDateInvalid,
+                        onClick = {
+                            val amountLong = (amountStr.replace(",", ".").toDoubleOrNull() ?: 0.0).times(100).toLong()
+                            if (amountLong > 0 && name.isNotBlank() && fromWallet != null && parsedDate != null) {
+                                onConfirm(amountLong, name, description.ifBlank { null }, parsedDate, fromWallet!!, category, selectedType, toWallet)
+                            }
                         }
-                    }) { Text("Save") }
+                    ) { Text("Save") }
                 }
             }
             item { Spacer(modifier = Modifier.height(32.dp)) }
