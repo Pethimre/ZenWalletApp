@@ -29,6 +29,7 @@ import com.aestroon.common.data.repository.WalletRepository
 import com.aestroon.common.data.repository.WalletRepositoryImpl
 import com.aestroon.common.domain.TransactionsViewModel
 import com.aestroon.common.domain.CategoriesViewModel
+import com.aestroon.common.domain.DashboardViewModel
 import com.aestroon.common.domain.PlannedPaymentsViewModel
 import com.aestroon.common.domain.WalletsViewModel
 import com.aestroon.home.news.domain.HomeViewModel
@@ -100,6 +101,7 @@ val appModule = module {
     single { UserManager(get()) }
 
     // ViewModels
+    viewModel { DashboardViewModel(get(), get()) }
     viewModel { CalendarViewModel(get(), get(), get(), get(), get(), get()) }
     viewModel { PlannedPaymentsViewModel(get(), get(), get(), get(), get()) }
     viewModel { HomeViewModel(get(), get(), get(), get()) }

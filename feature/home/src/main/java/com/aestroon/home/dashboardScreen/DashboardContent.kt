@@ -18,6 +18,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.aestroon.common.data.DashboardStats
 import com.aestroon.common.navigation.ScreenNavItems
 import com.aestroon.common.theme.GreenChipColor
 import com.aestroon.common.utilities.TextFormatter
@@ -28,9 +29,17 @@ data class Shortcut(
     val route: String
 )
 
-fun LazyListScope.addDashboardContent(navController: NavController) {
+fun LazyListScope.addDashboardContent(
+    navController: NavController,
+    stats: DashboardStats,
+) {
     item(key = "dashboard_quick_stats") {
-        QuickStatsCard()
+        QuickStatsCard(
+            netWorth = stats.netWorth,
+            savingsRate = stats.savingsRate,
+            thisMonthCashFlow = stats.thisMonthCashFlow,
+            baseCurrency = stats.baseCurrency
+        )
     }
 
     item(key = "dashboard_shortcuts_title") {
@@ -49,13 +58,14 @@ fun LazyListScope.addDashboardContent(navController: NavController) {
         Shortcut("Goals", Icons.Default.TrackChanges, ScreenNavItems.SavingGoals.route)
     )
 
-    // Chunk the shortcuts into rows of 3 to create a grid effect
     val chunkedShortcuts = shortcuts.chunked(3)
 
     items(items = chunkedShortcuts, key = { row -> "shortcut_row_${row.first().title}" }) { row ->
         Row(
             horizontalArrangement = Arrangement.spacedBy(12.dp),
-            modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 12.dp)
         ) {
             row.forEach { shortcut ->
                 Box(modifier = Modifier.weight(1f)) {
@@ -66,7 +76,6 @@ fun LazyListScope.addDashboardContent(navController: NavController) {
                     )
                 }
             }
-            // Add spacers to fill the row and maintain alignment if it's not full
             repeat(3 - row.size) {
                 Spacer(modifier = Modifier.weight(1f))
             }

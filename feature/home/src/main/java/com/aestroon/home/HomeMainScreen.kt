@@ -19,6 +19,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.aestroon.common.data.DashboardStats
 import com.aestroon.common.data.entity.PlannedPaymentEntity
 import com.aestroon.common.data.entity.TransactionEntity
 import com.aestroon.common.data.entity.TransactionType
@@ -135,7 +136,23 @@ fun HomeMainScreen(
                         currentMonthExpense = currentMonthExpense,
                     )
                 }
-                HomeScreenType.DASHBOARD -> addDashboardContent(navController = navController)
+                HomeScreenType.DASHBOARD -> {
+                    val netWorth = summary.totalBalance / 100.0
+                    val cashFlow = currentMonthIncome - currentMonthExpense
+                    val savingsRate = if (currentMonthIncome > 0) (cashFlow / currentMonthIncome).toFloat() else 0f
+
+                    val stats = DashboardStats(
+                        netWorth = netWorth,
+                        savingsRate = savingsRate,
+                        thisMonthCashFlow = cashFlow,
+                        baseCurrency = baseCurrency
+                    )
+
+                    addDashboardContent(
+                        navController = navController,
+                        stats = stats
+                    )
+                }
                 HomeScreenType.NEWS -> addNewsScreenContent(
                     newsArticles = articles,
                     isLoading = isLoadingNews,
