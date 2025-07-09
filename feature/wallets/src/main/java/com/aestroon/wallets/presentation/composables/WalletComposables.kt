@@ -108,6 +108,8 @@ fun SpendingWalletCard(
     wallet: WalletEntity,
     isExpanded: Boolean,
     monthlySummary: WalletMonthlySummary?,
+    baseCurrency: String,
+    exchangeRates: Map<String, Double>?,
     onClick: () -> Unit,
     onEdit: () -> Unit,
     onDelete: () -> Unit,
@@ -117,6 +119,13 @@ fun SpendingWalletCard(
         targetValue = if (isExpanded) 180f else 0f,
         label = "expandIconRotation"
     )
+
+    val convertedBalance = remember(wallet, baseCurrency, exchangeRates) {
+        if (exchangeRates == null || wallet.currency == baseCurrency) return@remember null
+        val baseRate = exchangeRates[baseCurrency] ?: return@remember null
+        val walletRate = exchangeRates[wallet.currency] ?: return@remember null
+        (wallet.balance / 100.0) * (baseRate / walletRate)
+    }
 
     Card(
         modifier = modifier
@@ -142,17 +151,24 @@ fun SpendingWalletCard(
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                     )
                 }
-                Text(
-                    text = formatBalance(wallet.balance, wallet.currency),
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.ExtraBold
-                )
+                Column(horizontalAlignment = Alignment.End) {
+                    Text(
+                        text = formatBalance(wallet.balance, wallet.currency),
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.ExtraBold
+                    )
+                    convertedBalance?.let {
+                        Text(
+                            text = "≈ ${TextFormatter.toPrettyAmountWithCurrency(it, baseCurrency)}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                        )
+                    }
+                }
                 Icon(
                     imageVector = Icons.Default.ExpandMore,
                     contentDescription = if (isExpanded) "Collapse" else "Expand",
-                    modifier = Modifier
-                        .padding(start = 8.dp)
-                        .rotate(rotationAngle)
+                    modifier = Modifier.padding(start = 8.dp).rotate(rotationAngle)
                 )
             }
 
@@ -172,7 +188,7 @@ fun SpendingWalletCard(
                                 TextFormatter.toPrettyAmountWithCurrency(monthlySummary?.income ?: 0.0, wallet.currency),
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
-                                color = GreenChipColor,
+                                color = GreenChipColor
                             )
                         }
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -181,16 +197,14 @@ fun SpendingWalletCard(
                                 TextFormatter.toPrettyAmountWithCurrency(monthlySummary?.expense ?: 0.0, wallet.currency),
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
-                                color = RedChipColor,
+                                color = RedChipColor
                             )
                         }
                     }
 
                     Spacer(modifier = Modifier.height(12.dp))
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 8.dp),
+                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                         horizontalArrangement = Arrangement.End
                     ) {
                         IconButton(onClick = onEdit) { Icon(Icons.Default.Edit, "Edit") }

@@ -19,8 +19,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import com.aestroon.common.components.mockProvider.sampleOverdueTransactions
-import com.aestroon.common.components.mockProvider.sampleUpcomingTransactions
 import com.aestroon.common.data.entity.PlannedPaymentEntity
 import com.aestroon.common.data.entity.TransactionEntity
 import com.aestroon.common.data.entity.TransactionType
@@ -34,7 +32,6 @@ import com.aestroon.home.news.domain.NewsViewModel
 import com.aestroon.home.news.ui.addNewsScreenContent
 import com.aestroon.home.widgets.HomeScreenType
 import com.aestroon.home.widgets.SegmentedControlHomeTabs
-import org.koin.androidx.compose.getViewModel
 import java.util.Calendar
 
 @OptIn(ExperimentalMaterialApi::class)
@@ -44,11 +41,11 @@ fun HomeMainScreen(
     onTabSelected: (HomeScreenType) -> Unit,
     onArticleClick: (String) -> Unit,
     navController: NavController,
-    homeViewModel: HomeViewModel = getViewModel(),
-    newsViewModel: NewsViewModel = getViewModel(),
-    transactionsViewModel: TransactionsViewModel = getViewModel(),
-    walletsViewModel: WalletsViewModel = getViewModel(),
-    plannedPaymentsViewModel: PlannedPaymentsViewModel = getViewModel()
+    homeViewModel: HomeViewModel,
+    newsViewModel: NewsViewModel,
+    transactionsViewModel: TransactionsViewModel,
+    walletsViewModel: WalletsViewModel,
+    plannedPaymentsViewModel: PlannedPaymentsViewModel
 ) {
     val transactions by transactionsViewModel.transactions.collectAsState()
     val articles by newsViewModel.news.collectAsState()
@@ -57,6 +54,9 @@ fun HomeMainScreen(
     val categoriesMap by transactionsViewModel.categoriesMap.collectAsState()
     val isRefreshing by homeViewModel.isRefreshing.collectAsState()
     val plannedPayments by plannedPaymentsViewModel.plannedPayments.collectAsState()
+
+    val baseCurrency by transactionsViewModel.baseCurrency.collectAsState()
+    val exchangeRates by transactionsViewModel.exchangeRates.collectAsState()
 
     val pullRefreshState = rememberPullRefreshState(isRefreshing, { homeViewModel.refreshAllData() })
 
@@ -88,7 +88,6 @@ fun HomeMainScreen(
         }
     }
 
-
     Box(Modifier.fillMaxSize()) {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
@@ -113,6 +112,8 @@ fun HomeMainScreen(
                         upcomingTransactions = upcomingPayments.map { it.toTransactionEntity() },
                         overdueTransactions = overduePayments.map { it.toTransactionEntity() },
                         categoriesMap = categoriesMap,
+                        baseCurrency = baseCurrency,
+                        exchangeRates = exchangeRates,
                         onEdit = {},
                         onDelete = { transactionsViewModel.deleteTransaction(it) },
                         onPayPlanned = { plannedPaymentsViewModel.pay(it) },

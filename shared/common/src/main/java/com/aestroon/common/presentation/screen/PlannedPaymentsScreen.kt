@@ -74,6 +74,9 @@ fun PlannedPaymentsScreen(
     val wallets by viewModel.wallets.collectAsState()
     val categories by viewModel.categories.collectAsState()
 
+    val baseCurrency by viewModel.baseCurrency.collectAsState()
+    val exchangeRates by viewModel.exchangeRates.collectAsState()
+
     var showAddEditSheet by remember { mutableStateOf(false) }
     var paymentToEdit by remember { mutableStateOf<PlannedPaymentEntity?>(null) }
 
@@ -114,6 +117,8 @@ fun PlannedPaymentsScreen(
                 items(payments, key = { it.id }) { payment ->
                     PlannedPaymentCard(
                         payment = payment,
+                        baseCurrency = baseCurrency,
+                        exchangeRates = exchangeRates,
                         onPay = { viewModel.pay(payment) },
                         onSkip = { viewModel.skip(payment) },
                         onEdit = {
@@ -146,6 +151,8 @@ fun PlannedPaymentsScreen(
 @Composable
 fun PlannedPaymentCard(
     payment: PlannedPaymentEntity,
+    baseCurrency: String,
+    exchangeRates: Map<String, Double>?,
     onPay: () -> Unit,
     onSkip: () -> Unit,
     onEdit: () -> Unit,
@@ -153,6 +160,13 @@ fun PlannedPaymentCard(
 ) {
     var isExpanded by remember { mutableStateOf(false) }
     val simpleDateFormat = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
+
+    val convertedAmount = remember(payment, baseCurrency, exchangeRates) {
+        if (exchangeRates == null || payment.currency == baseCurrency) return@remember null
+        val baseRate = exchangeRates[baseCurrency] ?: return@remember null
+        val paymentRate = exchangeRates[payment.currency] ?: return@remember null
+        (payment.amount / 100.0) * (baseRate / paymentRate)
+    }
 
     Card(
         modifier = Modifier
@@ -172,12 +186,21 @@ fun PlannedPaymentCard(
                         Text(it, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
-                Text(
-                    text = "${TextFormatter.toBasicFormat(payment.amount / 100.0)} ${payment.currency}",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary
-                )
+                Column(horizontalAlignment = Alignment.End) {
+                    Text(
+                        text = "${TextFormatter.toBasicFormat(payment.amount / 100.0)} ${payment.currency}",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    convertedAmount?.let {
+                        Text(
+                            text = "≈ ${TextFormatter.toPrettyAmountWithCurrency(it, baseCurrency)}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                        )
+                    }
+                }
             }
             Spacer(Modifier.height(8.dp))
             Text("Due: ${simpleDateFormat.format(payment.dueDate)}", style = MaterialTheme.typography.bodyMedium)

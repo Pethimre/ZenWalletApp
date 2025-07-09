@@ -8,6 +8,7 @@ import com.aestroon.common.data.entity.TransactionType
 import com.aestroon.common.data.entity.WalletEntity
 import com.aestroon.common.data.repository.AuthRepository
 import com.aestroon.common.data.repository.CategoryRepository
+import com.aestroon.common.data.repository.CurrencyConversionRepository
 import com.aestroon.common.data.repository.TransactionRepository
 import com.aestroon.common.data.repository.WalletRepository
 import com.aestroon.common.presentation.TransactionUiState
@@ -30,11 +31,15 @@ class TransactionsViewModel(
     private val transactionRepository: TransactionRepository,
     private val walletRepository: WalletRepository,
     private val categoryRepository: CategoryRepository,
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository,
+    val currencyConversionRepository: CurrencyConversionRepository,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<TransactionUiState>(TransactionUiState.Idle)
     val uiState: StateFlow<TransactionUiState> = _uiState.asStateFlow()
+
+    val baseCurrency: StateFlow<String> = currencyConversionRepository.baseCurrency
+    val exchangeRates: StateFlow<Map<String, Double>?> = currencyConversionRepository.exchangeRates
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val transactions: StateFlow<List<TransactionEntity>> = authRepository.userIdFlow

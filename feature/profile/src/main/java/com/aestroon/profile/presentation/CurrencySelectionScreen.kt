@@ -12,8 +12,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.aestroon.common.data.serializable.Currency
+import com.aestroon.profile.domain.CurrencyListUiState
 import com.aestroon.profile.domain.ProfileViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -22,9 +24,14 @@ fun CurrencySelectionScreen(
     viewModel: ProfileViewModel,
     onNavigateUp: () -> Unit,
 ) {
-    val currencies by viewModel.filteredCurrencies.collectAsState()
+    val uiState by viewModel.currencyListUiState.collectAsState()
+    val filteredCurrencies by viewModel.filteredCurrencies.collectAsState()
     val searchQuery by viewModel.currencySearchQuery.collectAsState()
     val selectedCurrency by viewModel.baseCurrency.collectAsState()
+
+    LaunchedEffect(Unit) {
+        viewModel.loadAllCurrencies()
+    }
 
     Scaffold(
         topBar = {
@@ -44,19 +51,54 @@ fun CurrencySelectionScreen(
                 value = searchQuery,
                 onValueChange = { viewModel.onCurrencySearchQueryChanged(it) },
                 label = { Text("Search by name or code") },
-                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
                 singleLine = true
             )
-            LazyColumn(modifier = Modifier.fillMaxSize()) {
-                items(currencies) { currency ->
-                    CurrencyItem(
-                        currency = currency,
-                        isSelected = currency.code == selectedCurrency,
-                        onSelect = {
-                            viewModel.onBaseCurrencySelected(currency.code)
-                            onNavigateUp()
+
+            when (uiState) {
+                is CurrencyListUiState.Loading -> {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator()
+                    }
+                }
+                is CurrencyListUiState.Error -> {
+                    Column(
+                        modifier = Modifier.fillMaxSize().padding(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Text(
+                            text = (uiState as CurrencyListUiState.Error).message,
+                            color = Color.White,
+                            textAlign = TextAlign.Center
+                        )
+                        Spacer(Modifier.height(16.dp))
+                        Button(onClick = { viewModel.loadAllCurrencies() }) {
+                            Text("Try Again")
                         }
-                    )
+                    }
+                }
+                is CurrencyListUiState.Success -> {
+                    if (filteredCurrencies.isEmpty() && searchQuery.isNotEmpty()) {
+                        Box(modifier = Modifier.fillMaxSize().padding(16.dp), contentAlignment = Alignment.Center) {
+                            Text("No currencies found for \"$searchQuery\"", color = Color.Gray)
+                        }
+                    } else {
+                        LazyColumn(modifier = Modifier.fillMaxSize()) {
+                            items(filteredCurrencies) { currency ->
+                                CurrencyItem(
+                                    currency = currency,
+                                    isSelected = currency.code == selectedCurrency,
+                                    onSelect = {
+                                        viewModel.onBaseCurrencySelected(currency.code)
+                                        onNavigateUp()
+                                    }
+                                )
+                            }
+                        }
+                    }
                 }
             }
         }

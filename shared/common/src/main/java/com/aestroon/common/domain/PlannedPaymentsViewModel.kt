@@ -8,6 +8,7 @@ import com.aestroon.common.data.entity.RecurrenceType
 import com.aestroon.common.data.entity.WalletEntity
 import com.aestroon.common.data.repository.AuthRepository
 import com.aestroon.common.data.repository.CategoryRepository
+import com.aestroon.common.data.repository.CurrencyConversionRepository
 import com.aestroon.common.data.repository.PlannedPaymentRepository
 import com.aestroon.common.data.repository.WalletRepository
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -20,7 +21,11 @@ class PlannedPaymentsViewModel(
     private val authRepository: AuthRepository,
     private val walletRepository: WalletRepository,
     private val categoryRepository: CategoryRepository,
+    private val currencyConversionRepository: CurrencyConversionRepository,
 ) : ViewModel() {
+
+    val baseCurrency: StateFlow<String> = currencyConversionRepository.baseCurrency
+    val exchangeRates: StateFlow<Map<String, Double>?> = currencyConversionRepository.exchangeRates
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val plannedPayments: StateFlow<List<PlannedPaymentEntity>> = authRepository.userIdFlow

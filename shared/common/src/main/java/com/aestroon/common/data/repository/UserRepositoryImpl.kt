@@ -1,7 +1,7 @@
-package com.aestroon.authentication.data
+package com.aestroon.common.data.repository
 
-import com.aestroon.authentication.data.model.UserProfile
 import com.aestroon.common.data.USERS_TABLE_NAME
+import com.aestroon.common.data.serializable.UserProfile
 import io.github.jan.supabase.postgrest.Postgrest
 
 interface UserRepository {

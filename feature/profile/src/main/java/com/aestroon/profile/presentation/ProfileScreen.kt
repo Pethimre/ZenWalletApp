@@ -15,7 +15,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -40,7 +39,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -49,6 +47,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import com.aestroon.profile.domain.CurrencyListUiState
+import com.aestroon.profile.domain.ExchangeRateUiState
 import com.aestroon.profile.domain.ProfileSettingsUiState
 import com.aestroon.profile.domain.ProfileViewModel
 
@@ -58,7 +58,9 @@ fun ProfileScreen(
     onLogoutClicked: () -> Unit,
     onNavigateToCurrencySelection: () -> Unit,
 ) {
-    val uiState by viewModel.profileSettingsUiState.collectAsState()
+    val profileUiState by viewModel.profileSettingsUiState.collectAsState()
+    val exchangeRateUiState by viewModel.exchangeRateUiState.collectAsState()
+    val currencyListState by viewModel.currencyListUiState.collectAsState()
     val user by viewModel.user.collectAsState()
     val isBiometricEnabled by viewModel.isBiometricLockEnabled.collectAsState()
 
@@ -66,13 +68,22 @@ fun ProfileScreen(
     val phone by viewModel.phone.collectAsState()
     val worthGoal by viewModel.worthGoal.collectAsState()
     val baseCurrency by viewModel.baseCurrency.collectAsState()
-    var showCurrencyOverview by rememberSaveable { mutableStateOf(false) }
 
     val snackbarHostState = remember { SnackbarHostState() }
     var showPasswordDialog by remember { mutableStateOf(false) }
 
-    LaunchedEffect(uiState) {
-        val currentState = uiState
+    val allCurrencies = (currencyListState as? CurrencyListUiState.Success)?.currencies ?: emptyList()
+
+    if (exchangeRateUiState !is ExchangeRateUiState.Idle) {
+        CurrencyOverviewSheet(
+            uiState = exchangeRateUiState,
+            allCurrencies = allCurrencies,
+            onDismiss = { viewModel.dismissExchangeRateSheet() }
+        )
+    }
+
+    LaunchedEffect(profileUiState) {
+        val currentState = profileUiState
         if (currentState is ProfileSettingsUiState.Success) {
             snackbarHostState.showSnackbar(currentState.message)
             viewModel.resetUiState()
@@ -80,13 +91,6 @@ fun ProfileScreen(
             snackbarHostState.showSnackbar(currentState.message, withDismissAction = true, duration = SnackbarDuration.Long)
             viewModel.resetUiState()
         }
-    }
-
-    if (showCurrencyOverview) {
-        CurrencyOverviewSheet(
-            viewModel = viewModel,
-            onDismiss = { showCurrencyOverview = false }
-        )
     }
 
     if (showPasswordDialog) {
@@ -104,7 +108,7 @@ fun ProfileScreen(
         containerColor = Color.Black
     ) { paddingValues ->
         Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
-            if (uiState is ProfileSettingsUiState.Loading && worthGoal.isBlank()) {
+            if (profileUiState is ProfileSettingsUiState.Loading && worthGoal.isBlank()) {
                 CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
             } else {
                 Column(
@@ -157,15 +161,14 @@ fun ProfileScreen(
                             .padding(vertical = 8.dp)
                             .clickable(
                                 interactionSource = remember { MutableInteractionSource() },
-                                indication = null, // No ripple effect
+                                indication = null,
                                 onClick = onNavigateToCurrencySelection
                             ),
                         readOnly = true,
-                        enabled = false, // To make it non-focusable but clickable
+                        enabled = false,
                         trailingIcon = {
                             IconButton(onClick = {
                                 viewModel.fetchExchangeRates()
-                                showCurrencyOverview = true
                             }) {
                                 Icon(Icons.Default.Info, "Currency rates overview")
                             }
@@ -189,20 +192,20 @@ fun ProfileScreen(
                         Switch(
                             checked = isBiometricEnabled,
                             onCheckedChange = { viewModel.setBiometricLockEnabled(it) },
-                            enabled = uiState !is ProfileSettingsUiState.Loading,
+                            enabled = profileUiState !is ProfileSettingsUiState.Loading,
                         )
                     }
 
                     Spacer(Modifier.height(24.dp))
 
-                    if (uiState is ProfileSettingsUiState.Loading) {
+                    if (profileUiState is ProfileSettingsUiState.Loading) {
                         CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally).padding(16.dp))
                     }
                     Button(
                         onClick = { viewModel.updateProfile() },
                         modifier = Modifier.fillMaxWidth().height(50.dp),
                         shape = MaterialTheme.shapes.medium,
-                        enabled = uiState !is ProfileSettingsUiState.Loading
+                        enabled = profileUiState !is ProfileSettingsUiState.Loading
                     ) {
                         Text("Save Changes")
                     }

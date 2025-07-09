@@ -61,7 +61,10 @@ fun WalletsScreen(
     val hasPendingSyncs: Boolean by viewModel.hasPendingSyncs.collectAsState()
     val networkStatus: ConnectivityObserver.Status by viewModel.networkStatus.collectAsState()
     val summary: WalletsSummary by viewModel.summary.collectAsState()
+
     val baseCurrency: String by viewModel.baseCurrency.collectAsState()
+    val exchangeRates: Map<String, Double>? by viewModel.exchangeRates.collectAsState()
+
     val monthlySummary by viewModel.monthlySummary.collectAsState()
 
     var showAddEditDialog by remember { mutableStateOf(false) }
@@ -90,11 +93,9 @@ fun WalletsScreen(
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-        ) {
+        Column(modifier = Modifier
+            .fillMaxSize()
+            .padding(paddingValues)) {
             OfflineWarningBanner(isVisible = hasPendingSyncs && networkStatus == ConnectivityObserver.Status.Unavailable)
 
             if (uiState is WalletsUiState.Loading && wallets.isEmpty()) {
@@ -102,19 +103,11 @@ fun WalletsScreen(
                     CircularProgressIndicator()
                 }
             } else {
-                HorizontalPager(
-                    state = pagerState,
-                    modifier = Modifier.fillMaxSize()
-                ) { pageIndex ->
+                HorizontalPager(state = pagerState, modifier = Modifier.fillMaxSize()) { pageIndex ->
                     val page = if (showOverview) pageIndex else 0
                     if (page == 0 && showOverview) {
                         LazyColumn(contentPadding = PaddingValues(16.dp)) {
-                            item {
-                                OverallSummaryCard(
-                                    summary = summary,
-                                    baseCurrency = baseCurrency
-                                )
-                            }
+                            item { OverallSummaryCard(summary = summary, baseCurrency = baseCurrency) }
                         }
                     } else {
                         LazyColumn(
@@ -128,10 +121,7 @@ fun WalletsScreen(
                                     horizontalArrangement = Arrangement.SpaceBetween,
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Text(
-                                        "Your Wallets",
-                                        style = MaterialTheme.typography.headlineSmall
-                                    )
+                                    Text("Your Wallets", style = MaterialTheme.typography.headlineSmall)
                                     TextButton(onClick = {
                                         walletToEdit = null
                                         showAddEditDialog = true
@@ -150,8 +140,7 @@ fun WalletsScreen(
                             }
                             if (wallets.isEmpty()) {
                                 item {
-                                    Text(
-                                        "No wallets yet. Tap 'Add Wallet' to create one!",
+                                    Text("No wallets yet. Tap 'Add Wallet' to create one!",
                                         modifier = Modifier
                                             .fillMaxWidth()
                                             .padding(top = 32.dp),
@@ -164,9 +153,10 @@ fun WalletsScreen(
                                         wallet = wallet,
                                         isExpanded = wallet.id == expandedWalletId,
                                         monthlySummary = if (wallet.id == expandedWalletId) monthlySummary else null,
+                                        baseCurrency = baseCurrency,
+                                        exchangeRates = exchangeRates,
                                         onClick = {
-                                            expandedWalletId =
-                                                if (expandedWalletId == wallet.id) null else wallet.id
+                                            expandedWalletId = if (expandedWalletId == wallet.id) null else wallet.id
                                         },
                                         onEdit = {
                                             walletToEdit = wallet
@@ -189,16 +179,7 @@ fun WalletsScreen(
             allCurrencies = allCurrencies,
             onDismiss = { showAddEditDialog = false },
             onConfirm = { name, balanceStr, goalAmountStr, color, currency, iconName, included ->
-                viewModel.addOrUpdateWallet(
-                    walletToEdit,
-                    name,
-                    balanceStr,
-                    goalAmountStr,
-                    color,
-                    currency,
-                    iconName,
-                    included
-                )
+                viewModel.addOrUpdateWallet(walletToEdit, name, balanceStr, goalAmountStr, color, currency, iconName, included)
                 showAddEditDialog = false
             }
         )
@@ -237,7 +218,10 @@ fun SpendingWalletCardPreview() {
         onDelete = {},
         isExpanded = true,
         monthlySummary = WalletMonthlySummary(1500.0, 800.0),
-        onClick = {})
+        onClick = {},
+        baseCurrency = "HUF",
+        exchangeRates = mapOf("EUR" to 400.0)
+    )
 }
 
 @Preview(showBackground = true)

@@ -18,9 +18,7 @@ import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowOutward
-import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.CompareArrows
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
@@ -68,7 +66,6 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
-import kotlin.collections.find
 
 fun LazyListScope.addHomeScreenContent(
     summary: WalletsSummary,
@@ -76,6 +73,8 @@ fun LazyListScope.addHomeScreenContent(
     upcomingTransactions: List<TransactionEntity>,
     overdueTransactions: List<TransactionEntity>,
     categoriesMap: Map<String, CategoryEntity>,
+    baseCurrency: String,
+    exchangeRates: Map<String, Double>?,
     onEdit: (TransactionEntity) -> Unit,
     onDelete: (TransactionEntity) -> Unit,
     onPayPlanned: (PlannedPaymentEntity) -> Unit,
@@ -85,8 +84,8 @@ fun LazyListScope.addHomeScreenContent(
 ) {
     item(key = "balance_overview_card") {
         BalanceOverviewCard(
-            totalBalance = TextFormatter.toPrettyAmountWithCurrency(summary.totalBalance / 100.0, "HUF", currencyPosition = TextFormatter.CurrencyPosition.AFTER),
-            amountUntilGoal = TextFormatter.toPrettyAmountWithCurrency(2080000.0, "HUF", currencyPosition = TextFormatter.CurrencyPosition.AFTER),
+            totalBalance = TextFormatter.toPrettyAmountWithCurrency(summary.totalBalance / 100.0, baseCurrency, currencyPosition = TextFormatter.CurrencyPosition.AFTER),
+            amountUntilGoal = TextFormatter.toPrettyAmountWithCurrency(2080000.0, baseCurrency, currencyPosition = TextFormatter.CurrencyPosition.AFTER),
             goalAmountValue = 7500000f,
             goalProgress = 0.72f,
             statusMessage = "This is a status message"
@@ -95,8 +94,8 @@ fun LazyListScope.addHomeScreenContent(
 
     item(key = "savings_summary_card") {
         SavingsSummaryCard(
-            income = TextFormatter.toPrettyAmountWithCurrency(12300.42, "HUF", currencyPosition = TextFormatter.CurrencyPosition.AFTER),
-            expense = TextFormatter.toPrettyAmountWithCurrency(845.72, "HUF", currencyPosition = TextFormatter.CurrencyPosition.AFTER),
+            income = TextFormatter.toPrettyAmountWithCurrency(12300.42, baseCurrency, currencyPosition = TextFormatter.CurrencyPosition.AFTER),
+            expense = TextFormatter.toPrettyAmountWithCurrency(845.72, baseCurrency, currencyPosition = TextFormatter.CurrencyPosition.AFTER),
             savingsGoalPercentage = 0.75f
         )
     }
@@ -110,6 +109,8 @@ fun LazyListScope.addHomeScreenContent(
                 isInitiallyExpanded = false,
                 categoriesMap = categoriesMap,
                 isPlanned = true,
+                baseCurrency = baseCurrency,
+                exchangeRates = exchangeRates,
                 onEdit = onEdit,
                 onDelete = onDelete,
                 onPay = { transaction -> allUpcoming.find { it.id == transaction.id }?.let(onPayPlanned) },
@@ -127,6 +128,8 @@ fun LazyListScope.addHomeScreenContent(
                 isInitiallyExpanded = false,
                 categoriesMap = categoriesMap,
                 isPlanned = true,
+                baseCurrency = baseCurrency,
+                exchangeRates = exchangeRates,
                 onEdit = onEdit,
                 onDelete = onDelete,
                 onPay = { transaction -> allOverdue.find { it.id == transaction.id }?.let(onPayPlanned) },
@@ -162,7 +165,12 @@ fun LazyListScope.addHomeScreenContent(
     groupedDailyTransactions.forEach { (dateMillis, transactionsOnDay) ->
         val date = Date(dateMillis)
         item(key = "daily_header_$dateMillis") {
-            DayTransactionHeader(date = date, transactionsOnDay = transactionsOnDay)
+            DayTransactionHeader(
+                date = date,
+                transactionsOnDay = transactionsOnDay,
+                baseCurrency = baseCurrency,
+                exchangeRates = exchangeRates
+            )
         }
 
         items(transactionsOnDay, key = { "daily_tx_${it.id}" }) { transaction ->
@@ -170,6 +178,8 @@ fun LazyListScope.addHomeScreenContent(
                 transaction = transaction,
                 category = transaction.categoryId?.let { categoriesMap[it] },
                 isPlanned = false,
+                baseCurrency = baseCurrency,
+                exchangeRates = exchangeRates,
                 onEditClick = { onEdit(transaction) },
                 onDeleteClick = { onDelete(transaction) },
                 onPayClick = {},
@@ -188,6 +198,8 @@ fun CollapsibleSectionCard(
     isInitiallyExpanded: Boolean,
     categoriesMap: Map<String, CategoryEntity>,
     isPlanned: Boolean,
+    baseCurrency: String,
+    exchangeRates: Map<String, Double>?,
     onEdit: (TransactionEntity) -> Unit,
     onDelete: (TransactionEntity) -> Unit,
     onPay: (TransactionEntity) -> Unit,
@@ -267,6 +279,8 @@ fun CollapsibleSectionCard(
                             transaction = transaction,
                             category = transaction.categoryId?.let { categoriesMap[it] },
                             isPlanned = isPlanned,
+                            baseCurrency = baseCurrency,
+                            exchangeRates = exchangeRates,
                             onEditClick = { onEdit(transaction) },
                             onDeleteClick = { onDelete(transaction) },
                             onPayClick = { onPay(transaction) },
@@ -286,6 +300,8 @@ fun TransactionCard(
     transaction: TransactionEntity,
     category: CategoryEntity?,
     isPlanned: Boolean,
+    baseCurrency: String,
+    exchangeRates: Map<String, Double>?,
     onEditClick: () -> Unit,
     onDeleteClick: () -> Unit,
     onPayClick: () -> Unit,
@@ -300,10 +316,15 @@ fun TransactionCard(
     }
     val simpleDateFormat = remember { SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()) }
 
+    val convertedAmount = remember(transaction, baseCurrency, exchangeRates) {
+        if (exchangeRates == null || transaction.currency == baseCurrency) return@remember null
+        val baseRate = exchangeRates[baseCurrency] ?: return@remember null
+        val walletRate = exchangeRates[transaction.currency] ?: return@remember null
+        (transaction.amount / 100.0) * (baseRate / walletRate)
+    }
+
     Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .clickable { isExpanded = !isExpanded },
+        modifier = modifier.fillMaxWidth().clickable { isExpanded = !isExpanded },
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
     ) {
@@ -320,7 +341,6 @@ fun TransactionCard(
                 Text(it, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
 
-            // Display the due date for planned items
             if (isPlanned) {
                 Spacer(Modifier.height(8.dp))
                 Text(
@@ -342,12 +362,24 @@ fun TransactionCard(
                     TransactionType.EXPENSE -> Icon(Icons.Default.ArrowOutward, contentDescription = "expense", Modifier.padding(end = 4.dp))
                     TransactionType.TRANSFER -> Icon(Icons.Default.CompareArrows, contentDescription = "transfer", Modifier.padding(end = 4.dp), tint = MaterialTheme.colorScheme.primary)
                 }
-                Text(
-                    text = "${TextFormatter.toBasicFormat(transaction.amount / 100.0)} ${transaction.currency}",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = amountColor
-                )
+                Column(
+                    modifier = Modifier.weight(1f),
+                    horizontalAlignment = Alignment.End
+                ) {
+                    Text(
+                        text = "${TextFormatter.toBasicFormat(transaction.amount / 100.0)} ${transaction.currency}",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = amountColor
+                    )
+                    convertedAmount?.let {
+                        Text(
+                            text = "≈ ${TextFormatter.toPrettyAmount(it)} $baseCurrency",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                        )
+                    }
+                }
             }
 
             AnimatedVisibility(visible = isExpanded) {
@@ -412,25 +444,41 @@ fun CategoryChip(category: CategoryEntity) {
 private fun DayTransactionHeader(
     date: Date,
     transactionsOnDay: List<TransactionEntity>,
+    baseCurrency: String,
+    exchangeRates: Map<String, Double>?,
     locale: Locale = Locale.getDefault()
 ) {
-    val dailyNet = transactionsOnDay.sumOf {
-        when (it.transactionType) {
-            TransactionType.INCOME -> it.amount
-            TransactionType.EXPENSE -> -it.amount
-            TransactionType.TRANSFER -> 0
+    val dailyNetInBaseCurrency = remember(transactionsOnDay, baseCurrency, exchangeRates) {
+        if (exchangeRates == null) return@remember 0.0
+
+        transactionsOnDay.sumOf { transaction ->
+            val amount = when (transaction.transactionType) {
+                TransactionType.INCOME -> transaction.amount / 100.0
+                TransactionType.EXPENSE -> -transaction.amount / 100.0
+                TransactionType.TRANSFER -> 0.0
+            }
+
+            if (transaction.currency == baseCurrency) {
+                amount
+            } else {
+                val rate = exchangeRates[transaction.currency] ?: 0.0
+                if (rate != 0.0) amount / rate else 0.0
+            }
         }
     }
+
     val currencyFormatter = remember { DecimalFormat("#,##0.00") }
     val netAmountColor = when {
-        dailyNet > 0 -> GreenChipColor
-        dailyNet < 0 -> RedChipColor
+        dailyNetInBaseCurrency > 0 -> GreenChipColor
+        dailyNetInBaseCurrency < 0 -> RedChipColor
         else -> MaterialTheme.colorScheme.onSurfaceVariant
     }
 
     Column {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp, horizontal = 4.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 8.dp, horizontal = 4.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -442,7 +490,7 @@ private fun DayTransactionHeader(
             )
             if (transactionsOnDay.isNotEmpty()) {
                 Text(
-                    text = "${if (dailyNet >= 0) "+" else ""}${currencyFormatter.format(dailyNet / 100.0)} ${transactionsOnDay.first().currency}",
+                    text = "${if (dailyNetInBaseCurrency >= 0) "+" else ""}${currencyFormatter.format(dailyNetInBaseCurrency)} $baseCurrency",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = netAmountColor

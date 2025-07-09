@@ -1,14 +1,16 @@
 import androidx.room.Room
 import com.aestroon.common.data.repository.AuthRepository
 import com.aestroon.common.data.repository.AuthRepositoryImpl
-import com.aestroon.authentication.data.UserRepository
-import com.aestroon.authentication.data.UserRepositoryImpl
+import com.aestroon.common.data.repository.UserRepository
+import com.aestroon.common.data.repository.UserRepositoryImpl
 import com.aestroon.authentication.domain.AuthViewModel
 import com.aestroon.authentication.domain.SupabaseClientProvider
 import com.aestroon.authentication.domain.UserManager
 import com.aestroon.common.data.database.AppDatabase
 import com.aestroon.common.data.repository.CategoryRepository
 import com.aestroon.common.data.repository.CategoryRepositoryImpl
+import com.aestroon.common.data.repository.CurrencyConversionRepository
+import com.aestroon.common.data.repository.CurrencyConversionRepositoryImpl
 import com.aestroon.common.utilities.network.ConnectivityObserver
 import com.aestroon.common.utilities.network.NetworkConnectivityObserver
 import com.aestroon.home.news.data.RssNewsRepository
@@ -33,6 +35,7 @@ import io.github.jan.supabase.gotrue.auth
 import io.github.jan.supabase.postgrest.postgrest
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.android.Android
+import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
@@ -45,8 +48,16 @@ val appModule = module {
     // Ktor HTTP Client for network requests
     single {
         HttpClient(Android) {
+            install(HttpTimeout) {
+                connectTimeoutMillis = 15000
+                requestTimeoutMillis = 30000
+                socketTimeoutMillis = 15000
+            }
             install(ContentNegotiation) {
-                json(Json { isLenient = true; ignoreUnknownKeys = true })
+                json(Json {
+                    isLenient = true
+                    ignoreUnknownKeys = true
+                })
             }
         }
     }
@@ -70,6 +81,7 @@ val appModule = module {
     single { get<AppDatabase>().plannedPaymentDao() }
 
     // Repositories
+    single<CurrencyConversionRepository> { CurrencyConversionRepositoryImpl(get(), get(), get()) }
     single<PlannedPaymentRepository> { PlannedPaymentRepositoryImpl(get(), get(), get(), get()) }
     single<TransactionRepository> { TransactionRepositoryImpl(get(), get(), get(), get(), get(), get()) }
     single<AuthRepository> { AuthRepositoryImpl(get(), get(), get(), androidContext()) }
@@ -87,12 +99,12 @@ val appModule = module {
     single { UserManager(get()) }
 
     // ViewModels
-    viewModel { PlannedPaymentsViewModel(get(), get(), get(), get()) }
+    viewModel { PlannedPaymentsViewModel(get(), get(), get(), get(), get()) }
     viewModel { HomeViewModel(get(), get(), get(), get()) }
-    viewModel { TransactionsViewModel(get(), get(), get(), get()) }
+    viewModel { TransactionsViewModel(get(), get(), get(), get(), get()) }
     viewModel { AuthViewModel(get(), get(), get()) }
     viewModel { NewsViewModel(get()) }
-    viewModel { ProfileViewModel(get(), get(), get(), get()) }
-    viewModel { WalletsViewModel(get(), get(), get(), get(), get()) }
+    viewModel { ProfileViewModel(get(), get(), get(), get(), get()) }
+    viewModel { WalletsViewModel(get(), get(), get(), get(), get(), get()) }
     viewModel { CategoriesViewModel(get(), get()) }
 }

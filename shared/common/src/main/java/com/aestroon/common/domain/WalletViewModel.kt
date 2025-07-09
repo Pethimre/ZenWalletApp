@@ -8,6 +8,7 @@ import com.aestroon.common.data.entity.TransactionType
 import com.aestroon.common.data.repository.AuthRepository
 import com.aestroon.common.data.entity.WalletEntity
 import com.aestroon.common.data.model.WalletsSummary
+import com.aestroon.common.data.repository.CurrencyConversionRepository
 import com.aestroon.common.data.repository.CurrencyRepository
 import com.aestroon.common.data.repository.TransactionRepository
 import com.aestroon.common.data.serializable.Currency
@@ -18,6 +19,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
@@ -36,6 +38,7 @@ class WalletsViewModel(
     private val walletRepository: WalletRepository,
     private val authRepository: AuthRepository,
     private val currencyRepository: CurrencyRepository,
+    private val currencyConversionRepository: CurrencyConversionRepository,
     private val connectivityObserver: ConnectivityObserver,
     private val transactionRepository: TransactionRepository,
 ) : ViewModel() {
@@ -46,10 +49,11 @@ class WalletsViewModel(
     private val _allCurrencies = MutableStateFlow<List<Currency>>(emptyList())
     val allCurrencies: StateFlow<List<Currency>> = _allCurrencies.asStateFlow()
 
+    val baseCurrency: StateFlow<String> = currencyConversionRepository.baseCurrency
+    val exchangeRates: StateFlow<Map<String, Double>?> = currencyConversionRepository.exchangeRates
+
     private val _monthlySummary = MutableStateFlow<WalletMonthlySummary?>(null)
     val monthlySummary: StateFlow<WalletMonthlySummary?> = _monthlySummary.asStateFlow()
-
-    val baseCurrency = MutableStateFlow("HUF")
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val wallets: StateFlow<List<WalletEntity>> = authRepository.userIdFlow
@@ -66,13 +70,22 @@ class WalletsViewModel(
     val networkStatus: StateFlow<ConnectivityObserver.Status> = connectivityObserver.observe()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), ConnectivityObserver.Status.Unavailable)
 
-    val summary: StateFlow<WalletsSummary> = wallets.map { walletList ->
+    val summary: StateFlow<WalletsSummary> = combine(wallets, exchangeRates, baseCurrency) { walletList, rates, base ->
         val includedWallets = walletList.filter { it.included }
-        val total = includedWallets.sumOf { it.balance }
-        val breakdown = if (total > 0) {
-            includedWallets.map { it to (it.balance.toFloat() / total.toFloat()) }
+        var totalInBase = 0.0
+        if (rates != null) {
+            includedWallets.forEach { wallet ->
+                val conversionRate = if (wallet.currency == base) 1.0 else (rates[base] ?: 1.0) / (rates[wallet.currency] ?: 1.0)
+                totalInBase += (wallet.balance / 100.0) * conversionRate
+            }
+        }
+        // This breakdown is for the pie chart proportions and should use original values
+        val totalOriginal = includedWallets.sumOf { it.balance }.toDouble()
+        val breakdown = if (totalOriginal > 0) {
+            includedWallets.map { it to (it.balance / totalOriginal).toFloat() }
         } else { emptyList() }
-        WalletsSummary(totalBalance = total, balanceBreakdown = breakdown)
+
+        WalletsSummary(totalBalance = (totalInBase * 100).toLong(), balanceBreakdown = breakdown)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), WalletsSummary())
 
     init {
