@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.first
 interface TransactionRepository {
     fun getTransactionsForUser(userId: String): Flow<List<TransactionEntity>>
     fun getTransactionsForWallet(walletId: String): Flow<List<TransactionEntity>>
+    fun getPaginatedTransactionsForWallet(walletId: String, limit: Int, offset: Int): Flow<List<TransactionEntity>>
     suspend fun addTransaction(transaction: TransactionEntity): Result<Unit>
     suspend fun updateTransaction(transaction: TransactionEntity): Result<Unit>
     suspend fun deleteTransaction(transaction: TransactionEntity): Result<Unit>
@@ -64,6 +65,10 @@ class TransactionRepositoryImpl(
                 filter { eq("id", transaction.id) }
             }
         }
+    }
+
+    override fun getPaginatedTransactionsForWallet(walletId: String, limit: Int, offset: Int): Flow<List<TransactionEntity>> {
+        return transactionDao.getPaginatedTransactionsForWallet(walletId, limit, offset)
     }
 
     private suspend fun updateWalletBalancesForTransaction(transaction: TransactionEntity, isReverting: Boolean) {

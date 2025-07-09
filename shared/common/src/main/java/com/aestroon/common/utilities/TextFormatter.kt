@@ -1,6 +1,7 @@
 package com.aestroon.common.utilities
 
 import java.text.DecimalFormat
+import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -26,6 +27,17 @@ object TextFormatter {
                 kAmount >= 1 -> "${toPrettyAmount(kAmount)}K"
                 else -> it
             }
+        }
+    }
+
+    fun formatBalance(balanceInCents: Long, currencyCode: String): String {
+        val amount = balanceInCents / 100.0
+        return try {
+            NumberFormat.getCurrencyInstance(Locale.getDefault()).apply {
+                currency = java.util.Currency.getInstance(currencyCode)
+            }.format(amount)
+        } catch (e: Exception) {
+            "${"%,.2f".format(amount)} $currencyCode"
         }
     }
 

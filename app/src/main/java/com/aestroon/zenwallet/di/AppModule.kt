@@ -6,6 +6,7 @@ import com.aestroon.common.data.repository.UserRepositoryImpl
 import com.aestroon.authentication.domain.AuthViewModel
 import com.aestroon.authentication.domain.SupabaseClientProvider
 import com.aestroon.authentication.domain.UserManager
+import com.aestroon.calendar.domain.CalendarViewModel
 import com.aestroon.common.data.database.AppDatabase
 import com.aestroon.common.data.repository.CategoryRepository
 import com.aestroon.common.data.repository.CategoryRepositoryImpl
@@ -99,6 +100,7 @@ val appModule = module {
     single { UserManager(get()) }
 
     // ViewModels
+    viewModel { CalendarViewModel(get(), get(), get(), get(), get(), get()) }
     viewModel { PlannedPaymentsViewModel(get(), get(), get(), get(), get()) }
     viewModel { HomeViewModel(get(), get(), get(), get()) }
     viewModel { TransactionsViewModel(get(), get(), get(), get(), get()) }

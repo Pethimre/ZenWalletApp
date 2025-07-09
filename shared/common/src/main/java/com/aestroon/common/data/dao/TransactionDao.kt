@@ -30,4 +30,7 @@ interface TransactionDao {
 
     @Query("UPDATE transactions SET isSynced = 1 WHERE id = :transactionId")
     suspend fun markTransactionAsSynced(transactionId: String)
+
+    @Query("SELECT * FROM transactions WHERE walletId = :walletId ORDER BY date DESC LIMIT :limit OFFSET :offset")
+    fun getPaginatedTransactionsForWallet(walletId: String, limit: Int, offset: Int): Flow<List<TransactionEntity>>
 }
