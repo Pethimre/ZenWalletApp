@@ -36,7 +36,9 @@ object TextFormatter {
         currencyPosition: CurrencyPosition = CurrencyPosition.BEFORE
     ): String {
         val sign = if (withSign && amount > 0) "+" else ""
-        val formattedAmount = "$sign${prettyDecimalFormatter.format(amount)}"
+        val formatter = if (amount % 1.0 == 0.0) prettyIntFormatter else prettyDecimalFormatter
+        val formattedAmount = "$sign${formatter.format(amount)}"
+
         return when (currencyPosition) {
             CurrencyPosition.BEFORE -> "$currency $formattedAmount"
             CurrencyPosition.AFTER -> "$formattedAmount $currency"

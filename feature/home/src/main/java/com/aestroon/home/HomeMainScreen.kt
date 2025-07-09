@@ -63,6 +63,8 @@ fun HomeMainScreen(
 
     val worthGoal by profileViewModel.savedWorthGoal.collectAsState()
     val worthGoalCurrency by profileViewModel.savedWorthGoalCurrency.collectAsState()
+    val currentMonthIncome by transactionsViewModel.currentMonthIncome.collectAsState()
+    val currentMonthExpense by transactionsViewModel.currentMonthExpense.collectAsState()
 
     val pullRefreshState = rememberPullRefreshState(isRefreshing, { homeViewModel.refreshAllData() })
 
@@ -128,7 +130,9 @@ fun HomeMainScreen(
                         onPayPlanned = { plannedPaymentsViewModel.pay(it) },
                         onSkipPlanned = { plannedPaymentsViewModel.skip(it) },
                         allUpcoming = upcomingPayments,
-                        allOverdue = overduePayments
+                        allOverdue = overduePayments,
+                        currentMonthIncome = currentMonthIncome,
+                        currentMonthExpense = currentMonthExpense,
                     )
                 }
                 HomeScreenType.DASHBOARD -> addDashboardContent(navController = navController)

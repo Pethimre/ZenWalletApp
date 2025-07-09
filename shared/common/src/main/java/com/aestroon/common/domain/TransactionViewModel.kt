@@ -72,6 +72,44 @@ class TransactionsViewModel(
         list.associateBy { it.id }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
 
+    private val currentMonthTransactions = combine(
+        transactions,
+        baseCurrency,
+        exchangeRates
+    ) { transactions, base, rates ->
+        val calendar = Calendar.getInstance()
+        val currentMonth = calendar.get(Calendar.MONTH)
+        val currentYear = calendar.get(Calendar.YEAR)
+
+        transactions
+            .filter { transaction ->
+                calendar.time = transaction.date
+                calendar.get(Calendar.MONTH) == currentMonth && calendar.get(Calendar.YEAR) == currentYear
+            }
+            .map { transaction ->
+                val amount = transaction.amount / 100.0
+                val convertedAmount = if (transaction.currency == base || rates == null) {
+                    amount
+                } else {
+                    val rate = rates[transaction.currency] ?: 0.0
+                    if (rate != 0.0) amount / rate else 0.0
+                }
+                transaction.copy(amount = (convertedAmount * 100).toLong())
+            }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val currentMonthIncome: StateFlow<Double> = currentMonthTransactions.map { transactions ->
+        transactions
+            .filter { it.transactionType == TransactionType.INCOME }
+            .sumOf { it.amount / 100.0 }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0.0)
+
+    val currentMonthExpense: StateFlow<Double> = currentMonthTransactions.map { transactions ->
+        transactions
+            .filter { it.transactionType == TransactionType.EXPENSE }
+            .sumOf { it.amount / 100.0 }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0.0)
+
     val monthlyProgress: StateFlow<Double> = combine(
         transactions,
         baseCurrency,

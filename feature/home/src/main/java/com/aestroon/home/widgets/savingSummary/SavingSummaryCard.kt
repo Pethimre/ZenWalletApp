@@ -70,7 +70,7 @@ fun SavingsSummaryCard(
                     modifier = Modifier.padding(top = 80.dp)
                 ) {
                     Text(
-                        text = "Cashflow rate",
+                        text = "Savings rate",
                         color = MaterialTheme.colorScheme.onPrimaryContainer,
                         fontWeight = FontWeight.SemiBold,
                         fontSize = 14.sp,

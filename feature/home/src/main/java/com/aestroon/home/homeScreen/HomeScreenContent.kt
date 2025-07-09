@@ -83,7 +83,9 @@ fun LazyListScope.addHomeScreenContent(
     onPayPlanned: (PlannedPaymentEntity) -> Unit,
     onSkipPlanned: (PlannedPaymentEntity) -> Unit,
     allUpcoming: List<PlannedPaymentEntity>,
-    allOverdue: List<PlannedPaymentEntity>
+    allOverdue: List<PlannedPaymentEntity>,
+    currentMonthIncome: Double,
+    currentMonthExpense: Double,
 ) {
     item(key = "balance_overview_card") {
         BalanceOverviewCard(
@@ -98,9 +100,9 @@ fun LazyListScope.addHomeScreenContent(
 
     item(key = "savings_summary_card") {
         SavingsSummaryCard(
-            income = TextFormatter.toPrettyAmountWithCurrency(12300.42, baseCurrency, currencyPosition = TextFormatter.CurrencyPosition.AFTER),
-            expense = TextFormatter.toPrettyAmountWithCurrency(845.72, baseCurrency, currencyPosition = TextFormatter.CurrencyPosition.AFTER),
-            savingsGoalPercentage = 0.75f
+            income = TextFormatter.toPrettyAmountWithCurrency(currentMonthIncome, baseCurrency, currencyPosition = TextFormatter.CurrencyPosition.AFTER),
+            expense = TextFormatter.toPrettyAmountWithCurrency(currentMonthExpense, baseCurrency, currencyPosition = TextFormatter.CurrencyPosition.AFTER),
+            savingsGoalPercentage = if (currentMonthIncome > 0) ((currentMonthIncome - currentMonthExpense) / currentMonthIncome).toFloat() else 0f
         )
     }
 
