@@ -136,8 +136,10 @@ fun BalanceOverviewCard(
                         if (monthlyProgress >= 0) {
                             Box(
                                 modifier = Modifier
-                                    .fillMaxWidth(totalProgress.coerceIn(0f, 1f))
+                                    .align(Alignment.CenterStart)
                                     .fillMaxHeight()
+                                    .padding(start = maxWidth * pastProgress.coerceIn(0f,1f))
+                                    .width(maxWidth * monthlyProgressPercent)
                                     .background(monthlyProgressColor)
                             )
                         } else {
