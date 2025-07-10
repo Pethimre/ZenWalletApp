@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.aestroon.common.data.entity.CategoryEntity
 import com.aestroon.common.data.entity.PlannedPaymentEntity
 import com.aestroon.common.data.entity.RecurrenceType
+import com.aestroon.common.data.entity.TransactionType
 import com.aestroon.common.data.entity.WalletEntity
 import com.aestroon.common.data.repository.AuthRepository
 import com.aestroon.common.data.repository.CategoryRepository
@@ -68,7 +69,9 @@ class PlannedPaymentsViewModel(
         wallet: WalletEntity,
         category: CategoryEntity?,
         recurrenceType: RecurrenceType,
-        recurrenceValue: Int
+        recurrenceValue: Int,
+        transactionType: TransactionType,
+        toWallet: WalletEntity?
     ) {
         viewModelScope.launch {
             val userId = authRepository.userIdFlow.first() ?: return@launch
@@ -82,7 +85,9 @@ class PlannedPaymentsViewModel(
                 recurrenceType = recurrenceType,
                 recurrenceValue = recurrenceValue,
                 walletId = wallet.id,
-                categoryId = category?.id
+                categoryId = if (transactionType == TransactionType.TRANSFER) null else category?.id,
+                transactionType = transactionType,
+                toWalletId = if (transactionType == TransactionType.TRANSFER) toWallet?.id else null
             ) ?: PlannedPaymentEntity(
                 name = name,
                 description = description,
@@ -93,7 +98,9 @@ class PlannedPaymentsViewModel(
                 recurrenceValue = recurrenceValue,
                 userId = userId,
                 walletId = wallet.id,
-                categoryId = category?.id
+                categoryId = if (transactionType == TransactionType.TRANSFER) null else category?.id,
+                transactionType = transactionType,
+                toWalletId = if (transactionType == TransactionType.TRANSFER) toWallet?.id else null
             )
             plannedPaymentRepository.addOrUpdatePlannedPayment(payment)
         }

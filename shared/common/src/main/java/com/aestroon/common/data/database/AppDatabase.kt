@@ -21,7 +21,7 @@ import com.aestroon.common.data.entity.WalletEntity
         TransactionEntity::class,
         PlannedPaymentEntity::class,
     ],
-    version = 5,
+    version = 6,
     autoMigrations = [
         //AutoMigration(from = 3, to = 4)
     ],

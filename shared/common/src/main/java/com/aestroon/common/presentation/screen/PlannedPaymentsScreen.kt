@@ -1,5 +1,6 @@
 package com.aestroon.common.presentation.screen
 
+import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -53,9 +54,11 @@ import androidx.navigation.NavController
 import com.aestroon.common.data.entity.CategoryEntity
 import com.aestroon.common.data.entity.PlannedPaymentEntity
 import com.aestroon.common.data.entity.RecurrenceType
+import com.aestroon.common.data.entity.TransactionType
 import com.aestroon.common.data.entity.WalletEntity
 import com.aestroon.common.domain.PlannedPaymentsViewModel
 import com.aestroon.common.presentation.DropdownSelector
+import com.aestroon.common.presentation.SegmentedButtonRow
 import com.aestroon.common.theme.GreenChipColor
 import com.aestroon.common.theme.RedChipColor
 import com.aestroon.common.utilities.TextFormatter
@@ -137,9 +140,9 @@ fun PlannedPaymentsScreen(
                 wallets = wallets,
                 categories = categories,
                 onDismiss = { showAddEditSheet = false },
-                onConfirm = { existing, name, description, dueDate, amount, wallet, category, recurrenceType, recurrenceValue ->
+                onConfirm = { existing, name, description, dueDate, amount, wallet, category, recurrenceType, recurrenceValue, transactionType, toWallet ->
                     viewModel.addOrUpdatePayment(
-                        existing, name, description, dueDate, amount, wallet, category, recurrenceType, recurrenceValue
+                        existing, name, description, dueDate, amount, wallet, category, recurrenceType, recurrenceValue, transactionType, toWallet
                     )
                     showAddEditSheet = false
                 }
@@ -160,6 +163,12 @@ fun PlannedPaymentCard(
 ) {
     var isExpanded by remember { mutableStateOf(false) }
     val simpleDateFormat = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
+
+    val amountColor = when (payment.transactionType) {
+        TransactionType.INCOME -> GreenChipColor
+        TransactionType.EXPENSE -> RedChipColor
+        TransactionType.TRANSFER -> MaterialTheme.colorScheme.primary
+    }
 
     val convertedAmount = remember(payment, baseCurrency, exchangeRates) {
         if (exchangeRates == null || payment.currency == baseCurrency) return@remember null
@@ -191,7 +200,7 @@ fun PlannedPaymentCard(
                         text = "${TextFormatter.toBasicFormat(payment.amount / 100.0)} ${payment.currency}",
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary
+                        color = amountColor
                     )
                     convertedAmount?.let {
                         Text(
@@ -249,17 +258,21 @@ fun AddEditPlannedPaymentSheet(
         fromWallet: WalletEntity,
         category: CategoryEntity?,
         recurrenceType: RecurrenceType,
-        recurrenceValue: Int
+        recurrenceValue: Int,
+        transactionType: TransactionType,
+        toWallet: WalletEntity?
     ) -> Unit
 ) {
     var name by remember { mutableStateOf(existingPayment?.name ?: "") }
     var description by remember { mutableStateOf(existingPayment?.description ?: "") }
     var amountStr by remember { mutableStateOf(existingPayment?.let { (it.amount / 100.0).toString() } ?: "") }
     var fromWallet by remember { mutableStateOf(wallets.find { it.id == existingPayment?.walletId } ?: wallets.firstOrNull()) }
+    var toWallet by remember { mutableStateOf(wallets.find { it.id == existingPayment?.toWalletId }) }
     var category by remember { mutableStateOf(categories.find { it.id == existingPayment?.categoryId }) }
     var recurrenceType by remember { mutableStateOf(existingPayment?.recurrenceType ?: RecurrenceType.ONCE) }
     var recurrenceValue by remember { mutableStateOf(existingPayment?.recurrenceValue?.toString() ?: "1") }
     var date by remember { mutableStateOf(existingPayment?.dueDate ?: Date()) }
+    var selectedType by remember { mutableStateOf(existingPayment?.transactionType ?: TransactionType.EXPENSE) }
 
     val simpleDateFormat = remember { SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()) }
 
@@ -296,6 +309,17 @@ fun AddEditPlannedPaymentSheet(
         ) {
             item { Text(if (existingPayment == null) "New Planned Payment" else "Edit Planned Payment", style = MaterialTheme.typography.headlineSmall) }
             item {
+                SegmentedButtonRow(
+                    selectedType = selectedType,
+                    onTypeSelected = { newType ->
+                        selectedType = newType
+                        if (newType != TransactionType.TRANSFER) {
+                            toWallet = null
+                        }
+                    }
+                )
+            }
+            item {
                 OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Name") }, modifier = Modifier.fillMaxWidth())
             }
             item {
@@ -312,11 +336,29 @@ fun AddEditPlannedPaymentSheet(
                 )
             }
             item {
-                DropdownSelector(label = "From Wallet", items = wallets, selectedItem = fromWallet, onItemSelected = { fromWallet = it }, itemToString = { it.displayName })
+                val label = if (selectedType == TransactionType.INCOME) "To Wallet" else "From Wallet"
+                DropdownSelector(label = label, items = wallets, selectedItem = fromWallet, onItemSelected = { fromWallet = it }, itemToString = { it.displayName })
             }
-            item {
-                DropdownSelector(label = "Category (Optional)", items = categories, selectedItem = category, onItemSelected = { category = it }, itemToString = { it.name })
+
+            if (selectedType == TransactionType.TRANSFER) {
+                item {
+                    val availableToWallets = wallets.filter { it.id != fromWallet?.id }
+                    DropdownSelector(
+                        label = "To Wallet",
+                        items = availableToWallets,
+                        selectedItem = toWallet,
+                        onItemSelected = { toWallet = it },
+                        itemToString = { it.displayName }
+                    )
+                }
             }
+
+            if (selectedType != TransactionType.TRANSFER) {
+                item {
+                    DropdownSelector(label = "Category (Optional)", items = categories, selectedItem = category, onItemSelected = { category = it }, itemToString = { it.name })
+                }
+            }
+
             item {
                 OutlinedTextField(
                     value = simpleDateFormat.format(date),
@@ -354,9 +396,17 @@ fun AddEditPlannedPaymentSheet(
                     TextButton(onClick = onDismiss) { Text("Cancel") }
                     Button(onClick = {
                         val amountLong = (amountStr.replace(",", ".").toDoubleOrNull() ?: 0.0).times(100).toLong()
+
+                        // --- DEBUG LOGGING ---
+                        Log.d("SheetDebug", "SAVE CLICKED:")
+                        Log.d("SheetDebug", "  - Type: $selectedType")
+                        Log.d("SheetDebug", "  - From/To Wallet: ${fromWallet?.displayName} (ID: ${fromWallet?.id})")
+                        Log.d("SheetDebug", "  - Destination Wallet (for Transfer): ${toWallet?.displayName} (ID: ${toWallet?.id})")
+                        Log.d("SheetDebug", "  - Category: ${category?.name} (ID: ${category?.id})")
+
                         if (amountLong > 0 && name.isNotBlank() && fromWallet != null) {
                             onConfirm(
-                                existingPayment, name, description.ifBlank { null }, date, amountLong, fromWallet!!, category, recurrenceType, recurrenceValue.toIntOrNull() ?: 1
+                                existingPayment, name, description.ifBlank { null }, date, amountLong, fromWallet!!, category, recurrenceType, recurrenceValue.toIntOrNull() ?: 1, selectedType, toWallet
                             )
                         }
                     }) { Text(if (existingPayment == null) "Save" else "Update") }

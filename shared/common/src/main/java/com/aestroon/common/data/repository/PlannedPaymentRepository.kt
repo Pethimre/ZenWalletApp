@@ -34,9 +34,7 @@ class PlannedPaymentRepositoryImpl(
     }
 
     override suspend fun addOrUpdatePlannedPayment(payment: PlannedPaymentEntity): Result<Unit> = runCatching {
-        // Insert locally first, marked as unsynced
         plannedPaymentDao.insertPlannedPayment(payment.copy(isSynced = false))
-        // Attempt to sync with remote
         syncPlannedPayments(payment.userId)
     }
 
@@ -46,12 +44,12 @@ class PlannedPaymentRepositoryImpl(
             currency = payment.currency,
             name = payment.name,
             description = "Planned: ${payment.description.orEmpty()}",
-            date = Date(), // Use current date for the actual payment
+            date = Date(),
             userId = payment.userId,
             walletId = payment.walletId,
             categoryId = payment.categoryId,
-            transactionType = TransactionType.EXPENSE,
-            toWalletId = null
+            transactionType = payment.transactionType,
+            toWalletId = payment.toWalletId,
         )
         transactionRepository.addTransaction(transaction).getOrThrow()
 
@@ -78,7 +76,6 @@ class PlannedPaymentRepositoryImpl(
 
     override suspend fun deletePayment(payment: PlannedPaymentEntity): Result<Unit> = runCatching {
         plannedPaymentDao.deletePlannedPaymentById(payment.id)
-        // Attempt to delete from remote if online
         if (connectivityObserver.observe().first() == ConnectivityObserver.Status.Available) {
             postgrest.from("Planned_payments").delete { filter { eq("id", payment.id) } }
         }
@@ -86,12 +83,11 @@ class PlannedPaymentRepositoryImpl(
 
     override suspend fun syncPlannedPayments(userId: String): Result<Unit> = runCatching {
         if (connectivityObserver.observe().first() != ConnectivityObserver.Status.Available) {
-            return@runCatching // Exit if offline
+            return@runCatching
         }
 
         val isoFormat = SimpleDateFormat("yyyy-MM-dd", Locale.US)
 
-        // 1. Push local unsynced changes to remote
         val unsyncedPayments = plannedPaymentDao.getUnsyncedPayments().first()
         if (unsyncedPayments.isNotEmpty()) {
             val networkPayments = unsyncedPayments.map {
@@ -106,15 +102,15 @@ class PlannedPaymentRepositoryImpl(
                     recurrence_value = it.recurrenceValue,
                     user_id = it.userId,
                     wallet_id = it.walletId,
-                    category_id = it.categoryId
+                    category_id = it.categoryId,
+                    transaction_type = it.transactionType.name,
+                    to_wallet_id = it.toWalletId
                 )
             }
             postgrest.from("Planned_payments").upsert(networkPayments)
-            // Mark them as synced locally
             unsyncedPayments.forEach { plannedPaymentDao.markPaymentAsSynced(it.id) }
         }
 
-        // 2. Pull remote changes and update local database
         val remotePayments = postgrest.from("Planned_payments").select {
             filter { eq("user_id", userId) }
         }.decodeList<PlannedPayment>()
@@ -132,7 +128,9 @@ class PlannedPaymentRepositoryImpl(
                 userId = remotePayment.user_id,
                 walletId = remotePayment.wallet_id,
                 categoryId = remotePayment.category_id,
-                isSynced = true // Mark as synced
+                transactionType = TransactionType.valueOf(remotePayment.transaction_type),
+                toWalletId = remotePayment.to_wallet_id,
+                isSynced = true
             )
             plannedPaymentDao.insertPlannedPayment(entity)
         }

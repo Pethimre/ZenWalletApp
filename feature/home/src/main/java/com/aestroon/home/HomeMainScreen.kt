@@ -181,7 +181,7 @@ fun PlannedPaymentEntity.toTransactionEntity(): TransactionEntity {
         userId = this.userId,
         walletId = this.walletId,
         categoryId = this.categoryId,
-        transactionType = TransactionType.EXPENSE,
-        toWalletId = null
+        transactionType = this.transactionType,
+        toWalletId = this.toWalletId,
     )
 }

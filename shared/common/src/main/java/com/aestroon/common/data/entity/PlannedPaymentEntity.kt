@@ -26,5 +26,7 @@ data class PlannedPaymentEntity(
     val userId: String,
     val walletId: String,
     val categoryId: String?,
+    val transactionType: TransactionType = TransactionType.EXPENSE,
+    val toWalletId: String? = null,
     val isSynced: Boolean = false
 )

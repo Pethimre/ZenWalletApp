@@ -21,5 +21,7 @@ data class PlannedPayment(
     val recurrence_value: Int,
     val user_id: String,
     val wallet_id: String,
-    val category_id: String?
+    val category_id: String?,
+    val transaction_type: String = "EXPENSE",
+    val to_wallet_id: String? = null
 )

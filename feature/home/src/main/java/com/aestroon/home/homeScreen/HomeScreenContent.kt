@@ -212,10 +212,31 @@ fun CollapsibleSectionCard(
     onSkip: (TransactionEntity) -> Unit,
 ) {
     var isExpanded by remember { mutableStateOf(isInitiallyExpanded) }
-    val income = transactions.filter { it.transactionType == TransactionType.INCOME }
-        .sumOf { it.amount } / 100.0
-    val expense = transactions.filter { it.transactionType == TransactionType.EXPENSE }
-        .sumOf { it.amount } / 100.0
+    val rates = exchangeRates
+
+    val convertToBaseCurrency: (TransactionEntity) -> Double = { txn ->
+        val amount = txn.amount / 100.0
+        if (txn.currency == baseCurrency || rates == null) {
+            amount
+        } else {
+            val rate = rates[txn.currency]
+            if (rate != null && rate != 0.0) amount / rate else 0.0
+        }
+    }
+
+    // Calculate totals for each type
+    val incomeInBase = transactions
+        .filter { it.transactionType == TransactionType.INCOME }
+        .sumOf(convertToBaseCurrency)
+
+    val expenseInBase = transactions
+        .filter { it.transactionType == TransactionType.EXPENSE }
+        .sumOf(convertToBaseCurrency)
+
+    val transferInBase = transactions
+        .filter { it.transactionType == TransactionType.TRANSFER }
+        .sumOf(convertToBaseCurrency)
+
 
     Column(
         modifier = Modifier
@@ -232,7 +253,7 @@ fun CollapsibleSectionCard(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                if (income > 0) {
+                if (incomeInBase > 0) {
                     Icon(
                         Icons.Default.KeyboardDoubleArrowUp,
                         contentDescription = "Income",
@@ -240,12 +261,13 @@ fun CollapsibleSectionCard(
                         modifier = Modifier.size(16.dp).padding(end = 4.dp)
                     )
                     Text(
-                        TextFormatter.toPrettyAmount(income),
-                        color = MaterialTheme.colorScheme.onSurface
+                        "${TextFormatter.toPrettyAmount(incomeInBase)} $baseCurrency",
+                        color = MaterialTheme.colorScheme.onSurface,
+                        style = MaterialTheme.typography.bodySmall
                     )
-                }
-                if (expense > 0) {
                     Spacer(Modifier.width(8.dp))
+                }
+                if (expenseInBase > 0) {
                     Icon(
                         Icons.Default.KeyboardDoubleArrowDown,
                         contentDescription = "Expense",
@@ -253,15 +275,28 @@ fun CollapsibleSectionCard(
                         modifier = Modifier.size(16.dp).padding(end = 4.dp)
                     )
                     Text(
-                        TextFormatter.toPrettyAmount(expense),
-                        color = MaterialTheme.colorScheme.onSurface
+                        "${TextFormatter.toPrettyAmount(expenseInBase)} $baseCurrency",
+                        color = MaterialTheme.colorScheme.onSurface,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    Spacer(Modifier.width(8.dp))
+                }
+                if (transferInBase > 0) {
+                    Icon(
+                        Icons.Default.CompareArrows,
+                        contentDescription = "Transfer",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(16.dp).padding(end = 4.dp)
+                    )
+                    Text(
+                        "${TextFormatter.toPrettyAmount(transferInBase)} $baseCurrency",
+                        color = MaterialTheme.colorScheme.onSurface,
+                        style = MaterialTheme.typography.bodySmall
                     )
                 }
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    title,
-                )
+                Text(title)
                 Icon(
                     imageVector = if (isExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
                     contentDescription = "Expand section"
