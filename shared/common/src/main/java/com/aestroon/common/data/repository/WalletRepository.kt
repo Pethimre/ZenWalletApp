@@ -1,6 +1,5 @@
 package com.aestroon.common.data.repository
 
-import android.util.Log
 import com.aestroon.common.data.WALLETS_TABLE_NAME
 import com.aestroon.common.data.dao.WalletDao
 import com.aestroon.common.data.entity.WalletEntity

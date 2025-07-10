@@ -1,6 +1,7 @@
 package com.aestroon.zenwallet
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -55,29 +56,31 @@ class MainActivity : FragmentActivity() {
                 var biometricUnlockAttempted by rememberSaveable { mutableStateOf(false) }
                 var biometricUnlockSuccess by rememberSaveable { mutableStateOf(false) }
 
+                Log.d("AppStartup", "Recomposition -> isLoggedIn: $isLoggedIn, restoreComplete: $restoreComplete, needsBiometric: ${isBiometricLockEnabled && isLoggedIn}")
+
                 LaunchedEffect(Unit) {
                     authViewModel.restoreSession()
                 }
 
                 val needsBiometricUnlock = restoreComplete && isLoggedIn && isBiometricLockEnabled
 
-                // This effect triggers the biometric prompt only when needed.
                 LaunchedEffect(needsBiometricUnlock) {
                     if (needsBiometricUnlock && !biometricUnlockAttempted) {
                         biometricUnlockAttempted = true
                         biometricPromptManager.showBiometricPrompt(
                             onSuccess = { biometricUnlockSuccess = true },
-                            onFailure = { authViewModel.logout() } // Log out if user cancels/fails prompt
+                            onFailure = { authViewModel.logout() }
                         )
                     }
                 }
 
-                // A clear, multi-stage check to decide what to show.
                 when {
                     !restoreComplete -> {
+                        Log.d("AppStartup", "UI STATE: Showing SplashScreen")
                         SplashScreen()
                     }
                     needsBiometricUnlock && !biometricUnlockSuccess -> {
+                        Log.d("AppStartup", "UI STATE: Showing Biometric Lock Screen")
                         Box(
                             modifier = Modifier
                                 .fillMaxSize()
@@ -88,9 +91,11 @@ class MainActivity : FragmentActivity() {
                         }
                     }
                     isLoggedIn -> {
+                        Log.d("AppStartup", "UI STATE: Showing AuthenticatedNavGraph")
                         AuthenticatedNavGraph(onLogoutClicked = { authViewModel.logout() })
                     }
                     else -> {
+                        Log.d("AppStartup", "UI STATE: Showing UnauthenticatedNavGraph")
                         UnauthenticatedNavGraph(authViewModel)
                     }
                 }

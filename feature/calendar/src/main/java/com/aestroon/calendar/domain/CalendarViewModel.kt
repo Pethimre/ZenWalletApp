@@ -59,9 +59,6 @@ class CalendarViewModel(
             val userId = authRepository.userIdFlow.firstOrNull() ?: return@launch
             walletsRepository.getWalletsForUser(userId).collect { walletList ->
                 _wallets.value = walletList
-                if (_selectedWalletId.value == null && walletList.isNotEmpty()) {
-                    onWalletSelected(walletList.first().id)
-                }
             }
         }
     }
@@ -89,7 +86,6 @@ class CalendarViewModel(
             val userId = authRepository.userIdFlow.firstOrNull() ?: return@launch
             val categories = categoryRepository.getCategoriesForUser(userId).first().associateBy { it.id }
 
-            // 1. Fetch planned payments ONLY on the initial load for a wallet.
             val plannedUiModels = if (isInitialLoad) {
                 plannedPaymentRepository.getPlannedPayments(userId).first()
                     .filter { it.walletId == walletId }
@@ -111,7 +107,6 @@ class CalendarViewModel(
                 emptyList()
             }
 
-            // 2. Fetch the requested page of recorded transactions.
             val recordedTransactions = transactionRepository
                 .getPaginatedTransactionsForWallet(walletId, pageSize, currentPage * pageSize)
                 .first()
@@ -136,9 +131,6 @@ class CalendarViewModel(
                 )
             }
 
-            // 3. Combine the lists and sort.
-            //    If initial load, combine with planned payments.
-            //    If pagination, just append to the existing list.
             val currentList = _transactions.value
             val newList = if (isInitialLoad) {
                 (plannedUiModels + recordedUiModels)

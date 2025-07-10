@@ -6,6 +6,8 @@ import android.util.Log
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import com.aestroon.common.data.dao.UserDao
+import com.aestroon.common.utilities.AUTH_MASTERKEY
+import com.aestroon.common.utilities.AUTH_PREF_MASTERKEY
 import com.aestroon.common.utilities.network.ConnectivityObserver
 import io.github.jan.supabase.gotrue.Auth
 import io.github.jan.supabase.gotrue.OtpType
@@ -19,6 +21,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.map
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import okhttp3.Dispatcher
@@ -32,31 +35,22 @@ class AuthRepositoryImpl(
 ) : AuthRepository {
 
     private val sharedPreferences: SharedPreferences by lazy {
-        val masterKey = MasterKey.Builder(context)
+        val masterKey = MasterKey.Builder(context, AUTH_MASTERKEY)
             .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
             .build()
 
         EncryptedSharedPreferences.create(
             context,
-            "auth_prefs",
+            AUTH_PREF_MASTERKEY,
             masterKey,
             EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
             EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
         )
     }
 
-    override val userIdFlow: Flow<String?> = flow {
-        val refreshToken = getRefreshToken()
-        val restoredUser = if (refreshToken != null) {
-            try {
-                refreshSession(refreshToken)
-            } catch (e: Exception) {
-                Log.e("AuthRepository", e.localizedMessage ?: "Unknown error with userIdFlow")
-                null
-            }
-        } else null
-        emit(restoredUser?.id ?: auth.currentUserOrNull()?.id)
-    }.distinctUntilChanged().flowOn(Dispatchers.IO).conflate()
+    override val userIdFlow: Flow<String?> = sessionStatus().map { status ->
+        (status as? SessionStatus.Authenticated)?.session?.user?.id
+    }.distinctUntilChanged()
 
 
     override fun sessionStatus(): Flow<SessionStatus> = auth.sessionStatus

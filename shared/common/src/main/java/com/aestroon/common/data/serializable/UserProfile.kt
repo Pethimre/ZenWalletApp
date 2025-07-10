@@ -7,7 +7,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class UserProfile(
     val id: String,
-    val display_name: String,
+    val display_name: String?,
     val worth_goal: Long,
     val email: String,
     val base_currency: String = DEFAULT_BASE_CURRENCY,

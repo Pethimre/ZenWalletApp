@@ -89,7 +89,7 @@ class PlannedPaymentRepositoryImpl(
             return@runCatching // Exit if offline
         }
 
-        val isoFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX", Locale.getDefault())
+        val isoFormat = SimpleDateFormat("yyyy-MM-dd", Locale.US)
 
         // 1. Push local unsynced changes to remote
         val unsyncedPayments = plannedPaymentDao.getUnsyncedPayments().first()

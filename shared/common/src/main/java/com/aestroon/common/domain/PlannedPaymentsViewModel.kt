@@ -51,6 +51,14 @@ class PlannedPaymentsViewModel(
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+    fun syncPlannedPayments() {
+        viewModelScope.launch {
+            authRepository.userIdFlow.firstOrNull()?.let { userId ->
+                plannedPaymentRepository.syncPlannedPayments(userId)
+            }
+        }
+    }
+
     fun addOrUpdatePayment(
         existingPayment: PlannedPaymentEntity?,
         name: String,

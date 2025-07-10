@@ -21,6 +21,7 @@ import androidx.navigation.NavController
 import com.aestroon.common.data.DashboardStats
 import com.aestroon.common.navigation.ScreenNavItems
 import com.aestroon.common.theme.GreenChipColor
+import com.aestroon.common.theme.RedChipColor
 import com.aestroon.common.utilities.TextFormatter
 
 data class Shortcut(
@@ -115,7 +116,12 @@ fun ShortcutButton(title: String, icon: ImageVector, onClick: () -> Unit) {
 }
 
 @Composable
-fun QuickStatsCard() {
+fun QuickStatsCard(
+    netWorth: Double,
+    savingsRate: Float,
+    thisMonthCashFlow: Double,
+    baseCurrency: String
+) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
@@ -126,9 +132,9 @@ fun QuickStatsCard() {
             horizontalArrangement = Arrangement.SpaceAround,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            StatItem("Net Worth", "${TextFormatter.toPrettyAmount(12500.0)}K")
-            StatItem("Savings Rate", "15%", GreenChipColor)
-            StatItem("This Month", "-${TextFormatter.toPrettyAmount(550.0)}K")
+            StatItem("Net Worth", TextFormatter.toPrettyAmountWithCurrency(netWorth, baseCurrency))
+            StatItem("Savings Rate", String.format("%.0f%%", savingsRate * 100), if (savingsRate >= 0) GreenChipColor else RedChipColor)
+            StatItem("This Month", TextFormatter.toPrettyAmountWithCurrency(thisMonthCashFlow, baseCurrency, withSign = true))
         }
     }
 }

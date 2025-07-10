@@ -12,6 +12,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 class AuthViewModel(
@@ -125,13 +127,12 @@ class AuthViewModel(
 
     fun restoreSession() {
         viewModelScope.launch {
-            val refreshToken = authRepository.getRefreshToken()
-            if (refreshToken != null) {
-                val user = authRepository.refreshSession(refreshToken)
-                _isLoggedIn.value = authRepository.isUserVerified(user)
-            } else {
-                _isLoggedIn.value = false
-            }
+            // The Supabase client handles refreshing automatically.
+            // We just wait for it to emit its first conclusive state (Authenticated or NotAuthenticated)
+            // before we hide the splash screen. The ongoing observation is handled in the init block.
+            authRepository.sessionStatus()
+                .filter { it is SessionStatus.Authenticated || it is SessionStatus.NotAuthenticated }
+                .first()
             _restoreComplete.value = true
         }
     }
