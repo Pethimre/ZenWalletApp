@@ -18,8 +18,12 @@ import com.aestroon.home.news.data.RssNewsRepository
 import com.aestroon.home.news.domain.NewsViewModel
 import com.aestroon.common.data.repository.CurrencyRepository
 import com.aestroon.common.data.repository.CurrencyRepositoryImpl
+import com.aestroon.common.data.repository.MarketDataRepository
+import com.aestroon.common.data.repository.MarketDataRepositoryImpl
 import com.aestroon.common.data.repository.PlannedPaymentRepository
 import com.aestroon.common.data.repository.PlannedPaymentRepositoryImpl
+import com.aestroon.common.data.repository.PortfolioRepository
+import com.aestroon.common.data.repository.PortfolioRepositoryImpl
 import com.aestroon.common.data.repository.TransactionRepository
 import com.aestroon.common.data.repository.TransactionRepositoryImpl
 import com.aestroon.common.data.repository.UserPreferencesRepository
@@ -31,6 +35,7 @@ import com.aestroon.common.domain.TransactionsViewModel
 import com.aestroon.common.domain.CategoriesViewModel
 import com.aestroon.common.domain.DashboardViewModel
 import com.aestroon.common.domain.PlannedPaymentsViewModel
+import com.aestroon.common.domain.PortfolioViewModel
 import com.aestroon.common.domain.WalletsViewModel
 import com.aestroon.home.news.domain.HomeViewModel
 import io.github.jan.supabase.gotrue.auth
@@ -81,8 +86,11 @@ val appModule = module {
     single { get<AppDatabase>().categoryDao() }
     single { get<AppDatabase>().transactionDao() }
     single { get<AppDatabase>().plannedPaymentDao() }
+    single { get<AppDatabase>().portfolioDao() }
 
     // Repositories
+    single<MarketDataRepository> { MarketDataRepositoryImpl(get()) }
+    single<PortfolioRepository> { PortfolioRepositoryImpl(get(), get(), get()) }
     single<CurrencyConversionRepository> { CurrencyConversionRepositoryImpl(get(), get(), get()) }
     single<PlannedPaymentRepository> { PlannedPaymentRepositoryImpl(get(), get(), get(), get()) }
     single<TransactionRepository> { TransactionRepositoryImpl(get(), get(), get(), get(), get(), get()) }
@@ -101,7 +109,8 @@ val appModule = module {
     single { UserManager(get()) }
 
     // ViewModels
-    viewModel { DashboardViewModel(get(), get()) }
+    viewModel { PortfolioViewModel(get(), get(), get(), get()) }
+    viewModel { DashboardViewModel(get(), get(), get(), get()) }
     viewModel { CalendarViewModel(get(), get(), get(), get(), get(), get()) }
     viewModel { PlannedPaymentsViewModel(get(), get(), get(), get(), get()) }
     viewModel { HomeViewModel(get(), get(), get(), get(), get(), get()) }

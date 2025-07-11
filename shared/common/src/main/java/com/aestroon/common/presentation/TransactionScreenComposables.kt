@@ -31,6 +31,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.aestroon.common.data.entity.CategoryEntity
+import com.aestroon.common.data.entity.TransactionEntity
 import com.aestroon.common.data.entity.TransactionType
 import com.aestroon.common.data.entity.WalletEntity
 import java.text.SimpleDateFormat
@@ -40,6 +41,7 @@ import java.util.Locale
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddEditTransactionSheet(
+    existingTransaction: TransactionEntity?, // If null, it's "Add" mode. Otherwise, "Edit" mode.
     wallets: List<WalletEntity>,
     categories: List<CategoryEntity>,
     onDismiss: () -> Unit,
@@ -54,17 +56,20 @@ fun AddEditTransactionSheet(
         toWallet: WalletEntity?
     ) -> Unit
 ) {
-    var selectedType by remember { mutableStateOf(TransactionType.EXPENSE) }
-    var amountStr by remember { mutableStateOf("") }
-    var name by remember { mutableStateOf("") }
-    var description by remember { mutableStateOf("") }
+    val isEditMode = existingTransaction != null
+    val title = if (isEditMode) "Edit Transaction" else "New Transaction"
 
-    var fromWallet by remember { mutableStateOf(wallets.firstOrNull()) }
-    var toWallet by remember { mutableStateOf<WalletEntity?>(null) }
-    var category by remember { mutableStateOf<CategoryEntity?>(null) }
+    // Initialize state. If in edit mode, pre-fill with existing data.
+    var selectedType by remember { mutableStateOf(existingTransaction?.transactionType ?: TransactionType.EXPENSE) }
+    var amountStr by remember { mutableStateOf(if (isEditMode) (existingTransaction!!.amount / 100.0).toString() else "") }
+    var name by remember { mutableStateOf(existingTransaction?.name ?: "") }
+    var description by remember { mutableStateOf(existingTransaction?.description ?: "") }
+    var fromWallet by remember { mutableStateOf(wallets.find { it.id == existingTransaction?.walletId } ?: wallets.firstOrNull()) }
+    var toWallet by remember { mutableStateOf(wallets.find { it.id == existingTransaction?.toWalletId }) }
+    var category by remember { mutableStateOf(categories.find { it.id == existingTransaction?.categoryId }) }
 
     val dateFormat = remember { SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).apply { isLenient = false } }
-    var dateInput by remember { mutableStateOf(dateFormat.format(Date())) }
+    var dateInput by remember { mutableStateOf(dateFormat.format(existingTransaction?.date ?: Date())) }
     var isDateInvalid by remember { mutableStateOf(false) }
 
     val parsedDate = remember(dateInput) {
@@ -84,7 +89,7 @@ fun AddEditTransactionSheet(
                 .padding(horizontal = 24.dp, vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            item { Text("New Transaction", style = MaterialTheme.typography.headlineSmall) }
+            item { Text(title, style = MaterialTheme.typography.headlineSmall) }
             item { SegmentedButtonRow(selectedType = selectedType, onTypeSelected = { selectedType = it }) }
             item {
                 OutlinedTextField(
@@ -98,7 +103,6 @@ fun AddEditTransactionSheet(
             }
             item { OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Name") }, modifier = Modifier.fillMaxWidth()) }
             item { OutlinedTextField(value = description, onValueChange = { description = it }, label = { Text("Description (Optional)") }, modifier = Modifier.fillMaxWidth()) }
-
             item {
                 OutlinedTextField(
                     value = dateInput,

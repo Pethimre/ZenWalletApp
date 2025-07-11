@@ -23,10 +23,13 @@ import com.aestroon.common.data.DashboardStats
 import com.aestroon.common.data.entity.PlannedPaymentEntity
 import com.aestroon.common.data.entity.TransactionEntity
 import com.aestroon.common.data.entity.TransactionType
+import com.aestroon.common.domain.DashboardViewModel
 import com.aestroon.common.domain.PlannedPaymentsViewModel
+import com.aestroon.common.domain.PortfolioViewModel
 import com.aestroon.common.domain.ProfileViewModel
 import com.aestroon.common.domain.TransactionsViewModel
 import com.aestroon.common.domain.WalletsViewModel
+import com.aestroon.common.presentation.AddEditTransactionSheet
 import com.aestroon.home.dashboardScreen.addDashboardContent
 import com.aestroon.home.homeScreen.addHomeScreenContent
 import com.aestroon.home.news.domain.HomeViewModel
@@ -48,24 +51,30 @@ fun HomeMainScreen(
     transactionsViewModel: TransactionsViewModel,
     walletsViewModel: WalletsViewModel,
     plannedPaymentsViewModel: PlannedPaymentsViewModel,
-    profileViewModel: ProfileViewModel
+    profileViewModel: ProfileViewModel,
+    portfolioViewModel: PortfolioViewModel,
+    dashboardViewModel: DashboardViewModel,
 ) {
+    val summary by walletsViewModel.summary.collectAsState()
+    val portfolioSummary by portfolioViewModel.overallSummary.collectAsState()
     val transactions by transactionsViewModel.transactions.collectAsState()
     val articles by newsViewModel.news.collectAsState()
     val isLoadingNews by newsViewModel.loading.collectAsState()
-    val summary by walletsViewModel.summary.collectAsState()
     val categoriesMap by transactionsViewModel.categoriesMap.collectAsState()
     val isRefreshing by homeViewModel.isRefreshing.collectAsState()
     val plannedPayments by plannedPaymentsViewModel.plannedPayments.collectAsState()
-
     val baseCurrency by transactionsViewModel.baseCurrency.collectAsState()
     val exchangeRates by transactionsViewModel.exchangeRates.collectAsState()
     val monthlyProgress by transactionsViewModel.monthlyProgress.collectAsState()
-
     val worthGoal by profileViewModel.savedWorthGoal.collectAsState()
     val worthGoalCurrency by profileViewModel.savedWorthGoalCurrency.collectAsState()
     val currentMonthIncome by transactionsViewModel.currentMonthIncome.collectAsState()
     val currentMonthExpense by transactionsViewModel.currentMonthExpense.collectAsState()
+    val netWorthState by dashboardViewModel.netWorthState.collectAsState()
+
+    val transactionToEdit by transactionsViewModel.transactionToEdit.collectAsState()
+    val wallets by walletsViewModel.wallets.collectAsState()
+    val categories by transactionsViewModel.categories.collectAsState()
 
     val pullRefreshState = rememberPullRefreshState(isRefreshing, { homeViewModel.refreshAllData() })
 
@@ -97,6 +106,23 @@ fun HomeMainScreen(
         }
     }
 
+    transactionToEdit?.let { transaction ->
+        AddEditTransactionSheet(
+            existingTransaction = transaction,
+            wallets = wallets,
+            categories = categories,
+            onDismiss = { transactionsViewModel.onEditTransactionDialogDismiss() },
+            onConfirm = { amount, name, description, date, fromWallet, category, type, toWallet ->
+                transactionsViewModel.onEditTransactionConfirm(
+                    amountStr = (amount / 100.0).toString(),
+                    name = name,
+                    description = description ?: "",
+                    category = category!!
+                )
+            }
+        )
+    }
+
     Box(Modifier.fillMaxSize()) {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
@@ -116,6 +142,7 @@ fun HomeMainScreen(
             when (selectedHomeScreenType) {
                 HomeScreenType.OVERVIEW -> {
                     addHomeScreenContent(
+                        netWorth = netWorthState.currentNetWorth,
                         summary = summary,
                         worthGoal = worthGoal,
                         worthGoalCurrency = worthGoalCurrency,
@@ -126,28 +153,32 @@ fun HomeMainScreen(
                         categoriesMap = categoriesMap,
                         baseCurrency = baseCurrency,
                         exchangeRates = exchangeRates,
-                        onEdit = {},
+                        onEdit = { transaction ->
+                            transactionsViewModel.onEditTransactionClicked(transaction)
+                        },
                         onDelete = { transactionsViewModel.deleteTransaction(it) },
                         onPayPlanned = { plannedPaymentsViewModel.pay(it) },
                         onSkipPlanned = { plannedPaymentsViewModel.skip(it) },
                         allUpcoming = upcomingPayments,
                         allOverdue = overduePayments,
                         currentMonthIncome = currentMonthIncome,
-                        currentMonthExpense = currentMonthExpense,
+                        currentMonthExpense = currentMonthExpense
                     )
                 }
                 HomeScreenType.DASHBOARD -> {
-                    val netWorth = summary.totalBalance / 100.0
+                    val walletNetWorth = summary.totalBalance / 100.0
+                    val portfolioNetWorth = portfolioSummary.totalPortfolioValue
+                    val totalNetWorth = walletNetWorth + portfolioNetWorth
+
                     val cashFlow = currentMonthIncome - currentMonthExpense
                     val savingsRate = if (currentMonthIncome > 0) (cashFlow / currentMonthIncome).toFloat() else 0f
 
                     val stats = DashboardStats(
-                        netWorth = netWorth,
+                        netWorth = netWorthState.currentNetWorth,
                         savingsRate = savingsRate,
                         thisMonthCashFlow = cashFlow,
-                        baseCurrency = baseCurrency
+                        baseCurrency = netWorthState.currency
                     )
-
                     addDashboardContent(
                         navController = navController,
                         stats = stats

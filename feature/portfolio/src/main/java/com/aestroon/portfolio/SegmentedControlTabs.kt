@@ -1,5 +1,6 @@
-package com.aestroon.portfolio.mockProvider
+package com.aestroon.portfolio
 
+import PortfolioAssetType
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues

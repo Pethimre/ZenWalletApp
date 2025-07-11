@@ -18,7 +18,7 @@ interface TransactionRepository {
     fun getTransactionsForWallet(walletId: String): Flow<List<TransactionEntity>>
     fun getPaginatedTransactionsForWallet(walletId: String, limit: Int, offset: Int): Flow<List<TransactionEntity>>
     suspend fun addTransaction(transaction: TransactionEntity): Result<Unit>
-    suspend fun updateTransaction(transaction: TransactionEntity): Result<Unit>
+    suspend fun updateTransaction(originalTransaction: TransactionEntity, updatedTransaction: TransactionEntity): Result<Unit>
     suspend fun deleteTransaction(transaction: TransactionEntity): Result<Unit>
     suspend fun syncTransactions(userId: String): Result<Unit>
 }
@@ -52,13 +52,16 @@ class TransactionRepositoryImpl(
         syncTransactions(transaction.userId)
     }
 
-    override suspend fun updateTransaction(transaction: TransactionEntity): Result<Unit> = runCatching {
+    override suspend fun updateTransaction(originalTransaction: TransactionEntity, updatedTransaction: TransactionEntity): Result<Unit> = runCatching {
         db.withTransaction {
-            // Note: This simple update doesn't revert old wallet balances.
-            // A more robust implementation would be needed for editing amounts/types.
-            transactionDao.updateTransaction(transaction.copy(isSynced = false))
+            // Revert the old transaction's impact on wallet balances
+            updateWalletBalancesForTransaction(originalTransaction, isReverting = true)
+            // Apply the new transaction's impact
+            updateWalletBalancesForTransaction(updatedTransaction, isReverting = false)
+            // Update the transaction in the database
+            transactionDao.updateTransaction(updatedTransaction.copy(isSynced = false))
         }
-        syncTransactions(transaction.userId)
+        syncTransactions(updatedTransaction.userId)
     }
 
     override suspend fun deleteTransaction(transaction: TransactionEntity): Result<Unit> = runCatching {
@@ -66,7 +69,6 @@ class TransactionRepositoryImpl(
             updateWalletBalancesForTransaction(transaction, isReverting = true)
             transactionDao.deleteTransactionById(transaction.id)
         }
-
         if (connectivityObserver.observe().first() == ConnectivityObserver.Status.Available) {
             postgrest.from(TRANSACTIONS_TABLE_NAME).delete {
                 filter { eq("id", transaction.id) }
@@ -79,14 +81,10 @@ class TransactionRepositoryImpl(
             Log.d("TransactionSync", "Skipping sync: Network not available.")
             return@runCatching
         }
-
         try {
             Log.d("TransactionSync", "Starting transaction sync for user: $userId")
-
-            // Upload unsynced transactions
             val unsynced = transactionDao.getUnsyncedTransactions().first()
             if (unsynced.isNotEmpty()) {
-                Log.d("TransactionSync", "Found ${unsynced.size} unsynced transactions to upload.")
                 val networkTransactions = unsynced.map {
                     Transaction(
                         id = it.id, amount = it.amount, currency = it.currency, name = it.name,
@@ -97,17 +95,10 @@ class TransactionRepositoryImpl(
                 }
                 postgrest.from(TRANSACTIONS_TABLE_NAME).upsert(networkTransactions)
                 unsynced.forEach { transactionDao.markTransactionAsSynced(it.id) }
-                Log.d("TransactionSync", "Upload successful.")
-            } else {
-                Log.d("TransactionSync", "No local transactions to upload.")
             }
-
-            // Download remote transactions
-            Log.d("TransactionSync", "Fetching remote transactions...")
             val remote = postgrest.from(TRANSACTIONS_TABLE_NAME).select {
                 filter { eq("user_id", userId) }
             }.decodeList<Transaction>()
-            Log.d("TransactionSync", "Successfully fetched and decoded ${remote.size} remote transactions.")
 
             db.withTransaction {
                 remote.forEach {
@@ -121,12 +112,9 @@ class TransactionRepositoryImpl(
                     transactionDao.insertTransaction(entity)
                 }
             }
-            Log.d("TransactionSync", "Local database updated with remote transactions.")
-
         } catch (e: Exception) {
-            // This will catch any error during the sync process (networking, JSON parsing, etc.)
             Log.e("TransactionSync", "TRANSACTION SYNC FAILED", e)
-            throw e // Re-throw to let the caller know it failed
+            throw e
         }
     }
 
@@ -146,16 +134,13 @@ class TransactionRepositoryImpl(
             TransactionType.TRANSFER -> {
                 val toWalletId = transaction.toWalletId ?: return
                 val toWallet = walletRepository.getWalletById(toWalletId).first() ?: return
-
                 val amountToTransfer = if (fromWallet.currency != toWallet.currency) {
                     convertCurrency(transaction.amount, fromWallet.currency, toWallet.currency).getOrThrow()
                 } else {
                     transaction.amount
                 }
-
                 val updatedFromWallet = fromWallet.copy(balance = fromWallet.balance - (transaction.amount * sign))
                 val updatedToWallet = toWallet.copy(balance = toWallet.balance + (amountToTransfer * sign))
-
                 walletRepository.updateWallet(updatedFromWallet).getOrThrow()
                 walletRepository.updateWallet(updatedToWallet).getOrThrow()
             }

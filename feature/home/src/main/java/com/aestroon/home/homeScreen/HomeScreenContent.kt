@@ -68,6 +68,7 @@ import java.util.Date
 import java.util.Locale
 
 fun LazyListScope.addHomeScreenContent(
+    netWorth: Double,
     summary: WalletsSummary,
     worthGoal: Long,
     worthGoalCurrency: String,
@@ -85,11 +86,12 @@ fun LazyListScope.addHomeScreenContent(
     allUpcoming: List<PlannedPaymentEntity>,
     allOverdue: List<PlannedPaymentEntity>,
     currentMonthIncome: Double,
-    currentMonthExpense: Double,
+    currentMonthExpense: Double
 ) {
     item(key = "balance_overview_card") {
         BalanceOverviewCard(
-            totalBalance = summary.totalBalance / 100.0,
+            netWorth = netWorth,
+            walletBalance = summary.totalBalance / 100.0,
             worthGoal = worthGoal,
             worthGoalCurrency = worthGoalCurrency,
             monthlyProgress = monthlyProgress,
@@ -296,7 +298,10 @@ fun CollapsibleSectionCard(
                 }
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(title)
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.bodySmall,
+                )
                 Icon(
                     imageVector = if (isExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
                     contentDescription = "Expand section"

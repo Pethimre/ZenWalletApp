@@ -27,6 +27,8 @@ android {
 
         buildConfigField("String", "EXCHANGE_RATE_API_KEY", "\"${properties.getProperty("EXCHANGE_RATE_API_KEY")}\"")
         buildConfigField("String", "EXCHANGE_RATE_API_URL", "\"${properties.getProperty("EXCHANGE_RATE_API_URL")}\"")
+        buildConfigField("String", "ALPHA_VANTAGE_API_KEY", "\"${properties.getProperty("ALPHA_VANTAGE_API_KEY")}\"")
+        buildConfigField("String", "COINGECKO_API_KEY", "\"${properties.getProperty("COINGECKO_API_KEY")}\"")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles("consumer-rules.pro")

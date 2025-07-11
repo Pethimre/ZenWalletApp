@@ -13,8 +13,14 @@ interface TransactionDao {
     @Query("SELECT * FROM transactions WHERE userId = :userId ORDER BY date DESC")
     fun getTransactionsForUser(userId: String): Flow<List<TransactionEntity>>
 
-    @Query("SELECT * FROM transactions WHERE walletId = :walletId OR toWalletId = :walletId ORDER BY date DESC")
+    @Query("SELECT * FROM transactions WHERE walletId = :walletId ORDER BY date DESC")
     fun getTransactionsForWallet(walletId: String): Flow<List<TransactionEntity>>
+
+    @Query("SELECT * FROM transactions WHERE walletId = :walletId ORDER BY date DESC LIMIT :limit OFFSET :offset")
+    fun getPaginatedTransactionsForWallet(walletId: String, limit: Int, offset: Int): Flow<List<TransactionEntity>>
+
+    @Query("SELECT * FROM transactions WHERE isSynced = 0")
+    fun getUnsyncedTransactions(): Flow<List<TransactionEntity>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertTransaction(transaction: TransactionEntity)
@@ -25,12 +31,6 @@ interface TransactionDao {
     @Query("DELETE FROM transactions WHERE id = :transactionId")
     suspend fun deleteTransactionById(transactionId: String)
 
-    @Query("SELECT * FROM transactions WHERE isSynced = 0")
-    fun getUnsyncedTransactions(): Flow<List<TransactionEntity>>
-
     @Query("UPDATE transactions SET isSynced = 1 WHERE id = :transactionId")
     suspend fun markTransactionAsSynced(transactionId: String)
-
-    @Query("SELECT * FROM transactions WHERE walletId = :walletId ORDER BY date DESC LIMIT :limit OFFSET :offset")
-    fun getPaginatedTransactionsForWallet(walletId: String, limit: Int, offset: Int): Flow<List<TransactionEntity>>
 }

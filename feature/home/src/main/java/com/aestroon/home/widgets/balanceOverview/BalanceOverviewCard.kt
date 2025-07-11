@@ -36,7 +36,8 @@ import kotlin.math.abs
 @Composable
 fun BalanceOverviewCard(
     modifier: Modifier = Modifier,
-    totalBalance: Double,
+    netWorth: Double,
+    walletBalance: Double,
     worthGoal: Long,
     worthGoalCurrency: String,
     monthlyProgress: Double,
@@ -58,15 +59,14 @@ fun BalanceOverviewCard(
         }
     }
 
-    val amountUntilGoal = (goalInCurrentBaseCurrency - totalBalance).coerceAtLeast(0.0)
+    val amountUntilGoal = (goalInCurrentBaseCurrency - netWorth).coerceAtLeast(0.0)
     val hasGoal = goalInCurrentBaseCurrency > 0
-    val isGoalReached = hasGoal && totalBalance >= goalInCurrentBaseCurrency
-
-    val totalProgress = if (hasGoal) (totalBalance / goalInCurrentBaseCurrency).toFloat() else 0f
+    val isGoalReached = hasGoal && netWorth >= goalInCurrentBaseCurrency
+    val totalProgress = if (hasGoal) (netWorth / goalInCurrentBaseCurrency).toFloat() else 0f
     val monthlyProgressPercent = if (hasGoal) (monthlyProgress / goalInCurrentBaseCurrency).toFloat() else 0f
     val pastProgress = totalProgress - monthlyProgressPercent
 
-    val statusMessage = "This month: ${if(monthlyProgress >= 0) "+" else ""}${TextFormatter.toPrettyAmountWithCurrency(monthlyProgress, baseCurrency)}"
+    val statusMessage = "This month: ${if (monthlyProgress >= 0) "+" else ""}${TextFormatter.toPrettyAmountWithCurrency(monthlyProgress, baseCurrency)}"
     val monthlyProgressColor = if (monthlyProgress >= 0) GreenChipColor else RedChipColor
 
     Card(
@@ -76,18 +76,21 @@ fun BalanceOverviewCard(
             containerColor = MaterialTheme.colorScheme.background,
         ),
     ) {
-        Column(modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp)) {
+        Column(modifier = Modifier.padding(top = 16.dp, bottom = 12.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.Top,
             ) {
-                BalanceOrExpenseItem(
-                    icon = Icons.Filled.AccountBalance,
-                    label = "Total Balance",
-                    value = TextFormatter.toPrettyAmountWithCurrency(totalBalance, baseCurrency),
-                    valueColor = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                Column(modifier = Modifier.weight(1f)) {
+                    BalanceOrExpenseItem(
+                        icon = Icons.Filled.AccountBalance,
+                        label = "Net Worth",
+                        value = TextFormatter.toPrettyAmountWithCurrency(netWorth, baseCurrency),
+                        valueColor = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
                 Divider(
                     modifier = Modifier.height(50.dp).width(1.dp).padding(horizontal = 8.dp),
                     color = MaterialTheme.colorScheme.outlineVariant
@@ -99,6 +102,13 @@ fun BalanceOverviewCard(
                     valueColor = MaterialTheme.colorScheme.primary,
                 )
             }
+
+            Text(
+                text = "Wallet Balance: ${TextFormatter.toPrettyAmountWithCurrency(walletBalance, baseCurrency)}",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                modifier = Modifier.padding(start = 28.dp).fillMaxWidth()
+            )
 
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -138,7 +148,7 @@ fun BalanceOverviewCard(
                                 modifier = Modifier
                                     .align(Alignment.CenterStart)
                                     .fillMaxHeight()
-                                    .padding(start = maxWidth * pastProgress.coerceIn(0f,1f))
+                                    .padding(start = maxWidth * pastProgress.coerceIn(0f, 1f))
                                     .width(maxWidth * monthlyProgressPercent)
                                     .background(monthlyProgressColor)
                             )
@@ -207,7 +217,7 @@ private fun BalanceOrExpenseItem(
             )
             Text(
                 text = value,
-                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
                 color = valueColor,
                 fontSize = 18.sp,
             )

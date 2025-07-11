@@ -28,7 +28,9 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.aestroon.calendar.CalendarScreen
+import com.aestroon.common.domain.DashboardViewModel
 import com.aestroon.common.domain.PlannedPaymentsViewModel
+import com.aestroon.common.domain.PortfolioViewModel
 import com.aestroon.common.domain.TransactionsViewModel
 import com.aestroon.common.domain.WalletsViewModel
 import com.aestroon.common.navigation.AnimatedNavigationBar
@@ -57,6 +59,8 @@ fun AuthenticatedNavGraph(onLogoutClicked: () -> Unit) {
 
     val newsViewModel: NewsViewModel = getViewModel()
     val profileViewModel: ProfileViewModel = getViewModel()
+    val portfolioViewModel: PortfolioViewModel = getViewModel()
+    val dashboardViewModel: DashboardViewModel = getViewModel()
     val transactionsViewModel: TransactionsViewModel = getViewModel()
     val walletsViewModel: WalletsViewModel = getViewModel()
     val homeViewModel: HomeViewModel = getViewModel()
@@ -80,6 +84,7 @@ fun AuthenticatedNavGraph(onLogoutClicked: () -> Unit) {
 
     if (showAddTransactionSheet) {
         AddEditTransactionSheet(
+            existingTransaction = null, // Pass null because we are adding
             wallets = wallets,
             categories = categories,
             onDismiss = { showAddTransactionSheet = false },
@@ -156,6 +161,8 @@ fun AuthenticatedNavGraph(onLogoutClicked: () -> Unit) {
                     walletsViewModel = walletsViewModel,
                     plannedPaymentsViewModel = plannedPaymentsViewModel,
                     profileViewModel = profileViewModel,
+                    portfolioViewModel = portfolioViewModel,
+                    dashboardViewModel = dashboardViewModel,
                 )
             }
             composable("news_detail/{articleId}") { backStackEntry ->

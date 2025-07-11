@@ -43,6 +43,9 @@ class TransactionsViewModel(
     val baseCurrency: StateFlow<String> = currencyConversionRepository.baseCurrency
     val exchangeRates: StateFlow<Map<String, Double>?> = currencyConversionRepository.exchangeRates
 
+    private val _transactionToEdit = MutableStateFlow<TransactionEntity?>(null)
+    val transactionToEdit = _transactionToEdit.asStateFlow()
+
     @OptIn(ExperimentalCoroutinesApi::class)
     val transactions: StateFlow<List<TransactionEntity>> = authRepository.userIdFlow
         .filterNotNull()
@@ -184,10 +187,41 @@ class TransactionsViewModel(
         }
     }
 
+    fun onEditTransactionClicked(transaction: TransactionEntity) {
+        _transactionToEdit.value = transaction
+    }
+
+    fun onEditTransactionDialogDismiss() {
+        _transactionToEdit.value = null
+    }
+
+    fun onEditTransactionConfirm(
+        amountStr: String,
+        name: String,
+        description: String,
+        category: CategoryEntity
+    ) {
+        viewModelScope.launch {
+            val originalTransaction = _transactionToEdit.value ?: return@launch
+
+            val amountInCents = (amountStr.replace(",", ".").toDoubleOrNull() ?: 0.0).times(100).toLong()
+
+            val updatedTransaction = originalTransaction.copy(
+                amount = amountInCents,
+                name = name,
+                description = description,
+                categoryId = category.id,
+                isSynced = false
+            )
+
+            transactionRepository.updateTransaction(originalTransaction, updatedTransaction)
+            onEditTransactionDialogDismiss()
+        }
+    }
+
     fun deleteTransaction(transaction: TransactionEntity) {
         viewModelScope.launch {
             transactionRepository.deleteTransaction(transaction)
-                .onFailure { _uiState.value = TransactionUiState.Error("Failed to delete transaction.") }
         }
     }
 }
