@@ -1,11 +1,19 @@
 package com.aestroon.common.domain
 
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AttachMoney
+import androidx.compose.material.icons.filled.CurrencyFranc
+import androidx.compose.material.icons.filled.EuroSymbol
+import androidx.compose.material.icons.filled.Paid
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.aestroon.common.data.entity.CategoryEntity
 import com.aestroon.common.data.entity.TransactionEntity
 import com.aestroon.common.data.entity.TransactionType
 import com.aestroon.common.data.entity.WalletEntity
+import com.aestroon.common.data.model.CurrencyExchangeInfo
+import com.aestroon.common.data.model.RateTrend
 import com.aestroon.common.data.repository.AuthRepository
 import com.aestroon.common.data.repository.CategoryRepository
 import com.aestroon.common.data.repository.CurrencyConversionRepository
@@ -144,7 +152,6 @@ class TransactionsViewModel(
             }
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0.0)
-
 
     fun syncTransactions() {
         viewModelScope.launch {

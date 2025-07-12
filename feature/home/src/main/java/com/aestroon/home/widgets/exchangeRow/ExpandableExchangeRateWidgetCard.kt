@@ -1,59 +1,70 @@
 package com.aestroon.home.widgets.exchangeRow
 
-import androidx.compose.animation.*
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.UnfoldLess
+import androidx.compose.material.icons.filled.UnfoldMore
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.aestroon.common.utilities.DEFAULT_BASE_CURRENCY
-import com.aestroon.common.utilities.NUMBER_OF_CURRENCIES_ON_COMPACT
-import com.aestroon.home.mockProvider.CurrencyExchangeInfo
-import com.aestroon.home.mockProvider.RateTrend
-import com.aestroon.home.widgets.exchangeRow.mockProvider.sampleCollapsedRates
-import com.aestroon.home.widgets.exchangeRow.mockProvider.sampleExchangeRatesForWidget
+import com.aestroon.common.data.model.CurrencyExchangeInfo
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalAnimationApi::class)
+@OptIn(ExperimentalAnimationApi::class)
 @Composable
 fun ExpandableExchangeRateWidgetCard(
     modifier: Modifier = Modifier,
     allExchangeRates: List<CurrencyExchangeInfo>,
-    ratesForCollapsedView: List<CurrencyExchangeInfo> = allExchangeRates.take(NUMBER_OF_CURRENCIES_ON_COMPACT),
-    baseCurrencySymbol: String = DEFAULT_BASE_CURRENCY,
+    ratesForCollapsedView: List<CurrencyExchangeInfo>,
+    baseCurrencySymbol: String,
     initiallyExpanded: Boolean = false,
     cardTitle: String = "Exchange Rates"
 ) {
     var isExpanded by remember { mutableStateOf(initiallyExpanded) }
 
+    if (allExchangeRates.isEmpty()) return
+
     Card(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.background
-        ),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.background),
     ) {
         AnimatedContent(
             targetState = isExpanded,
             transitionSpec = {
                 fadeIn(animationSpec = tween(300, easing = FastOutSlowInEasing)) +
-                        expandVertically(
-                            animationSpec = tween(300, easing = FastOutSlowInEasing),
-                            expandFrom = Alignment.Top,
-                        ) togetherWith
+                        expandVertically(animationSpec = tween(300, easing = FastOutSlowInEasing), expandFrom = Alignment.Top) togetherWith
                         fadeOut(animationSpec = tween(300, easing = FastOutSlowInEasing)) +
-                        shrinkVertically(
-                            animationSpec = tween(300, easing = FastOutSlowInEasing),
-                            shrinkTowards = Alignment.Top,
-                        )
+                        shrinkVertically(animationSpec = tween(300, easing = FastOutSlowInEasing), shrinkTowards = Alignment.Top)
             },
             label = "expandableExchangeRateContent"
         ) { targetExpanded ->
@@ -68,91 +79,27 @@ fun ExpandableExchangeRateWidgetCard(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween,
-                    ){
-                        Text(
-                            text = cardTitle,
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface,
-                        )
-                        Icon(
-                            imageVector = Icons.Filled.UnfoldLess,
-                            contentDescription = "Collapse",
-                            tint = MaterialTheme.colorScheme.onBackground,
-                            modifier = Modifier.size(28.dp),
-                        )
+                    ) {
+                        Text(text = cardTitle, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                        Icon(imageVector = Icons.Filled.UnfoldLess, contentDescription = "Collapse", tint = MaterialTheme.colorScheme.onBackground, modifier = Modifier.size(28.dp))
                     }
                     Spacer(modifier = Modifier.height(10.dp))
-
                     allExchangeRates.forEachIndexed { index, rateInfo ->
-                        DetailedExchangeRateRow(
-                            info = rateInfo,
-                            baseCurrencySymbol = baseCurrencySymbol,
-                        )
+                        DetailedExchangeRateRow(info = rateInfo, baseCurrencySymbol = baseCurrencySymbol)
                         if (index < allExchangeRates.size - 1) {
-                            HorizontalDivider(
-                                modifier = Modifier.padding(vertical = 8.dp),
-                                thickness = 0.5.dp,
-                                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
-                            )
+                            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
                         }
                     }
                 }
             } else {
-                Box(modifier = Modifier.clickable { isExpanded = true }) {
-                    CollapsedRatesDisplay(
-                        rates = ratesForCollapsedView
-                    )
+                Row(
+                    modifier = Modifier.fillMaxWidth().clickable { isExpanded = true },
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center,
+                ) {
+                    CollapsedRatesDisplay(rates = ratesForCollapsedView)
                 }
             }
         }
-    }
-}
-
-@Preview(showBackground = true, name = "Collapsed Exchange Rate Widget")
-@Composable
-fun ExpandableExchangeRateWidgetCardCollapsedPreview() {
-    MaterialTheme {
-        ExpandableExchangeRateWidgetCard(
-            allExchangeRates = sampleExchangeRatesForWidget,
-            ratesForCollapsedView = sampleCollapsedRates,
-            initiallyExpanded = false,
-        )
-    }
-}
-
-@Preview(showBackground = true, name = "Expanded Exchange Rate Widget")
-@Composable
-fun ExpandableExchangeRateWidgetCardExpandedPreview() {
-    MaterialTheme {
-        ExpandableExchangeRateWidgetCard(
-            allExchangeRates = sampleExchangeRatesForWidget,
-            ratesForCollapsedView = sampleCollapsedRates,
-            initiallyExpanded = true,
-        )
-    }
-}
-
-@Preview(showBackground = true, name = "Collapsed Dark")
-@Composable
-fun ExpandableExchangeRateWidgetCardCollapsedDarkPreview() {
-    MaterialTheme(colorScheme = darkColorScheme()) {
-        ExpandableExchangeRateWidgetCard(
-            allExchangeRates = sampleExchangeRatesForWidget,
-            ratesForCollapsedView = sampleCollapsedRates,
-            initiallyExpanded = false,
-        )
-    }
-}
-
-@Preview(showBackground = true, name = "Expanded Dark")
-@Composable
-fun ExpandableExchangeRateWidgetCardExpandedDarkPreview() {
-    MaterialTheme(colorScheme = darkColorScheme()) {
-        ExpandableExchangeRateWidgetCard(
-            allExchangeRates = sampleExchangeRatesForWidget,
-            ratesForCollapsedView = sampleCollapsedRates,
-            initiallyExpanded = true,
-        )
     }
 }

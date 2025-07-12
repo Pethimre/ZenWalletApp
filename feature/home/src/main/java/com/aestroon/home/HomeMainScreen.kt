@@ -23,6 +23,8 @@ import com.aestroon.common.data.DashboardStats
 import com.aestroon.common.data.entity.PlannedPaymentEntity
 import com.aestroon.common.data.entity.TransactionEntity
 import com.aestroon.common.data.entity.TransactionType
+import com.aestroon.common.data.model.CurrencyExchangeInfo
+import com.aestroon.common.data.model.RateTrend
 import com.aestroon.common.domain.DashboardViewModel
 import com.aestroon.common.domain.PlannedPaymentsViewModel
 import com.aestroon.common.domain.PortfolioViewModel
@@ -37,6 +39,8 @@ import com.aestroon.home.news.domain.NewsViewModel
 import com.aestroon.home.news.ui.addNewsScreenContent
 import com.aestroon.home.widgets.HomeScreenType
 import com.aestroon.home.widgets.SegmentedControlHomeTabs
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
 import java.util.Calendar
 
 @OptIn(ExperimentalMaterialApi::class)
@@ -71,6 +75,8 @@ fun HomeMainScreen(
     val currentMonthIncome by transactionsViewModel.currentMonthIncome.collectAsState()
     val currentMonthExpense by transactionsViewModel.currentMonthExpense.collectAsState()
     val netWorthState by dashboardViewModel.netWorthState.collectAsState()
+    val allExchangeRateInfos by homeViewModel.exchangeRateInfos.collectAsState()
+    val collapsedExchangeRateInfos by homeViewModel.collapsedExchangeRateInfos.collectAsState()
 
     val transactionToEdit by transactionsViewModel.transactionToEdit.collectAsState()
     val wallets by walletsViewModel.wallets.collectAsState()
@@ -162,7 +168,9 @@ fun HomeMainScreen(
                         allUpcoming = upcomingPayments,
                         allOverdue = overduePayments,
                         currentMonthIncome = currentMonthIncome,
-                        currentMonthExpense = currentMonthExpense
+                        currentMonthExpense = currentMonthExpense,
+                        allExchangeRates = allExchangeRateInfos,
+                        collapsedExchangeRates = collapsedExchangeRateInfos,
                     )
                 }
                 HomeScreenType.DASHBOARD -> {

@@ -53,6 +53,7 @@ import com.aestroon.common.data.entity.CategoryEntity
 import com.aestroon.common.data.entity.PlannedPaymentEntity
 import com.aestroon.common.data.entity.TransactionEntity
 import com.aestroon.common.data.entity.TransactionType
+import com.aestroon.common.data.model.CurrencyExchangeInfo
 import com.aestroon.common.data.model.WalletsSummary
 import com.aestroon.common.theme.GreenChipColor
 import com.aestroon.common.theme.OrangeChipColor
@@ -60,6 +61,7 @@ import com.aestroon.common.theme.RedChipColor
 import com.aestroon.common.utilities.TextFormatter
 import com.aestroon.common.utilities.formatDayAndMonth
 import com.aestroon.home.widgets.balanceOverview.BalanceOverviewCard
+import com.aestroon.home.widgets.exchangeRow.ExpandableExchangeRateWidgetCard
 import com.aestroon.home.widgets.savingSummary.SavingsSummaryCard
 import java.text.DecimalFormat
 import java.text.SimpleDateFormat
@@ -77,6 +79,8 @@ fun LazyListScope.addHomeScreenContent(
     upcomingTransactions: List<TransactionEntity>,
     overdueTransactions: List<TransactionEntity>,
     categoriesMap: Map<String, CategoryEntity>,
+    allExchangeRates: List<CurrencyExchangeInfo>,
+    collapsedExchangeRates: List<CurrencyExchangeInfo>,
     baseCurrency: String,
     exchangeRates: Map<String, Double>?,
     onEdit: (TransactionEntity) -> Unit,
@@ -105,6 +109,14 @@ fun LazyListScope.addHomeScreenContent(
             income = TextFormatter.toPrettyAmountWithCurrency(currentMonthIncome, baseCurrency, currencyPosition = TextFormatter.CurrencyPosition.AFTER),
             expense = TextFormatter.toPrettyAmountWithCurrency(currentMonthExpense, baseCurrency, currencyPosition = TextFormatter.CurrencyPosition.AFTER),
             savingsGoalPercentage = if (currentMonthIncome > 0) ((currentMonthIncome - currentMonthExpense) / currentMonthIncome).toFloat() else 0f
+        )
+    }
+
+    item(key = "exchange_rate_widget") {
+        ExpandableExchangeRateWidgetCard(
+            allExchangeRates = allExchangeRates,
+            ratesForCollapsedView = collapsedExchangeRates,
+            baseCurrencySymbol = baseCurrency
         )
     }
 
