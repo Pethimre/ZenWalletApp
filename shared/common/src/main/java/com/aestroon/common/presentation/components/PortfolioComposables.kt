@@ -26,7 +26,7 @@ import androidx.compose.ui.unit.dp
 import com.aestroon.common.utilities.TextFormatter.formatPercentage
 
 @Composable
-fun BondPieChart(
+fun AssetPieChart(
     instruments: List<HeldInstrument>,
     modifier: Modifier = Modifier
 ) {
@@ -79,4 +79,3 @@ fun BondPieChart(
         }
     }
 }
-

@@ -206,7 +206,7 @@ class TransactionsViewModel(
         amountStr: String,
         name: String,
         description: String,
-        category: CategoryEntity
+        category: CategoryEntity?,
     ) {
         viewModelScope.launch {
             val originalTransaction = _transactionToEdit.value ?: return@launch
@@ -217,7 +217,7 @@ class TransactionsViewModel(
                 amount = amountInCents,
                 name = name,
                 description = description,
-                categoryId = category.id,
+                categoryId = category?.id,
                 isSynced = false
             )
 

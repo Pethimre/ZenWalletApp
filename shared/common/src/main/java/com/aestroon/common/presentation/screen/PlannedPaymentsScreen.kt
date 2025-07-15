@@ -57,6 +57,7 @@ import com.aestroon.common.data.entity.RecurrenceType
 import com.aestroon.common.data.entity.TransactionType
 import com.aestroon.common.data.entity.WalletEntity
 import com.aestroon.common.domain.PlannedPaymentsViewModel
+import com.aestroon.common.navigation.ScreenNavItems
 import com.aestroon.common.presentation.DropdownSelector
 import com.aestroon.common.presentation.SegmentedButtonRow
 import com.aestroon.common.theme.GreenChipColor
@@ -70,7 +71,7 @@ import java.util.Locale
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PlannedPaymentsScreen(
-    navController: NavController,
+    onNavigateBack: () -> Unit,
     viewModel: PlannedPaymentsViewModel = getViewModel()
 ) {
     val payments by viewModel.plannedPayments.collectAsState()
@@ -88,7 +89,7 @@ fun PlannedPaymentsScreen(
             TopAppBar(
                 title = { Text("Planned Payments") },
                 navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
+                    IconButton(onClick = onNavigateBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")
                     }
                 }

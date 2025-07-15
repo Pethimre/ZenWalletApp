@@ -30,7 +30,6 @@ import androidx.navigation.compose.rememberNavController
 import com.aestroon.calendar.CalendarScreen
 import com.aestroon.common.domain.DashboardViewModel
 import com.aestroon.common.domain.PlannedPaymentsViewModel
-import com.aestroon.common.domain.PortfolioViewModel
 import com.aestroon.common.domain.TransactionsViewModel
 import com.aestroon.common.domain.WalletsViewModel
 import com.aestroon.common.navigation.AnimatedNavigationBar
@@ -59,7 +58,6 @@ fun AuthenticatedNavGraph(onLogoutClicked: () -> Unit) {
 
     val newsViewModel: NewsViewModel = getViewModel()
     val profileViewModel: ProfileViewModel = getViewModel()
-    val portfolioViewModel: PortfolioViewModel = getViewModel()
     val dashboardViewModel: DashboardViewModel = getViewModel()
     val transactionsViewModel: TransactionsViewModel = getViewModel()
     val walletsViewModel: WalletsViewModel = getViewModel()
@@ -71,6 +69,7 @@ fun AuthenticatedNavGraph(onLogoutClicked: () -> Unit) {
 
     val wallets by transactionsViewModel.wallets.collectAsState()
     val categories by transactionsViewModel.categories.collectAsState()
+    var selectedHomeTab by remember { mutableStateOf(HomeScreenType.OVERVIEW) }
 
     val buttons = remember(selectedIndex) {
         listOf(
@@ -84,7 +83,7 @@ fun AuthenticatedNavGraph(onLogoutClicked: () -> Unit) {
 
     if (showAddTransactionSheet) {
         AddEditTransactionSheet(
-            existingTransaction = null, // Pass null because we are adding
+            existingTransaction = null,
             wallets = wallets,
             categories = categories,
             onDismiss = { showAddTransactionSheet = false },
@@ -149,10 +148,9 @@ fun AuthenticatedNavGraph(onLogoutClicked: () -> Unit) {
                 CurrencySelectionScreen(viewModel = profileViewModel, onNavigateUp = { navController.navigateUp() })
             }
             composable(ScreenNavItems.Home.route) {
-                var selectedTab by remember { mutableStateOf(HomeScreenType.OVERVIEW) }
                 HomeMainScreen(
-                    selectedHomeScreenType = selectedTab,
-                    onTabSelected = { selectedTab = it },
+                    selectedHomeScreenType = selectedHomeTab,
+                    onTabSelected = { selectedHomeTab = it },
                     onArticleClick = { articleId -> navController.navigate("news_detail/$articleId") },
                     navController = navController,
                     homeViewModel = homeViewModel,
@@ -161,7 +159,6 @@ fun AuthenticatedNavGraph(onLogoutClicked: () -> Unit) {
                     walletsViewModel = walletsViewModel,
                     plannedPaymentsViewModel = plannedPaymentsViewModel,
                     profileViewModel = profileViewModel,
-                    portfolioViewModel = portfolioViewModel,
                     dashboardViewModel = dashboardViewModel,
                 )
             }
@@ -169,7 +166,13 @@ fun AuthenticatedNavGraph(onLogoutClicked: () -> Unit) {
                 val articleId = backStackEntry.arguments?.getString("articleId") ?: ""
                 val article = newsViewModel.findArticleById(articleId)
                 if (article != null) {
-                    NewsDetailScreen(article = article, onBackClick = { navController.popBackStack() })
+                    NewsDetailScreen(
+                        article = article,
+                        onBackClick = {
+                            selectedHomeTab = HomeScreenType.NEWS
+                            navController.navigate(ScreenNavItems.Home.route)
+                        }
+                    )
                 } else {
                     NewsDetailErrorScreen(onBackClick = { navController.popBackStack() })
                 }
@@ -179,10 +182,20 @@ fun AuthenticatedNavGraph(onLogoutClicked: () -> Unit) {
                 WalletsScreen()
             }
             composable(ScreenNavItems.Categories.route) {
-                CategoriesScreen(onNavigateUp = { navController.popBackStack() })
+                CategoriesScreen(
+                    onNavigateBack = {
+                        selectedHomeTab = HomeScreenType.DASHBOARD
+                        navController.navigate(ScreenNavItems.Home.route)
+                    }
+                )
             }
             composable(ScreenNavItems.PlannedPayments.route) {
-                PlannedPaymentsScreen(navController = navController)
+                PlannedPaymentsScreen(
+                    onNavigateBack = {
+                        selectedHomeTab = HomeScreenType.DASHBOARD
+                        navController.navigate(ScreenNavItems.Home.route)
+                    }
+                )
             }
             composable(ScreenNavItems.Loans.route) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -193,9 +206,6 @@ fun AuthenticatedNavGraph(onLogoutClicked: () -> Unit) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Text("Saving Goals Screen")
                 }
-            }
-            composable(ScreenNavItems.PlannedPayments.route) {
-                PlannedPaymentsScreen(navController = navController)
             }
         }
     }

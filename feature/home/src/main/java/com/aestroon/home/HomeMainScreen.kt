@@ -22,12 +22,8 @@ import androidx.navigation.NavController
 import com.aestroon.common.data.DashboardStats
 import com.aestroon.common.data.entity.PlannedPaymentEntity
 import com.aestroon.common.data.entity.TransactionEntity
-import com.aestroon.common.data.entity.TransactionType
-import com.aestroon.common.data.model.CurrencyExchangeInfo
-import com.aestroon.common.data.model.RateTrend
 import com.aestroon.common.domain.DashboardViewModel
 import com.aestroon.common.domain.PlannedPaymentsViewModel
-import com.aestroon.common.domain.PortfolioViewModel
 import com.aestroon.common.domain.ProfileViewModel
 import com.aestroon.common.domain.TransactionsViewModel
 import com.aestroon.common.domain.WalletsViewModel
@@ -39,8 +35,6 @@ import com.aestroon.home.news.domain.NewsViewModel
 import com.aestroon.home.news.ui.addNewsScreenContent
 import com.aestroon.home.widgets.HomeScreenType
 import com.aestroon.home.widgets.SegmentedControlHomeTabs
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
 import java.util.Calendar
 
 @OptIn(ExperimentalMaterialApi::class)
@@ -56,11 +50,9 @@ fun HomeMainScreen(
     walletsViewModel: WalletsViewModel,
     plannedPaymentsViewModel: PlannedPaymentsViewModel,
     profileViewModel: ProfileViewModel,
-    portfolioViewModel: PortfolioViewModel,
     dashboardViewModel: DashboardViewModel,
 ) {
     val summary by walletsViewModel.summary.collectAsState()
-    val portfolioSummary by portfolioViewModel.overallSummary.collectAsState()
     val transactions by transactionsViewModel.transactions.collectAsState()
     val articles by newsViewModel.news.collectAsState()
     val isLoadingNews by newsViewModel.loading.collectAsState()
@@ -123,7 +115,7 @@ fun HomeMainScreen(
                     amountStr = (amount / 100.0).toString(),
                     name = name,
                     description = description ?: "",
-                    category = category!!
+                    category = category,
                 )
             }
         )
@@ -174,10 +166,6 @@ fun HomeMainScreen(
                     )
                 }
                 HomeScreenType.DASHBOARD -> {
-                    val walletNetWorth = summary.totalBalance / 100.0
-                    val portfolioNetWorth = portfolioSummary.totalPortfolioValue
-                    val totalNetWorth = walletNetWorth + portfolioNetWorth
-
                     val cashFlow = currentMonthIncome - currentMonthExpense
                     val savingsRate = if (currentMonthIncome > 0) (cashFlow / currentMonthIncome).toFloat() else 0f
 

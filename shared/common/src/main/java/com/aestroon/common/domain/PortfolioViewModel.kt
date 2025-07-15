@@ -63,8 +63,9 @@ class PortfolioViewModel(
     private val _isChartLoading = MutableStateFlow(false)
     val isChartLoading: StateFlow<Boolean> = _isChartLoading.asStateFlow()
     private val _liveInstrumentPrices = MutableStateFlow<Map<String, Double>>(emptyMap())
-    private val _marketDataFailed = MutableStateFlow(false)
-    val marketDataFailed: StateFlow<Boolean> = _marketDataFailed.asStateFlow()
+
+    private val _marketDataError = MutableStateFlow<String?>(null)
+    val marketDataError: StateFlow<String?> = _marketDataError.asStateFlow()
 
     init {
         viewModelScope.launch {
@@ -142,7 +143,6 @@ class PortfolioViewModel(
         val totalProfitLossPercentage = if (totalCost == 0.0) 0.0 else (totalProfitLoss / totalCost) * 100
         val breakdown = portfolioAccounts.groupBy { it.accountType }.mapValues { entry -> entry.value.sumOf { it.totalValue } }
         val historicalData = if (totalValue > 0) List(30) { totalValue } else emptyList()
-
         PortfolioSummary(totalValue, totalProfitLoss, totalProfitLossPercentage, breakdown, historicalData)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), PortfolioSummary(0.0, 0.0, 0.0, emptyMap(), emptyList()))
 
@@ -171,7 +171,6 @@ class PortfolioViewModel(
     fun fetchHistoricalData(instrument: HeldInstrument, range: TimeRange) {
         viewModelScope.launch {
             _isChartLoading.value = true
-            _marketDataFailed.value = false
 
             val result = when (instrument.instrument.type) {
                 PortfolioAssetType.CRYPTO -> marketDataRepository.getHistoricalCryptoData(instrument.instrument.symbol, range.days)
@@ -180,10 +179,8 @@ class PortfolioViewModel(
             }
 
             result.onSuccess { data ->
-                _marketDataFailed.value = data.isEmpty()
                 _chartData.value = data
             }.onFailure {
-                _marketDataFailed.value = true
                 _chartData.value = emptyList()
             }
             _isChartLoading.value = false
@@ -192,6 +189,11 @@ class PortfolioViewModel(
 
     fun clearChartData() {
         _chartData.value = emptyList()
+        _marketDataError.value = null
+    }
+
+    fun onDataErrorShown() {
+        _marketDataError.value = null
     }
 
     fun onAddAccountClicked(assetType: String) { _showAddAccountDialog.value = assetType }

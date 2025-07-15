@@ -19,7 +19,7 @@ import org.koin.androidx.compose.koinViewModel
 @Composable
 fun CategoriesScreen(
     viewModel: CategoriesViewModel = koinViewModel(),
-    onNavigateUp: () -> Unit
+    onNavigateBack: () -> Unit
 ) {
     val categories by viewModel.categories.collectAsState()
     var showAddEditDialog by remember { mutableStateOf(false) }
@@ -34,7 +34,7 @@ fun CategoriesScreen(
             TopAppBar(
                 title = { Text("Manage Categories") },
                 navigationIcon = {
-                    IconButton(onClick = onNavigateUp) {
+                    IconButton(onClick = onNavigateBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")
                     }
                 }

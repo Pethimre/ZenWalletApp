@@ -4,6 +4,8 @@ import HeldInstrument
 import PortfolioAccount
 import PortfolioAssetType
 import PortfolioSummary
+import android.widget.Toast
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -55,7 +57,7 @@ import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -68,6 +70,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -79,9 +82,8 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.aestroon.common.data.repository.TimeRange
 import com.aestroon.common.domain.PortfolioViewModel
-import com.aestroon.common.presentation.components.BondPieChart
+import com.aestroon.common.presentation.components.AssetPieChart
 import com.aestroon.common.presentation.components.ConfirmDeleteDialog
-import com.aestroon.common.utilities.DEFAULT_BASE_CURRENCY
 import org.koin.androidx.compose.koinViewModel
 import java.text.DecimalFormat
 
@@ -101,13 +103,22 @@ fun PortfolioOverviewScreen(
     val overallSummary by viewModel.overallSummary.collectAsState()
     val chartData by viewModel.chartData.collectAsState()
     val isChartLoading by viewModel.isChartLoading.collectAsState()
-    val marketDataFailed by viewModel.marketDataFailed.collectAsState()
     val showAddAccountDialogFor by viewModel.showAddAccountDialog.collectAsState()
     val showAddInstrumentDialogFor by viewModel.showAddInstrumentDialog.collectAsState()
     val showEditAccountDialogFor by viewModel.showEditAccountDialog.collectAsState()
     val showEditInstrumentDialogFor by viewModel.showEditInstrumentDialog.collectAsState()
     var accountToDelete by remember { mutableStateOf<PortfolioAccount?>(null) }
     var instrumentToDelete by remember { mutableStateOf<HeldInstrument?>(null) }
+    val marketDataError by viewModel.marketDataError.collectAsState()
+
+    val context = LocalContext.current
+
+    LaunchedEffect(marketDataError) {
+        marketDataError?.let { error ->
+            Toast.makeText(context, error, Toast.LENGTH_SHORT).show()
+            viewModel.onDataErrorShown()
+        }
+    }
 
     Scaffold(
         floatingActionButton = {
@@ -128,7 +139,7 @@ fun PortfolioOverviewScreen(
                 selectedTab = selectedAssetType,
                 onTabSelected = { newTab ->
                     selectedAssetType = newTab
-                    viewModel.clearChartData() // Clear chart when switching main tabs
+                    viewModel.clearChartData()
                 }
             )
             val filteredAccounts = remember(accounts, selectedAssetType) {
@@ -165,7 +176,6 @@ fun PortfolioOverviewScreen(
                             account = account,
                             chartData = chartData,
                             isChartLoading = isChartLoading,
-                            isMarketDataFailed = marketDataFailed,
                             onFetchData = viewModel::fetchHistoricalData,
                             onClearChartData = viewModel::clearChartData,
                             onAddInstrument = { viewModel.onAddInstrumentClicked(account) },
@@ -213,7 +223,6 @@ fun AccountCard(
     account: PortfolioAccount,
     chartData: List<Double>,
     isChartLoading: Boolean,
-    isMarketDataFailed: Boolean,
     onFetchData: (HeldInstrument, TimeRange) -> Unit,
     onClearChartData: () -> Unit,
     onAddInstrument: () -> Unit,
@@ -226,9 +235,9 @@ fun AccountCard(
     var selectedInstrument by remember { mutableStateOf<HeldInstrument?>(null) }
     var selectedRange by remember { mutableStateOf(TimeRange.MONTH) }
 
-    DisposableEffect(Unit) {
-        onDispose {
-            onClearChartData()
+    LaunchedEffect(selectedInstrument, selectedRange) {
+        selectedInstrument?.let {
+            onFetchData(it, selectedRange)
         }
     }
 
@@ -242,50 +251,41 @@ fun AccountCard(
                 }
             }
             Spacer(modifier = Modifier.height(4.dp))
-            if (account.overallProfitLossPercentage != 0.0) {
-                Text("Total Value: ${formatCurrency(account.totalValue, account.instruments.firstOrNull()?.instrument?.currency ?: DEFAULT_BASE_CURRENCY)} (${formatPercentage(account.overallProfitLossPercentage)} P/L)", style = MaterialTheme.typography.bodyMedium, color = if (account.overallProfitLoss >= 0) Color(0xFF28A745) else MaterialTheme.colorScheme.error, fontWeight = FontWeight.SemiBold)
+            if (account.overallProfitLoss.toInt() != 0) {
+                Text("Total Value: ${formatCurrency(account.totalValue, account.instruments.firstOrNull()?.instrument?.currency ?: "HUF")} (${formatPercentage(account.overallProfitLossPercentage)} P/L)", style = MaterialTheme.typography.bodyMedium, color = if (account.overallProfitLoss >= 0) Color(0xFF28A745) else MaterialTheme.colorScheme.error, fontWeight = FontWeight.SemiBold)
             } else {
-                Text("Total Value: ${formatCurrency(account.totalValue, account.instruments.firstOrNull()?.instrument?.currency ?: DEFAULT_BASE_CURRENCY)}", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onBackground, fontWeight = FontWeight.SemiBold)
+                Text("Total Value: ${formatCurrency(account.totalValue, account.instruments.firstOrNull()?.instrument?.currency ?: "HUF")}", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.SemiBold)
             }
             HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
 
-            if (account.accountType != PortfolioAssetType.BONDS) {
-                if (selectedInstrument != null) {
-                    if (isChartLoading) {
-                        Box(modifier = Modifier.fillMaxWidth().height(150.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
-                    } else if (chartData.isNotEmpty()) {
-                        AnimatedLineChart(data = chartData, modifier = Modifier.fillMaxWidth().height(150.dp))
-                    } else if (isMarketDataFailed) {
-                        Box(modifier = Modifier.fillMaxWidth().height(150.dp), contentAlignment = Alignment.Center) { Text("Chart data is not available for this asset.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
-                    }
-                    Spacer(modifier = Modifier.height(8.dp))
-                    TimeRangeSelector(
-                        selectedRange = selectedRange,
-                        onRangeSelected = { newRange ->
-                            selectedRange = newRange
-                            selectedInstrument?.let { onFetchData(it, newRange) }
-                        }
-                    )
+            if (selectedInstrument != null && account.accountType != PortfolioAssetType.BONDS) {
+                if (isChartLoading) {
+                    Box(modifier = Modifier.fillMaxWidth().height(150.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
+                } else if (chartData.isNotEmpty()) {
+                    AnimatedLineChart(data = chartData, modifier = Modifier.fillMaxWidth().height(150.dp))
+                } else {
+                    Box(modifier = Modifier.fillMaxWidth().height(150.dp), contentAlignment = Alignment.Center) { Text("No chart data available.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
                 }
+                Spacer(modifier = Modifier.height(8.dp))
+                TimeRangeSelector(
+                    selectedRange = selectedRange,
+                    onRangeSelected = { newRange -> selectedRange = newRange }
+                )
             } else if (account.instruments.size >= 2) {
-                BondPieChart(instruments = account.instruments)
+                AssetPieChart(instruments = account.instruments)
             }
+
+            HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
+
             Column {
                 account.instruments.forEach { heldInstrument ->
                     InstrumentRow(
                         heldInstrument = heldInstrument,
-                        isMarketDataFailed = isMarketDataFailed,
                         onEdit = { onEditInstrument(heldInstrument) },
                         onDelete = { onDeleteInstrument(heldInstrument) },
                         onSelect = {
                             if (account.accountType != PortfolioAssetType.BONDS) {
-                                val newSelection = if (selectedInstrument == heldInstrument) null else heldInstrument
-                                selectedInstrument = newSelection
-                                if (newSelection != null) {
-                                    onFetchData(newSelection, selectedRange)
-                                } else {
-                                    onClearChartData()
-                                }
+                                selectedInstrument = if (selectedInstrument == heldInstrument) null else heldInstrument
                             }
                         },
                         isSelected = selectedInstrument?.instrument?.id == heldInstrument.instrument.id
@@ -308,7 +308,6 @@ fun AccountCard(
 @Composable
 fun InstrumentRow(
     heldInstrument: HeldInstrument,
-    isMarketDataFailed: Boolean,
     onEdit: () -> Unit,
     onDelete: () -> Unit,
     onSelect: () -> Unit,
@@ -330,7 +329,7 @@ fun InstrumentRow(
             Column(modifier = Modifier.weight(1f)) {
                 Text(text = heldInstrument.instrument.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Text(text = "${heldInstrument.quantity} x ${formatCurrency(heldInstrument.averageBuyPrice, heldInstrument.instrument.currency + " ")}", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                if (!isMarketDataFailed && heldInstrument.profitLoss.toInt() != 0) {
+                if (heldInstrument.profitLoss.toInt() != 0) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         val pnlColor = if (heldInstrument.profitLoss >= 0) Color(0xFF28A745) else MaterialTheme.colorScheme.error
                         Icon(imageVector = if (heldInstrument.profitLoss >= 0) Icons.AutoMirrored.Filled.TrendingUp else Icons.AutoMirrored.Filled.TrendingDown, contentDescription = "Trend", tint = pnlColor, modifier = Modifier.size(16.dp))
