@@ -27,6 +27,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.aestroon.calendar.CalendarScreen
 import com.aestroon.common.domain.DashboardViewModel
 import com.aestroon.common.domain.PlannedPaymentsViewModel
@@ -45,6 +46,10 @@ import com.aestroon.home.news.ui.NewsDetailScreen
 import com.aestroon.home.widgets.HomeScreenType
 import com.aestroon.portfolio.PortfolioOverviewScreen
 import com.aestroon.common.domain.ProfileViewModel
+import com.aestroon.common.presentation.screen.AddEditLoanScreen
+import com.aestroon.common.presentation.screen.AddLoanEntryScreen
+import com.aestroon.common.presentation.screen.LoanDetailScreen
+import com.aestroon.common.presentation.screen.LoansScreen
 import com.aestroon.profile.presentation.CurrencySelectionScreen
 import com.aestroon.profile.presentation.ProfileScreen
 import com.aestroon.wallets.presentation.CategoriesScreen
@@ -198,14 +203,48 @@ fun AuthenticatedNavGraph(onLogoutClicked: () -> Unit) {
                 )
             }
             composable(ScreenNavItems.Loans.route) {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("Loans Screen")
-                }
+                LoansScreen(
+                    onNavigateToLoanDetails = { loanId ->
+                        navController.navigate("loan_detail/$loanId")
+                    },
+                    onNavigateToAddLoan = {
+                        navController.navigate("add_edit_loan")
+                    },
+                    onNavigateBack = {
+                        selectedHomeTab = HomeScreenType.DASHBOARD
+                        navController.navigate(ScreenNavItems.Home.route)
+                    }
+                )
             }
             composable(ScreenNavItems.SavingGoals.route) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Text("Saving Goals Screen")
                 }
+            }
+            composable("loan_detail/{loanId}") { backStackEntry ->
+                val loanId = backStackEntry.arguments?.getString("loanId") ?: ""
+                LoanDetailScreen(
+                    loanId = loanId,
+                    onNavigateBack = { navController.popBackStack() },
+                    onNavigateToAddEntry = { lId -> navController.navigate("add_loan_entry/$lId") },
+                    onNavigateToEditLoan = { lId -> navController.navigate("add_edit_loan?loanId=$lId") }
+                )
+            }
+            composable("add_loan_entry/{loanId}") { backStackEntry ->
+                val loanId = backStackEntry.arguments?.getString("loanId") ?: ""
+                AddLoanEntryScreen(
+                    loanId = loanId,
+                    onNavigateBack = { navController.popBackStack() }
+                )
+            }
+            composable(
+                route = "add_edit_loan?loanId={loanId}",
+                arguments = listOf(navArgument("loanId") { nullable = true; defaultValue = null })
+            ) { backStackEntry ->
+                AddEditLoanScreen(
+                    loanId = backStackEntry.arguments?.getString("loanId"),
+                    onNavigateBack = { navController.popBackStack() }
+                )
             }
         }
     }
