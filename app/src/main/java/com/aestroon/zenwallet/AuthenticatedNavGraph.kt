@@ -28,7 +28,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import com.aestroon.calendar.CalendarScreen
+import com.aestroon.common.presentation.screen.CalendarScreen
 import com.aestroon.common.domain.DashboardViewModel
 import com.aestroon.common.domain.PlannedPaymentsViewModel
 import com.aestroon.common.domain.TransactionsViewModel
@@ -38,22 +38,22 @@ import com.aestroon.common.navigation.ButtonData
 import com.aestroon.common.navigation.ScreenNavItems
 import com.aestroon.common.presentation.AddEditTransactionSheet
 import com.aestroon.common.presentation.screen.PlannedPaymentsScreen
-import com.aestroon.home.HomeMainScreen
-import com.aestroon.home.news.domain.HomeViewModel
-import com.aestroon.home.news.domain.NewsViewModel
-import com.aestroon.home.news.ui.NewsDetailErrorScreen
-import com.aestroon.home.news.ui.NewsDetailScreen
-import com.aestroon.home.widgets.HomeScreenType
-import com.aestroon.portfolio.PortfolioOverviewScreen
+import com.aestroon.common.presentation.screen.HomeMainScreen
+import com.aestroon.common.domain.HomeViewModel
+import com.aestroon.common.domain.NewsViewModel
+import com.aestroon.common.presentation.screen.NewsDetailErrorScreen
+import com.aestroon.common.presentation.screen.NewsDetailScreen
+import com.aestroon.common.presentation.screen.components.HomeScreenType
+import com.aestroon.common.presentation.screen.PortfolioOverviewScreen
 import com.aestroon.common.domain.ProfileViewModel
 import com.aestroon.common.presentation.screen.AddEditLoanScreen
 import com.aestroon.common.presentation.screen.AddLoanEntryScreen
 import com.aestroon.common.presentation.screen.LoanDetailScreen
 import com.aestroon.common.presentation.screen.LoansScreen
-import com.aestroon.profile.presentation.CurrencySelectionScreen
-import com.aestroon.profile.presentation.ProfileScreen
-import com.aestroon.wallets.presentation.CategoriesScreen
-import com.aestroon.wallets.presentation.WalletsScreen
+import com.aestroon.common.presentation.screen.CurrencySelectionScreen
+import com.aestroon.common.presentation.screen.ProfileScreen
+import com.aestroon.common.presentation.screen.CategoriesScreen
+import com.aestroon.common.presentation.screen.WalletsScreen
 import org.koin.androidx.compose.getViewModel
 
 @Composable

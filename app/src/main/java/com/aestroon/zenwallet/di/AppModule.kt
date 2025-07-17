@@ -3,10 +3,10 @@ import com.aestroon.common.data.repository.AuthRepository
 import com.aestroon.common.data.repository.AuthRepositoryImpl
 import com.aestroon.common.data.repository.UserRepository
 import com.aestroon.common.data.repository.UserRepositoryImpl
-import com.aestroon.authentication.domain.AuthViewModel
-import com.aestroon.authentication.domain.SupabaseClientProvider
-import com.aestroon.authentication.domain.UserManager
-import com.aestroon.calendar.domain.CalendarViewModel
+import com.aestroon.common.domain.AuthViewModel
+import com.aestroon.common.domain.SupabaseClientProvider
+import com.aestroon.common.domain.UserManager
+import com.aestroon.common.domain.CalendarViewModel
 import com.aestroon.common.data.database.AppDatabase
 import com.aestroon.common.data.repository.CategoryRepository
 import com.aestroon.common.data.repository.CategoryRepositoryImpl
@@ -14,8 +14,8 @@ import com.aestroon.common.data.repository.CurrencyConversionRepository
 import com.aestroon.common.data.repository.CurrencyConversionRepositoryImpl
 import com.aestroon.common.utilities.network.ConnectivityObserver
 import com.aestroon.common.utilities.network.NetworkConnectivityObserver
-import com.aestroon.home.news.data.RssNewsRepository
-import com.aestroon.home.news.domain.NewsViewModel
+import com.aestroon.common.data.repository.RssNewsRepository
+import com.aestroon.common.domain.NewsViewModel
 import com.aestroon.common.data.repository.CurrencyRepository
 import com.aestroon.common.data.repository.CurrencyRepositoryImpl
 import com.aestroon.common.data.repository.LoanRepository
@@ -40,7 +40,7 @@ import com.aestroon.common.domain.LoansViewModel
 import com.aestroon.common.domain.PlannedPaymentsViewModel
 import com.aestroon.common.domain.PortfolioViewModel
 import com.aestroon.common.domain.WalletsViewModel
-import com.aestroon.home.news.domain.HomeViewModel
+import com.aestroon.common.domain.HomeViewModel
 import io.github.jan.supabase.gotrue.auth
 import io.github.jan.supabase.postgrest.postgrest
 import io.ktor.client.HttpClient

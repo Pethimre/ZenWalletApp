@@ -46,12 +46,6 @@ android {
 }
 
 dependencies {
-    implementation(project(":feature:authentication"))
-    implementation(project(":feature:home"))
-    implementation(project(":feature:wallets"))
-    implementation(project(":feature:portfolio"))
-    implementation(project(":feature:calendar"))
-    implementation(project(":feature:profile"))
     implementation(project(":shared:common"))
 
     implementation(libs.lottie.compose)

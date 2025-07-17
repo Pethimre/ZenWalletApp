@@ -23,12 +23,5 @@ dependencyResolutionManagement {
 rootProject.name = "ZenWallet"
 include(":app")
 include(":shared")
-include(":feature")
-include(":feature:authentication")
 include(":shared:common")
 include(":shared:components")
-include(":feature:home")
-include(":feature:calendar")
-include(":feature:profile")
-include(":feature:portfolio")
-include(":feature:wallets")

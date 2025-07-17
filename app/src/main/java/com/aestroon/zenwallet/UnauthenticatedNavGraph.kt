@@ -4,10 +4,10 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.aestroon.authentication.VerifyEmailScreen
-import com.aestroon.authentication.domain.AuthViewModel
-import com.aestroon.authentication.ui.LoginScreen
-import com.aestroon.authentication.ui.SignUpScreen
+import com.aestroon.common.presentation.screen.VerifyEmailScreen
+import com.aestroon.common.domain.AuthViewModel
+import com.aestroon.common.presentation.screen.LoginScreen
+import com.aestroon.common.presentation.screen.SignUpScreen
 import com.aestroon.common.navigation.ScreenNavItems
 
 @Composable

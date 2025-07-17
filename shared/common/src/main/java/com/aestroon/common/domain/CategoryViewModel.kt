@@ -7,7 +7,7 @@ import androidx.lifecycle.viewModelScope
 import com.aestroon.common.data.repository.AuthRepository
 import com.aestroon.common.data.entity.CategoryEntity
 import com.aestroon.common.data.repository.CategoryRepository
-import com.aestroon.common.utilities.toHexString
+import com.aestroon.common.presentation.state.WalletsUiState
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch

@@ -19,10 +19,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.core.view.WindowCompat
 import androidx.fragment.app.FragmentActivity
 import appModule
-import com.aestroon.authentication.domain.AuthViewModel
-import com.aestroon.authentication.ui.BiometricPromptManager
+import com.aestroon.common.domain.AuthViewModel
+import com.aestroon.common.presentation.screen.BiometricPromptManager
 import com.aestroon.common.theme.ZenWalletTheme
-import com.aestroon.home.news.di.newsModule
+import com.aestroon.common.data.di.newsModule
 import com.aestroon.common.data.repository.UserPreferencesRepository
 import org.koin.android.ext.android.inject
 import org.koin.android.ext.koin.androidContext

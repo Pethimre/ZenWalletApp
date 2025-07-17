@@ -9,6 +9,9 @@ import com.aestroon.common.data.serializable.UserProfile
 import com.aestroon.common.data.repository.CurrencyRepository
 import com.aestroon.common.data.repository.UserPreferencesRepository
 import com.aestroon.common.data.serializable.Currency
+import com.aestroon.common.presentation.state.CurrencyListUiState
+import com.aestroon.common.presentation.state.ExchangeRateUiState
+import com.aestroon.common.presentation.state.ProfileSettingsUiState
 import com.aestroon.common.utilities.DEFAULT_BASE_CURRENCY
 import io.github.jan.supabase.gotrue.user.UserInfo
 import kotlinx.coroutines.flow.*
@@ -22,7 +25,8 @@ class ProfileViewModel(
     private val currencyConversionRepository: CurrencyConversionRepository
 ) : ViewModel() {
 
-    private val _profileSettingsUiState = MutableStateFlow<ProfileSettingsUiState>(ProfileSettingsUiState.Idle)
+    private val _profileSettingsUiState = MutableStateFlow<ProfileSettingsUiState>(
+        ProfileSettingsUiState.Idle)
     val profileSettingsUiState: StateFlow<ProfileSettingsUiState> = _profileSettingsUiState.asStateFlow()
 
     private val _exchangeRateUiState = MutableStateFlow<ExchangeRateUiState>(ExchangeRateUiState.Idle)

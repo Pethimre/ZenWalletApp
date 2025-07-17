@@ -25,6 +25,9 @@ android {
             load(rootProject.file("local.properties").inputStream())
         }
 
+        buildConfigField("String", "SUPABASE_ANON_KEY", "\"${properties.getProperty("SUPABASE_ANON_KEY")}\"")
+        buildConfigField("String", "SUPABASE_URL", "\"${properties.getProperty("SUPABASE_URL")}\"")
+
         buildConfigField("String", "EXCHANGE_RATE_API_KEY", "\"${properties.getProperty("EXCHANGE_RATE_API_KEY")}\"")
         buildConfigField("String", "EXCHANGE_RATE_API_URL", "\"${properties.getProperty("EXCHANGE_RATE_API_URL")}\"")
         buildConfigField("String", "ALPHA_VANTAGE_API_KEY", "\"${properties.getProperty("ALPHA_VANTAGE_API_KEY")}\"")
@@ -54,7 +57,12 @@ android {
 
 dependencies {
 
+    implementation(libs.jsoup)
     implementation(libs.lottie.compose)
+    implementation(libs.androidx.biometric)
+
+    implementation("com.google.accompanist:accompanist-pager:0.32.0")
+    implementation("com.google.accompanist:accompanist-pager-indicators:0.32.0")
 
     // Supabase setup
     implementation("androidx.room:room-runtime:2.7.2")

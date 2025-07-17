@@ -15,6 +15,7 @@ import com.aestroon.common.data.repository.TransactionRepository
 import com.aestroon.common.data.serializable.Currency
 import com.aestroon.common.utilities.network.ConnectivityObserver
 import com.aestroon.common.data.repository.WalletRepository
+import com.aestroon.common.presentation.state.WalletsUiState
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
