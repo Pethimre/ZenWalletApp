@@ -1,7 +1,10 @@
 package com.aestroon.common.data
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import com.aestroon.common.data.entity.*
 import com.aestroon.common.data.serializable.*
+import java.time.Instant
 
 fun LoanEntity.toNetworkModel() = Loan(
     id = this.id,
@@ -84,4 +87,61 @@ fun Transaction.toEntity() = TransactionEntity(
     },
     toWalletId = this.toWalletId,
     isSynced = true
+)
+
+fun PortfolioEntity.toNetworkModel() = Portfolio(
+    id = this.id,
+    name = this.name,
+    type = this.type,
+    user_id = this.userId,
+    balance = this.balance,
+    color = this.color,
+    description = this.description,
+    icon_url = this.iconName
+)
+
+@RequiresApi(Build.VERSION_CODES.O)
+fun PortfolioInstrumentEntity.toNetworkModel(userId: String) = PortfolioInstrument(
+    id = this.id,
+    portfolio_id = this.portfolioId,
+    user_id = userId,
+    symbol = this.symbol,
+    name = this.name,
+    quantity = this.quantity,
+    average_buy_price = this.averageBuyPrice,
+    currency = this.currency,
+    maturity_date = this.maturityDate?.let { Instant.ofEpochMilli(it).toString() },
+    coupon_rate = this.couponRate,
+    lookup_price = this.lookupPrice,
+    last_updated_price = this.lastUpdatedPrice,
+    last_updated_date = this.lastUpdatedDate?.let { Instant.ofEpochMilli(it).toString() }
+)
+
+fun Portfolio.toEntity() = PortfolioEntity(
+    id = this.id,
+    name = this.name,
+    description = this.description,
+    balance = this.balance,
+    color = this.color,
+    iconName = this.icon_url,
+    type = this.type,
+    userId = this.user_id,
+    isSynced = true
+)
+
+@RequiresApi(Build.VERSION_CODES.O)
+fun PortfolioInstrument.toEntity() = PortfolioInstrumentEntity(
+    id = this.id,
+    portfolioId = this.portfolio_id,
+    symbol = this.symbol,
+    name = this.name,
+    quantity = this.quantity,
+    averageBuyPrice = this.average_buy_price,
+    currency = this.currency,
+    maturityDate = this.maturity_date?.let { Instant.parse(it).toEpochMilli() },
+    couponRate = this.coupon_rate,
+    isSynced = true,
+    lookupPrice = this.lookup_price,
+    lastUpdatedPrice = this.last_updated_price,
+    lastUpdatedDate = this.last_updated_date?.let { Instant.parse(it).toEpochMilli() }
 )

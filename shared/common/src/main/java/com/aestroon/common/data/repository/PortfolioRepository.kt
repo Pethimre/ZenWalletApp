@@ -17,6 +17,7 @@ import java.time.Instant
 interface PortfolioRepository {
     fun getPortfolios(userId: String): Flow<List<PortfolioEntity>>
     fun getInstrumentsForPortfolio(portfolioId: String): Flow<List<PortfolioInstrumentEntity>>
+    fun getInstrumentById(instrumentId: String): Flow<PortfolioInstrumentEntity?>
 
     suspend fun addPortfolio(portfolio: PortfolioEntity)
     suspend fun addInstrument(instrument: PortfolioInstrumentEntity)
@@ -43,6 +44,10 @@ class PortfolioRepositoryImpl(
 
     override fun getInstrumentsForPortfolio(portfolioId: String): Flow<List<PortfolioInstrumentEntity>> {
         return portfolioDao.getInstrumentsForPortfolio(portfolioId)
+    }
+
+    override fun getInstrumentById(instrumentId: String): Flow<PortfolioInstrumentEntity?> {
+        return portfolioDao.getInstrumentById(instrumentId)
     }
 
     override suspend fun addPortfolio(portfolio: PortfolioEntity) {

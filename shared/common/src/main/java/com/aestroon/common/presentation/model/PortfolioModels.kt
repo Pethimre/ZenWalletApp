@@ -19,7 +19,8 @@ data class Instrument(
 data class HeldInstrument(
     val instrument: Instrument,
     val quantity: Double,
-    val averageBuyPrice: Double
+    val averageBuyPrice: Double,
+    val lookupPrice: Boolean,
 ) {
     val currentValue: Double get() = instrument.currentPrice * quantity
     val totalCost: Double get() = averageBuyPrice * quantity

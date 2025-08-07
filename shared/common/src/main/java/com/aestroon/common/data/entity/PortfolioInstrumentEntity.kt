@@ -27,5 +27,8 @@ data class PortfolioInstrumentEntity(
     val currency: String,
     val maturityDate: Long? = null,
     val couponRate: Double? = null,
-    val isSynced: Boolean = false
+    val isSynced: Boolean = false,
+    val lookupPrice: Boolean = true,
+    val lastUpdatedPrice: Double? = null,
+    val lastUpdatedDate: Long? = null
 )

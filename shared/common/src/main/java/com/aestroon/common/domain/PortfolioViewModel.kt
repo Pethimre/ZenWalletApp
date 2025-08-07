@@ -101,20 +101,32 @@ class PortfolioViewModel(
     ) { list, pricesInUsd, rates ->
         if (rates.isNullOrEmpty()) return@combine emptyList()
         val baseCurrency = currencyConversionRepository.baseCurrency.value
-        val usdRateInBase = rates["USD"] ?: 1.0
 
         list.map { portfolioWithInstruments ->
             val heldInstruments = portfolioWithInstruments.instruments.map { entity ->
                 val assetType = PortfolioAssetType.valueOf(portfolioWithInstruments.portfolio.type)
-                val rateForPurchaseCurrency = rates[entity.currency] ?: 1.0
-                val averageBuyPriceInBase = entity.averageBuyPrice / rateForPurchaseCurrency
+                val rateForInstrumentCurrency = rates[entity.currency] ?: 1.0
+
+                val averageBuyPriceInBase = entity.averageBuyPrice / rateForInstrumentCurrency
+
                 val livePriceInUsd = pricesInUsd[entity.id]
-                val livePriceInBase = if (livePriceInUsd != null) livePriceInUsd / usdRateInBase else averageBuyPriceInBase
+                val usdToBaseRate = rates["USD"] ?: 1.0
+
+                val currentPriceInBase = when {
+                    !entity.lookupPrice -> {
+                        val manualPrice = entity.lastUpdatedPrice ?: entity.averageBuyPrice
+                        manualPrice / rateForInstrumentCurrency
+                    }
+                    livePriceInUsd != null -> livePriceInUsd / usdToBaseRate
+                    else -> averageBuyPriceInBase
+                }
 
                 HeldInstrument(
                     instrument = Instrument(
                         id = entity.id, name = entity.name, symbol = entity.symbol,
-                        currentPrice = livePriceInBase, currency = baseCurrency, type = assetType,
+                        currentPrice = currentPriceInBase,
+                        currency = baseCurrency,
+                        type = assetType,
                         icon = when (assetType) {
                             PortfolioAssetType.STOCKS -> Icons.Default.ShowChart
                             PortfolioAssetType.CRYPTO -> Icons.Default.CurrencyBitcoin
@@ -124,7 +136,9 @@ class PortfolioViewModel(
                         maturityDate = entity.maturityDate?.let { Date(it) },
                         couponRate = entity.couponRate
                     ),
-                    quantity = entity.quantity, averageBuyPrice = averageBuyPriceInBase
+                    quantity = entity.quantity,
+                    averageBuyPrice = averageBuyPriceInBase,
+                    lookupPrice = entity.lookupPrice
                 )
             }
             PortfolioAccount(
@@ -152,7 +166,7 @@ class PortfolioViewModel(
             portfolios.forEach { portfolioWithInstruments ->
                 val portfolioType = PortfolioAssetType.valueOf(portfolioWithInstruments.portfolio.type)
                 portfolioWithInstruments.instruments.forEach { instrument ->
-                    if (newPrices[instrument.id] == null) {
+                    if (instrument.lookupPrice && newPrices[instrument.id] == null) {
                         val result = when (portfolioType) {
                             PortfolioAssetType.CRYPTO -> marketDataRepository.getHistoricalCryptoData(instrument.symbol, 1)
                             PortfolioAssetType.STOCKS -> marketDataRepository.getHistoricalStockData(instrument.symbol)
@@ -171,13 +185,11 @@ class PortfolioViewModel(
     fun fetchHistoricalData(instrument: HeldInstrument, range: TimeRange) {
         viewModelScope.launch {
             _isChartLoading.value = true
-
             val result = when (instrument.instrument.type) {
                 PortfolioAssetType.CRYPTO -> marketDataRepository.getHistoricalCryptoData(instrument.instrument.symbol, range.days)
                 PortfolioAssetType.STOCKS -> marketDataRepository.getHistoricalStockData(instrument.instrument.symbol)
                 else -> Result.failure(IllegalArgumentException("Data not available for this asset type."))
             }
-
             result.onSuccess { data ->
                 _chartData.value = data
             }.onFailure {
@@ -209,11 +221,29 @@ class PortfolioViewModel(
 
     fun onAddInstrumentClicked(account: PortfolioAccount) { _showAddInstrumentDialog.value = account }
     fun onAddInstrumentDialogDismiss() { _showAddInstrumentDialog.value = null }
-    fun onAddInstrumentConfirm(account: PortfolioAccount, symbol: String, name: String, currency: String, quantity: Double, price: Double, maturityDateStr: String, couponRate: Double?) {
+
+    fun onAddInstrumentConfirm(
+        account: PortfolioAccount, symbol: String, name: String, currency: String,
+        quantity: Double, price: Double, maturityDateStr: String, couponRate: Double?,
+        lookupPrice: Boolean
+    ) {
         viewModelScope.launch {
             val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
             val maturityDate: Date? = try { if (maturityDateStr.isNotBlank()) dateFormat.parse(maturityDateStr) else null } catch (e: Exception) { null }
-            val instrument = PortfolioInstrumentEntity(portfolioId = account.id, symbol = symbol.uppercase(), name = name, quantity = quantity, averageBuyPrice = price, currency = currency, maturityDate = maturityDate?.time, couponRate = couponRate)
+
+            val instrument = PortfolioInstrumentEntity(
+                portfolioId = account.id,
+                symbol = symbol.uppercase(),
+                name = name,
+                quantity = quantity,
+                averageBuyPrice = price,
+                currency = currency,
+                maturityDate = maturityDate?.time,
+                couponRate = couponRate,
+                lookupPrice = lookupPrice,
+                lastUpdatedPrice = if (!lookupPrice) price else null,
+                lastUpdatedDate = if (!lookupPrice) System.currentTimeMillis() else null
+            )
             portfolioRepository.addInstrument(instrument)
             onAddInstrumentDialogDismiss()
         }
@@ -234,13 +264,59 @@ class PortfolioViewModel(
 
     fun onEditInstrumentClicked(account: PortfolioAccount, instrument: HeldInstrument) { _showEditInstrumentDialog.value = account to instrument }
     fun onEditInstrumentDialogDismiss() { _showEditInstrumentDialog.value = null }
-    fun onEditInstrumentConfirm(account: PortfolioAccount, instrument: HeldInstrument, symbol: String, name: String, currency: String, quantity: Double, price: Double, maturityDateStr: String, couponRate: Double?) {
+
+    fun onEditInstrumentConfirm(
+        account: PortfolioAccount,
+        instrument: HeldInstrument,
+        symbol: String,
+        name: String,
+        currency: String,
+        quantity: Double,
+        price: Double, // This is the averageBuyPrice
+        maturityDateStr: String,
+        couponRate: Double?,
+        lookupPrice: Boolean, // The value from the checkbox
+        newCurrentPrice: Double // The new manually entered price
+    ) {
         viewModelScope.launch {
             val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
             val maturityDate: Date? = try { if (maturityDateStr.isNotBlank()) dateFormat.parse(maturityDateStr) else null } catch (e: Exception) { null }
-            val updatedInstrument = PortfolioInstrumentEntity(id = instrument.instrument.id, portfolioId = account.id, symbol = symbol.uppercase(), name = name, quantity = quantity, averageBuyPrice = price, currency = currency, maturityDate = maturityDate?.time, couponRate = couponRate, isSynced = false)
+
+            val updatedInstrument = PortfolioInstrumentEntity(
+                id = instrument.instrument.id,
+                portfolioId = account.id,
+                symbol = symbol.uppercase(),
+                name = name,
+                quantity = quantity,
+                averageBuyPrice = price,
+                currency = currency,
+                maturityDate = maturityDate?.time,
+                couponRate = couponRate,
+                isSynced = false,
+                // --- MODIFIED: Logic to save the new fields ---
+                lookupPrice = lookupPrice,
+                // If lookup is disabled, save the new price; otherwise, clear it.
+                lastUpdatedPrice = if (!lookupPrice) newCurrentPrice else null,
+                // Update the date only if the price was manually updated.
+                lastUpdatedDate = if (!lookupPrice) System.currentTimeMillis() else null
+            )
             portfolioRepository.updateInstrument(updatedInstrument)
             onEditInstrumentDialogDismiss()
+        }
+    }
+
+    fun onUpdateInstrumentPrice(instrument: HeldInstrument, newPrice: Double) {
+        viewModelScope.launch {
+            val originalEntity = portfolioRepository.getInstrumentById(instrument.instrument.id).firstOrNull()
+
+            if (originalEntity != null) {
+                val updatedEntity = originalEntity.copy(
+                    lastUpdatedPrice = newPrice,
+                    lastUpdatedDate = System.currentTimeMillis(),
+                    isSynced = false
+                )
+                portfolioRepository.updateInstrument(updatedEntity)
+            }
         }
     }
 

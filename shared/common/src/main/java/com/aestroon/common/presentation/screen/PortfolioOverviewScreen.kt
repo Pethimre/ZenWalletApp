@@ -5,6 +5,7 @@ import PortfolioAccount
 import PortfolioAssetType
 import PortfolioSummary
 import android.widget.Toast
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -36,10 +37,12 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.EditNote
+import androidx.compose.material.icons.filled.Update
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
@@ -185,6 +188,7 @@ fun PortfolioOverviewScreen(
                             onDeleteAccount = { accountToDelete = account },
                             onEditInstrument = { instrument -> viewModel.onEditInstrumentClicked(account, instrument) },
                             onDeleteInstrument = { instrument -> instrumentToDelete = instrument },
+                            onUpdateInstrumentPrice = viewModel::onUpdateInstrumentPrice,
                             modifier = Modifier.padding(vertical = 8.dp)
                         )
                     }
@@ -194,8 +198,35 @@ fun PortfolioOverviewScreen(
     }
     showAddAccountDialogFor?.let { assetType -> AddEditAccountDialog(assetType = PortfolioAssetType.valueOf(assetType), onDismiss = viewModel::onAddAccountDialogDismiss, onConfirm = viewModel::onAddAccountConfirm) }
     showEditAccountDialogFor?.let { account -> EditAccountDialog(existingAccount = account, onDismiss = viewModel::onEditAccountDialogDismiss, onConfirm = { newName -> viewModel.onEditAccountConfirm(account.id, newName, account.accountType.name) }) }
-    showAddInstrumentDialogFor?.let { account -> AddEditInstrumentDialog(accountName = account.accountName, assetType = account.accountType, onDismiss = viewModel::onAddInstrumentDialogDismiss, onConfirm = { symbol, name, currency, quantity, price, maturityDateStr, couponRate -> viewModel.onAddInstrumentConfirm(account, symbol, name, currency, quantity, price, maturityDateStr, couponRate) }) }
-    showEditInstrumentDialogFor?.let { (account, instrument) -> AddEditInstrumentDialog(accountName = account.accountName, assetType = account.accountType, existingInstrument = instrument, onDismiss = viewModel::onEditInstrumentDialogDismiss, onConfirm = { symbol, name, currency, quantity, price, maturityDateStr, couponRate -> viewModel.onEditInstrumentConfirm(account, instrument, symbol, name, currency, quantity, price, maturityDateStr, couponRate) }) }
+    showAddInstrumentDialogFor?.let { account ->
+        AddEditInstrumentDialog(
+            accountName = account.accountName,
+            assetType = account.accountType,
+            onDismiss = viewModel::onAddInstrumentDialogDismiss,
+            // newCurrentPrice is not needed for a new instrument.
+            onConfirm = { symbol, name, currency, quantity, price, maturityDateStr, couponRate, lookupPrice, _ ->
+                viewModel.onAddInstrumentConfirm(
+                    account, symbol, name, currency, quantity, price,
+                    maturityDateStr, couponRate, lookupPrice
+                )
+            }
+        )
+    }
+    showEditInstrumentDialogFor?.let { (account, instrument) ->
+        AddEditInstrumentDialog(
+            accountName = account.accountName,
+            assetType = account.accountType,
+            existingInstrument = instrument,
+            onDismiss = viewModel::onEditInstrumentDialogDismiss,
+            onConfirm = { symbol, name, currency, quantity, price, maturityDateStr, couponRate, lookupPrice, newCurrentPrice ->
+                viewModel.onEditInstrumentConfirm(
+                    account, instrument, symbol, name, currency, quantity, price,
+                    maturityDateStr, couponRate, lookupPrice, newCurrentPrice
+                )
+            }
+        )
+    }
+
     accountToDelete?.let { account -> ConfirmDeleteDialog(itemName = account.accountName, itemType = "account (and all its instruments)", onDismiss = { accountToDelete = null }, onConfirm = { viewModel.onDeleteAccount(account.id) }) }
     instrumentToDelete?.let { instrument -> ConfirmDeleteDialog(itemName = instrument.instrument.name, itemType = "instrument", onDismiss = { instrumentToDelete = null }, onConfirm = { viewModel.onDeleteInstrument(instrument.instrument.id) }) }
 }
@@ -226,14 +257,16 @@ fun AccountCard(
     chartData: List<Double>,
     isChartLoading: Boolean,
     onFetchData: (HeldInstrument, TimeRange) -> Unit,
-    onClearChartData: () -> Unit,
+    onClearChartData: () -> Unit, // TODO: Check whether it is still planned
     onAddInstrument: () -> Unit,
     onEditAccount: () -> Unit,
     onDeleteAccount: () -> Unit,
     onEditInstrument: (HeldInstrument) -> Unit,
     onDeleteInstrument: (HeldInstrument) -> Unit,
+    onUpdateInstrumentPrice: (HeldInstrument, Double) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    var instrumentToUpdatePrice by remember { mutableStateOf<HeldInstrument?>(null) }
     var selectedInstrument by remember { mutableStateOf<HeldInstrument?>(null) }
     var selectedRange by remember { mutableStateOf(TimeRange.MONTH) }
 
@@ -285,6 +318,7 @@ fun AccountCard(
                         heldInstrument = heldInstrument,
                         onEdit = { onEditInstrument(heldInstrument) },
                         onDelete = { onDeleteInstrument(heldInstrument) },
+                        onUpdatePrice = { instrumentToUpdatePrice = heldInstrument },
                         onSelect = {
                             if (account.accountType != PortfolioAssetType.BONDS) {
                                 selectedInstrument = if (selectedInstrument == heldInstrument) null else heldInstrument
@@ -313,6 +347,7 @@ fun InstrumentRow(
     onEdit: () -> Unit,
     onDelete: () -> Unit,
     onSelect: () -> Unit,
+    onUpdatePrice: () -> Unit,
     isSelected: Boolean,
     modifier: Modifier = Modifier
 ) {
@@ -343,6 +378,11 @@ fun InstrumentRow(
             }
         }
         Row(modifier = Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.End) {
+            if (!heldInstrument.lookupPrice) {
+                IconButton(onClick = onUpdatePrice, modifier = Modifier.size(40.dp)) {
+                    Icon(Icons.Default.Update, contentDescription = "Update Price", tint = MaterialTheme.colorScheme.primary)
+                }
+            }
             IconButton(onClick = onEdit, modifier = Modifier.size(40.dp)) { Icon(Icons.Filled.Edit, contentDescription = "Edit Instrument", tint = MaterialTheme.colorScheme.onSurfaceVariant) }
             IconButton(onClick = onDelete, modifier = Modifier.size(40.dp)) { Icon(Icons.Filled.Delete, contentDescription = "Delete Instrument", tint = MaterialTheme.colorScheme.error) }
         }
@@ -483,16 +523,24 @@ fun AddEditInstrumentDialog(
     assetType: PortfolioAssetType,
     existingInstrument: HeldInstrument? = null,
     onDismiss: () -> Unit,
-    onConfirm: (symbol: String, name: String, currency: String, quantity: Double, price: Double, maturityDateStr: String, couponRate: Double?) -> Unit
+    onConfirm: (
+        symbol: String, name: String, currency: String, quantity: Double, price: Double,
+        maturityDateStr: String, couponRate: Double?, lookupPrice: Boolean, newCurrentPrice: Double
+    ) -> Unit
 ) {
+    // --- State variables for the dialog fields ---
     var symbol by remember { mutableStateOf(existingInstrument?.instrument?.symbol ?: "") }
     var name by remember { mutableStateOf(existingInstrument?.instrument?.name ?: "") }
     var currency by remember { mutableStateOf(existingInstrument?.instrument?.currency ?: "HUF") }
     var quantity by remember { mutableStateOf(existingInstrument?.quantity?.toString() ?: "") }
-    var price by remember { mutableStateOf(existingInstrument?.averageBuyPrice?.toString() ?: "") }
-    var couponRate by remember { mutableStateOf(existingInstrument?.instrument?.couponRate?.toString() ?: "") }
+    var averageBuyPrice by remember { mutableStateOf(existingInstrument?.averageBuyPrice?.toString() ?: "") }
     val dateFormatter = remember { SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()) }
     var maturityDateStr by remember { mutableStateOf(existingInstrument?.instrument?.maturityDate?.let { dateFormatter.format(it) } ?: "") }
+    var couponRate by remember { mutableStateOf(existingInstrument?.instrument?.couponRate?.toString() ?: "") }
+
+    // --- State variables for the new feature ---
+    var lookupPrice by remember { mutableStateOf(existingInstrument?.lookupPrice ?: true) }
+    var currentPrice by remember { mutableStateOf(existingInstrument?.instrument?.currentPrice?.toString() ?: averageBuyPrice) }
 
     val dialogTitle = if (existingInstrument == null) "Add ${assetType.displayName}" else "Edit Instrument"
     val confirmText = if (existingInstrument == null) "Add" else "Save"
@@ -503,6 +551,7 @@ fun AddEditInstrumentDialog(
                 Text(text = dialogTitle, style = MaterialTheme.typography.headlineSmall, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
                 Spacer(Modifier.height(20.dp))
 
+                // --- Text Fields for instrument details ---
                 OutlinedTextField(value = symbol, onValueChange = { symbol = it }, label = { Text("Symbol (e.g., AAPL, BTC)") }, singleLine = true, modifier = Modifier.fillMaxWidth())
                 Spacer(Modifier.height(12.dp))
                 OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Instrument Name") }, singleLine = true, modifier = Modifier.fillMaxWidth())
@@ -511,7 +560,33 @@ fun AddEditInstrumentDialog(
                 Spacer(Modifier.height(12.dp))
                 OutlinedTextField(value = quantity, onValueChange = { quantity = it }, label = { Text("Quantity / Face Value") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), singleLine = true, modifier = Modifier.fillMaxWidth())
                 Spacer(Modifier.height(12.dp))
-                OutlinedTextField(value = price, onValueChange = { price = it }, label = { Text("Average Buy Price") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), singleLine = true, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(value = averageBuyPrice, onValueChange = { averageBuyPrice = it }, label = { Text("Average Buy Price") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), singleLine = true, modifier = Modifier.fillMaxWidth())
+
+                // --- Checkbox to toggle live price lookup ---
+                Spacer(Modifier.height(16.dp))
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)).clickable { lookupPrice = !lookupPrice }.padding(horizontal = 4.dp, vertical = 8.dp)
+                ) {
+                    Checkbox(checked = lookupPrice, onCheckedChange = { lookupPrice = it })
+                    Spacer(Modifier.width(8.dp))
+                    Text("Look up live price information")
+                }
+
+                // --- Conditionally visible field for manual price updates ---
+                AnimatedVisibility(visible = !lookupPrice) {
+                    Column {
+                        Spacer(Modifier.height(12.dp))
+                        OutlinedTextField(
+                            value = currentPrice,
+                            onValueChange = { currentPrice = it },
+                            label = { Text("Current Price (Manual)") },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                }
 
                 if (assetType == PortfolioAssetType.BONDS) {
                     Spacer(Modifier.height(12.dp))
@@ -525,18 +600,21 @@ fun AddEditInstrumentDialog(
                     TextButton(onClick = onDismiss) { Text("Cancel") }
                     Spacer(Modifier.width(8.dp))
                     Button(
+                        // --- MODIFIED: The onClick lambda is now fully corrected ---
                         onClick = {
                             onConfirm(
                                 symbol,
                                 if (name.isNotBlank()) name else symbol,
                                 currency,
                                 quantity.toDoubleOrNull() ?: 0.0,
-                                price.toDoubleOrNull() ?: 0.0,
+                                averageBuyPrice.toDoubleOrNull() ?: 0.0,
                                 maturityDateStr,
-                                couponRate.toDoubleOrNull()
+                                couponRate.toDoubleOrNull(),
+                                lookupPrice,
+                                currentPrice.toDoubleOrNull() ?: 0.0 // This was the missing argument
                             )
                         },
-                        enabled = symbol.isNotBlank() && quantity.isNotBlank() && price.isNotBlank() && currency.isNotBlank()
+                        enabled = symbol.isNotBlank() && quantity.isNotBlank() && averageBuyPrice.isNotBlank() && currency.isNotBlank()
                     ) { Text(confirmText) }
                 }
             }
