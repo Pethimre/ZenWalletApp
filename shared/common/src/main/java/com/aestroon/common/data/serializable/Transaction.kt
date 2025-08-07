@@ -2,21 +2,27 @@ package com.aestroon.common.data.serializable
 
 import com.aestroon.common.data.DateSerializer
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.SerialName
 import java.util.Date
-import java.util.UUID
 
 @Serializable
 data class Transaction(
-    val id: String = UUID.randomUUID().toString(),
+    val id: String,
     val amount: Long,
     val currency: String,
     val name: String,
     val description: String?,
+    @SerialName("created_at")
     @Serializable(with = DateSerializer::class)
-    val created_at: Date,
-    val user_id: String,
-    val wallet_id: String,
-    val category_id: String?,
-    val transaction_type: String,
-    val to_wallet_id: String?
+    val date: Date,
+    @SerialName("user_id")
+    val userId: String,
+    @SerialName("wallet_id")
+    val walletId: String,
+    @SerialName("category_id")
+    val categoryId: String?,
+    @SerialName("transaction_type")
+    val transactionType: String,
+    @SerialName("to_wallet_id")
+    val toWalletId: String?
 )

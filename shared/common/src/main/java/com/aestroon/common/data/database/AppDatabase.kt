@@ -2,6 +2,8 @@ package com.aestroon.common.data.database
 
 import androidx.room.Database
 import androidx.room.RoomDatabase
+import androidx.room.TypeConverters
+import com.aestroon.common.data.Converters
 import com.aestroon.common.data.dao.CategoryDao
 import com.aestroon.common.data.dao.LoanDao
 import com.aestroon.common.data.dao.LoanEntryDao
@@ -38,6 +40,7 @@ import com.aestroon.common.data.entity.WalletEntity
     ],
     exportSchema = true,
 )
+@TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun userDao(): UserDao
     abstract fun walletDao(): WalletDao

@@ -13,10 +13,14 @@ import com.aestroon.common.data.entity.TransactionType
 import com.aestroon.common.data.entity.WalletEntity
 import com.aestroon.common.data.serializable.Loan
 import com.aestroon.common.data.serializable.LoanEntry
+import com.aestroon.common.data.serializable.Transaction
 import com.aestroon.common.utilities.network.ConnectivityObserver
 import io.github.jan.supabase.postgrest.Postgrest
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
+import android.graphics.Color
+import com.aestroon.common.data.toEntity
+import com.aestroon.common.data.toNetworkModel
 import java.util.Date
 
 interface LoanRepository {
@@ -147,63 +151,50 @@ class LoanRepositoryImpl(
     override suspend fun fetchRemoteLoans(userId: String): Result<Unit> = runCatching {
         if (connectivityObserver.observe().first() != ConnectivityObserver.Status.Available) return@runCatching
 
-        Log.d("LoanRepo", "Fetching remote loans for user $userId")
-        val remoteLoans = postgrest.from("Loans").select().decodeList<Loan>()
-        remoteLoans.forEach { loan ->
-            val entity = loan.toEntity()
-            loanDao.insertLoan(entity.copy(isSynced = true))
+        Log.d("LoanRepo", "Fetching remote data for user $userId")
+
+        postgrest.from("Loans").select().decodeList<Loan>().forEach { loan ->
+            loanDao.insertLoan(loan.toEntity(::sanitizeColor))
         }
 
-        val remoteEntries = postgrest.from("Loan_entry").select().decodeList<LoanEntry>()
-        remoteEntries.forEach { entry ->
-            loanEntryDao.insertEntry(entry.toEntity().copy(isSynced = true))
+        postgrest.from("Loan_entry").select().decodeList<LoanEntry>().forEach { entry ->
+            loanEntryDao.insertEntry(entry.toEntity())
         }
-    }
+    }.onFailure { Log.e("LoanRepository", "Failed to fetch remote loans", it) }
+
 
     override suspend fun syncLoans(userId: String): Result<Unit> = runCatching {
         if (connectivityObserver.observe().first() != ConnectivityObserver.Status.Available) return@runCatching
 
-        val unsyncedLoans = loanDao.getUnsyncedLoans().first()
-        if (unsyncedLoans.isNotEmpty()) {
-            val networkLoans = unsyncedLoans.map { it.toNetworkModel() }
-            postgrest.from("Loans").upsert(networkLoans)
-            unsyncedLoans.forEach { loanDao.markLoanAsSynced(it.id) }
+        // 1. SYNC TRANSACTIONS FIRST
+        transactionDao.getUnsyncedTransactions().first().takeIf { it.isNotEmpty() }?.let {
+            postgrest.from("Transactions").upsert(it.map { tx -> tx.toNetworkModel() })
+            it.forEach { tx -> transactionDao.markTransactionAsSynced(tx.id) }
         }
 
-        val unsyncedEntries = loanEntryDao.getUnsyncedEntries().first()
-        if (unsyncedEntries.isNotEmpty()) {
-            val networkEntries = unsyncedEntries.map { it.toNetworkModel() }
-            postgrest.from("Loan_entry").upsert(networkEntries)
-            unsyncedEntries.forEach { loanEntryDao.markEntryAsSynced(it.id) }
+        // 2. Sync Loans
+        loanDao.getUnsyncedLoans().first().takeIf { it.isNotEmpty() }?.let {
+            postgrest.from("Loans").upsert(it.map { loan -> loan.toNetworkModel() })
+            it.forEach { loan -> loanDao.markLoanAsSynced(loan.id) }
         }
-    }
 
-    private fun sanitizeColor(colorString: String?): String {
+        // 3. Sync Loan Entries
+        loanEntryDao.getUnsyncedEntries().first().takeIf { it.isNotEmpty() }?.let {
+            postgrest.from("Loan_entry").upsert(it.map { entry -> entry.toNetworkModel() })
+            it.forEach { entry -> loanEntryDao.markEntryAsSynced(entry.id) }
+        }
+        Unit
+
+    }.onFailure { Log.e("LoanRepository", "Failed to sync data", it) }
+
+    fun sanitizeColor(colorString: String?): String {
         val defaultColor = "#6200EE"
         if (colorString.isNullOrBlank()) return defaultColor
         return try {
-            android.graphics.Color.parseColor(colorString)
+            Color.parseColor(colorString)
             colorString
         } catch (e: IllegalArgumentException) {
-            // The color string is invalid, return the default.
             defaultColor
         }
     }
-
-    private fun LoanEntity.toNetworkModel() = Loan(id, name, description, principal, remaining, iconName, color, type.name, userId)
-
-    private fun Loan.toEntity() = LoanEntity(
-        id = this.id,
-        name = this.name,
-        description = this.description,
-        principal = this.principal,
-        remaining = this.remaining,
-        color = sanitizeColor(this.color),
-        iconName = this.icon_name,
-        type = try { LoanType.valueOf(this.type) } catch (e: Exception) { LoanType.LENT },
-        userId = this.user_id
-    )
-
-    private fun LoanEntryEntity.toNetworkModel() = LoanEntry(id, loanId, transactionId, userId, walletId ?: "", amount, date, note, isInterest)
-    private fun LoanEntry.toEntity() = LoanEntryEntity(id, loan_id, transaction_id, user_id, wallet_id, amount, date, note, is_interest)
 }

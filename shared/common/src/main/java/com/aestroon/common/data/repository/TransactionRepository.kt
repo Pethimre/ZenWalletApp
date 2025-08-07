@@ -2,12 +2,12 @@ package com.aestroon.common.data.repository
 
 import android.util.Log
 import androidx.room.withTransaction
-import com.aestroon.common.data.TRANSACTIONS_TABLE_NAME
 import com.aestroon.common.data.dao.TransactionDao
 import com.aestroon.common.data.database.AppDatabase
 import com.aestroon.common.data.entity.TransactionEntity
 import com.aestroon.common.data.entity.TransactionType
 import com.aestroon.common.data.serializable.Transaction
+import com.aestroon.common.data.toNetworkModel
 import com.aestroon.common.utilities.network.ConnectivityObserver
 import io.github.jan.supabase.postgrest.Postgrest
 import kotlinx.coroutines.flow.Flow
@@ -32,6 +32,8 @@ class TransactionRepositoryImpl(
     private val connectivityObserver: ConnectivityObserver
 ) : TransactionRepository {
 
+    private val TRANSACTIONS_TABLE_NAME = "Transactions"
+
     override fun getTransactionsForUser(userId: String): Flow<List<TransactionEntity>> {
         return transactionDao.getTransactionsForUser(userId)
     }
@@ -40,7 +42,9 @@ class TransactionRepositoryImpl(
         return transactionDao.getTransactionsForWallet(walletId)
     }
 
-    override fun getPaginatedTransactionsForWallet(walletId: String, limit: Int, offset: Int): Flow<List<TransactionEntity>> {
+    override fun getPaginatedTransactionsForWallet(
+        walletId: String, limit: Int, offset: Int
+    ): Flow<List<TransactionEntity>> {
         return transactionDao.getPaginatedTransactionsForWallet(walletId, limit, offset)
     }
 
@@ -52,13 +56,12 @@ class TransactionRepositoryImpl(
         syncTransactions(transaction.userId)
     }
 
-    override suspend fun updateTransaction(originalTransaction: TransactionEntity, updatedTransaction: TransactionEntity): Result<Unit> = runCatching {
+    override suspend fun updateTransaction(
+        originalTransaction: TransactionEntity, updatedTransaction: TransactionEntity
+    ): Result<Unit> = runCatching {
         db.withTransaction {
-            // Revert the old transaction's impact on wallet balances
             updateWalletBalancesForTransaction(originalTransaction, isReverting = true)
-            // Apply the new transaction's impact
             updateWalletBalancesForTransaction(updatedTransaction, isReverting = false)
-            // Update the transaction in the database
             transactionDao.updateTransaction(updatedTransaction.copy(isSynced = false))
         }
         syncTransactions(updatedTransaction.userId)
@@ -78,74 +81,82 @@ class TransactionRepositoryImpl(
 
     override suspend fun syncTransactions(userId: String): Result<Unit> = runCatching {
         if (connectivityObserver.observe().first() != ConnectivityObserver.Status.Available) {
-            Log.d("TransactionSync", "Skipping sync: Network not available.")
             return@runCatching
         }
-        try {
-            Log.d("TransactionSync", "Starting transaction sync for user: $userId")
-            val unsynced = transactionDao.getUnsyncedTransactions().first()
-            if (unsynced.isNotEmpty()) {
-                val networkTransactions = unsynced.map {
-                    Transaction(
-                        id = it.id, amount = it.amount, currency = it.currency, name = it.name,
-                        description = it.description, created_at = it.date, user_id = it.userId,
-                        wallet_id = it.walletId, category_id = it.categoryId,
-                        transaction_type = it.transactionType.name, to_wallet_id = it.toWalletId
-                    )
-                }
-                postgrest.from(TRANSACTIONS_TABLE_NAME).upsert(networkTransactions)
-                unsynced.forEach { transactionDao.markTransactionAsSynced(it.id) }
-            }
-            val remote = postgrest.from(TRANSACTIONS_TABLE_NAME).select {
-                filter { eq("user_id", userId) }
-            }.decodeList<Transaction>()
 
-            db.withTransaction {
-                remote.forEach {
-                    val entity = TransactionEntity(
-                        id = it.id, amount = it.amount, currency = it.currency, name = it.name,
-                        description = it.description, date = it.created_at, userId = it.user_id,
-                        walletId = it.wallet_id, categoryId = it.category_id,
-                        transactionType = TransactionType.valueOf(it.transaction_type),
-                        toWalletId = it.to_wallet_id, isSynced = true
-                    )
-                    transactionDao.insertTransaction(entity)
-                }
-            }
-        } catch (e: Exception) {
-            Log.e("TransactionSync", "TRANSACTION SYNC FAILED", e)
-            throw e
+        // Sync local to remote using the central mapper
+        transactionDao.getUnsyncedTransactions().first().takeIf { it.isNotEmpty() }?.let { unsynced ->
+            postgrest.from(TRANSACTIONS_TABLE_NAME).upsert(unsynced.map(TransactionEntity::toNetworkModel))
+            unsynced.forEach { transactionDao.markTransactionAsSynced(it.id) }
         }
+
+        // Sync remote to local using the central mapper
+        val remoteTransactions = postgrest.from(TRANSACTIONS_TABLE_NAME).select {
+            filter { eq("user_id", userId) }
+        }.decodeList<Transaction>()
+
+        db.withTransaction {
+            remoteTransactions.forEach { remoteTransaction ->
+                transactionDao.insertTransaction(remoteTransaction.toEntity())
+            }
+        }
+        Unit // Explicitly return Unit
+    }.onFailure {
+        Log.e("TransactionSync", "TRANSACTION SYNC FAILED", it)
     }
 
-    private suspend fun updateWalletBalancesForTransaction(transaction: TransactionEntity, isReverting: Boolean) {
+    private suspend fun updateWalletBalancesForTransaction(
+        transaction: TransactionEntity, isReverting: Boolean
+    ) {
         val fromWallet = walletRepository.getWalletById(transaction.walletId).first() ?: return
         val sign = if (isReverting) -1 else 1
 
         when (transaction.transactionType) {
             TransactionType.INCOME -> {
-                val updatedWallet = fromWallet.copy(balance = fromWallet.balance + (transaction.amount * sign))
-                walletRepository.updateWallet(updatedWallet).getOrThrow()
+                val newBalance = fromWallet.balance + (transaction.amount * sign)
+                walletRepository.updateWallet(fromWallet.copy(balance = newBalance)).getOrThrow()
             }
             TransactionType.EXPENSE -> {
-                val updatedWallet = fromWallet.copy(balance = fromWallet.balance - (transaction.amount * sign))
-                walletRepository.updateWallet(updatedWallet).getOrThrow()
+                val newBalance = fromWallet.balance - (transaction.amount * sign)
+                walletRepository.updateWallet(fromWallet.copy(balance = newBalance)).getOrThrow()
             }
             TransactionType.TRANSFER -> {
                 val toWalletId = transaction.toWalletId ?: return
                 val toWallet = walletRepository.getWalletById(toWalletId).first() ?: return
+
                 val amountToTransfer = if (fromWallet.currency != toWallet.currency) {
                     convertCurrency(transaction.amount, fromWallet.currency, toWallet.currency).getOrThrow()
                 } else {
                     transaction.amount
                 }
+
                 val updatedFromWallet = fromWallet.copy(balance = fromWallet.balance - (transaction.amount * sign))
                 val updatedToWallet = toWallet.copy(balance = toWallet.balance + (amountToTransfer * sign))
+
                 walletRepository.updateWallet(updatedFromWallet).getOrThrow()
                 walletRepository.updateWallet(updatedToWallet).getOrThrow()
             }
         }
     }
+
+    fun Transaction.toEntity() = TransactionEntity(
+        id = this.id,
+        amount = this.amount,
+        currency = this.currency,
+        name = this.name,
+        description = this.description,
+        date = this.date,
+        userId = this.userId,
+        walletId = this.walletId,
+        categoryId = this.categoryId,
+        transactionType = try {
+            TransactionType.valueOf(this.transactionType)
+        } catch (e: Exception) {
+            TransactionType.EXPENSE
+        },
+        toWalletId = this.toWalletId,
+        isSynced = true
+    )
 
     private suspend fun convertCurrency(amount: Long, fromCurrency: String, toCurrency: String): Result<Long> {
         if (fromCurrency == toCurrency) return Result.success(amount)
