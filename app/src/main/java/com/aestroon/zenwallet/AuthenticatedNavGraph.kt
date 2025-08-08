@@ -53,6 +53,7 @@ import com.aestroon.common.presentation.screen.LoansScreen
 import com.aestroon.common.presentation.screen.CurrencySelectionScreen
 import com.aestroon.common.presentation.screen.ProfileScreen
 import com.aestroon.common.presentation.screen.CategoriesScreen
+import com.aestroon.common.presentation.screen.CompoundInterestCalculatorScreen
 import com.aestroon.common.presentation.screen.GoalsScreen
 import com.aestroon.common.presentation.screen.WalletsScreen
 import org.koin.androidx.compose.getViewModel
@@ -219,6 +220,14 @@ fun AuthenticatedNavGraph(onLogoutClicked: () -> Unit) {
             }
             composable(ScreenNavItems.SavingGoals.route) {
                 GoalsScreen(
+                    onNavigateBack = {
+                        selectedHomeTab = HomeScreenType.DASHBOARD
+                        navController.navigate(ScreenNavItems.Home.route)
+                    }
+                )
+            }
+            composable(ScreenNavItems.CompoundInterestCalculator.route) {
+                CompoundInterestCalculatorScreen(
                     onNavigateBack = {
                         selectedHomeTab = HomeScreenType.DASHBOARD
                         navController.navigate(ScreenNavItems.Home.route)

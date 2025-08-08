@@ -56,7 +56,8 @@ fun LazyListScope.addDashboardContent(
         Shortcut("Categories", Icons.Default.Category, ScreenNavItems.Categories.route),
         Shortcut("Planned", Icons.Default.Event, ScreenNavItems.PlannedPayments.route),
         Shortcut("Loans", Icons.Default.MonetizationOn, ScreenNavItems.Loans.route),
-        Shortcut("Goals", Icons.Default.TrackChanges, ScreenNavItems.SavingGoals.route)
+        Shortcut("Goals", Icons.Default.TrackChanges, ScreenNavItems.SavingGoals.route),
+        Shortcut("Calculator", Icons.Default.Calculate, ScreenNavItems.CompoundInterestCalculator.route)
     )
 
     val chunkedShortcuts = shortcuts.chunked(3)

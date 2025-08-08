@@ -35,6 +35,7 @@ import com.aestroon.common.data.repository.UserPreferencesRepositoryImpl
 import com.aestroon.common.domain.ProfileViewModel
 import com.aestroon.common.data.repository.WalletRepository
 import com.aestroon.common.data.repository.WalletRepositoryImpl
+import com.aestroon.common.domain.CalculatorViewModel
 import com.aestroon.common.domain.TransactionsViewModel
 import com.aestroon.common.domain.CategoriesViewModel
 import com.aestroon.common.domain.DashboardViewModel
@@ -120,6 +121,7 @@ val appModule = module {
     single { UserManager(get()) }
 
     // ViewModels
+    viewModel { CalculatorViewModel(get(), get()) }
     viewModel { LoansViewModel(get(), get(), get(), get()) }
     viewModel { GoalsViewModel(get(), get()) }
     viewModel { PortfolioViewModel(get(), get(), get(), get()) }

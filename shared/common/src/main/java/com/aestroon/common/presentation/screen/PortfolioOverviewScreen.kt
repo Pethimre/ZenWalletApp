@@ -390,29 +390,73 @@ fun InstrumentRow(
 }
 
 @Composable
-fun AnimatedLineChart(modifier: Modifier = Modifier, data: List<Double>, lineColor: Color = MaterialTheme.colorScheme.primary, fillColor: Color = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f), strokeWidth: Float = 3f) {
-    if (data.isEmpty()) { Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text("No data for chart", style = MaterialTheme.typography.bodySmall) }; return }
+fun AnimatedLineChart(
+    modifier: Modifier = Modifier,
+    data: List<List<Double>>,
+    lineColors: List<Color> = listOf(MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.tertiary),
+    fillColors: List<Color> = listOf(MaterialTheme.colorScheme.primary.copy(alpha = 0.2f), MaterialTheme.colorScheme.tertiary.copy(alpha = 0.1f)),
+    strokeWidth: Float = 3f
+) {
+    if (data.isEmpty() || data.any { it.isEmpty() }) {
+        Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Text("No data for chart", style = MaterialTheme.typography.bodySmall)
+        }
+        return
+    }
+
     Canvas(modifier = modifier.fillMaxSize()) {
-        val path = Path()
-        val fillPath = Path()
-        val xStep = size.width / (data.size - 1).coerceAtLeast(1)
-        val yDataMin = data.minOrNull() ?: 0.0
-        val yDataMax = data.maxOrNull() ?: 1.0
+        val allDataPoints = data.flatten()
+        val xStep = size.width / (data.first().size - 1).coerceAtLeast(1)
+
+        val yDataMin = allDataPoints.minOrNull() ?: 0.0
+        val yDataMax = allDataPoints.maxOrNull() ?: 1.0
         val yPadding = (yDataMax - yDataMin) * 0.05
         val yMin = (yDataMin - yPadding).coerceAtLeast(0.0)
         val yMax = yDataMax + yPadding
         val yRange = (yMax - yMin).coerceAtLeast(1.0)
+
         fun getX(index: Int): Float = index * xStep
         fun getY(value: Double): Float = size.height - ((value - yMin).toFloat() / yRange.toFloat() * size.height)
-        path.moveTo(getX(0), getY(data[0]))
-        fillPath.moveTo(getX(0), size.height)
-        fillPath.lineTo(getX(0), getY(data[0]))
-        for (i in 1 until data.size) { path.lineTo(getX(i), getY(data[i])); fillPath.lineTo(getX(i), getY(data[i])) }
-        fillPath.lineTo(getX(data.size - 1), size.height)
-        fillPath.close()
-        drawPath(path = fillPath, brush = Brush.verticalGradient(colors = listOf(fillColor, fillColor.copy(alpha = 0.0f))))
-        drawPath(path = path, color = lineColor, style = Stroke(width = strokeWidth))
+
+        data.forEachIndexed { seriesIndex, dataSeries ->
+            val path = Path()
+            val fillPath = Path()
+            val lineColor = lineColors.getOrElse(seriesIndex) { Color.Gray }
+            val fillColor = fillColors.getOrElse(seriesIndex) { Color.Transparent }
+
+            path.moveTo(getX(0), getY(dataSeries[0]))
+            fillPath.moveTo(getX(0), size.height)
+            fillPath.lineTo(getX(0), getY(dataSeries[0]))
+
+            for (i in 1 until dataSeries.size) {
+                path.lineTo(getX(i), getY(dataSeries[i]))
+                fillPath.lineTo(getX(i), getY(dataSeries[i]))
+            }
+
+            fillPath.lineTo(getX(dataSeries.size - 1), size.height)
+            fillPath.close()
+
+            drawPath(path = fillPath, brush = Brush.verticalGradient(colors = listOf(fillColor, fillColor.copy(alpha = 0.0f))))
+            drawPath(path = path, color = lineColor, style = Stroke(width = strokeWidth))
+        }
     }
+}
+
+@Composable
+fun AnimatedLineChart(
+    modifier: Modifier = Modifier,
+    data: List<Double>,
+    lineColor: Color = MaterialTheme.colorScheme.primary,
+    fillColor: Color = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
+    strokeWidth: Float = 3f
+) {
+    AnimatedLineChart(
+        modifier = modifier,
+        data = listOf(data),
+        lineColors = listOf(lineColor),
+        fillColors = listOf(fillColor),
+        strokeWidth = strokeWidth
+    )
 }
 
 @Composable

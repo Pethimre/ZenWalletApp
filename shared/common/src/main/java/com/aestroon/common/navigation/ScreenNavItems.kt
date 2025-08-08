@@ -1,5 +1,7 @@
 package com.aestroon.common.navigation
 
+import androidx.compose.material.icons.Icons
+
 sealed class ScreenNavItems(val route: String) {
     object Splash : ScreenNavItems("splash")
     object VerifyEmail : ScreenNavItems("verifyEmail/{email}") {
@@ -21,4 +23,5 @@ sealed class ScreenNavItems(val route: String) {
     object PlannedPayments : ScreenNavItems("planned_payments")
     object Loans : ScreenNavItems("loans")
     object SavingGoals : ScreenNavItems("saving_goals")
+    object CompoundInterestCalculator : ScreenNavItems("compound_interest_calculator")
 }
