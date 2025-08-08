@@ -3,15 +3,18 @@ package com.aestroon.common.presentation
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.Business
+import androidx.compose.material.icons.filled.CardGiftcard
 import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.Fastfood
+import androidx.compose.material.icons.filled.FlightTakeoff
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.LocalHospital
 import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.ReceiptLong
 import androidx.compose.material.icons.filled.Savings
+import androidx.compose.material.icons.filled.School
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.filled.Theaters
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -38,11 +41,23 @@ object IconProvider {
     private val categoryOther = AppIcon("Other", Icons.Default.MoreHoriz)
     val categoryIcons = listOf(categoryShopping, categoryFood, categoryTransport, categoryBills, categoryEntertainment, categoryHealth, categoryOther)
 
+    private val goalSavings = AppIcon("Savings", Icons.Default.Savings)
+    private val goalHome = AppIcon("Home", Icons.Default.Home)
+    private val goalCar = AppIcon("Car", Icons.Default.DirectionsCar)
+    private val goalVacation = AppIcon("Vacation", Icons.Default.FlightTakeoff)
+    private val goalEducation = AppIcon("Education", Icons.Default.School)
+    private val goalGift = AppIcon("Gift", Icons.Default.CardGiftcard)
+    val goalIcons = listOf(goalSavings, goalHome, goalCar, goalVacation, goalEducation, goalGift)
+
     fun getWalletIcon(name: String?): ImageVector {
         return walletIcons.find { it.name == name }?.icon ?: walletAccountBalance.icon
     }
 
     fun getCategoryIcon(name: String?): ImageVector {
         return categoryIcons.find { it.name == name }?.icon ?: categoryOther.icon
+    }
+
+    fun getGoalIcon(name: String?): ImageVector {
+        return goalIcons.find { it.name == name }?.icon ?: goalSavings.icon
     }
 }

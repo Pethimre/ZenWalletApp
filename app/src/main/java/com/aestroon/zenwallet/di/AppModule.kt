@@ -18,6 +18,8 @@ import com.aestroon.common.data.repository.RssNewsRepository
 import com.aestroon.common.domain.NewsViewModel
 import com.aestroon.common.data.repository.CurrencyRepository
 import com.aestroon.common.data.repository.CurrencyRepositoryImpl
+import com.aestroon.common.data.repository.GoalRepository
+import com.aestroon.common.data.repository.GoalRepositoryImpl
 import com.aestroon.common.data.repository.LoanRepository
 import com.aestroon.common.data.repository.LoanRepositoryImpl
 import com.aestroon.common.data.repository.MarketDataRepository
@@ -36,6 +38,7 @@ import com.aestroon.common.data.repository.WalletRepositoryImpl
 import com.aestroon.common.domain.TransactionsViewModel
 import com.aestroon.common.domain.CategoriesViewModel
 import com.aestroon.common.domain.DashboardViewModel
+import com.aestroon.common.domain.GoalsViewModel
 import com.aestroon.common.domain.LoansViewModel
 import com.aestroon.common.domain.PlannedPaymentsViewModel
 import com.aestroon.common.domain.PortfolioViewModel
@@ -92,9 +95,11 @@ val appModule = module {
     single { get<AppDatabase>().portfolioDao() }
     single { get<AppDatabase>().loanDao() }
     single { get<AppDatabase>().loanEntryDao() }
+    single { get<AppDatabase>().goalDao() }
 
     // Repositories
     single<MarketDataRepository> { MarketDataRepositoryImpl(get()) }
+    single<GoalRepository> { GoalRepositoryImpl(get(), get(), get()) }
     single<LoanRepository> { LoanRepositoryImpl(get(), get(), get(), get(), get(), get(), get()) }
     single<PortfolioRepository> { PortfolioRepositoryImpl(get(), get(), get()) }
     single<CurrencyConversionRepository> { CurrencyConversionRepositoryImpl(get(), get(), get()) }
@@ -116,6 +121,7 @@ val appModule = module {
 
     // ViewModels
     viewModel { LoansViewModel(get(), get(), get(), get()) }
+    viewModel { GoalsViewModel(get(), get()) }
     viewModel { PortfolioViewModel(get(), get(), get(), get()) }
     viewModel { DashboardViewModel(get(), get(), get(), get()) }
     viewModel { CalendarViewModel(get(), get(), get(), get(), get(), get()) }

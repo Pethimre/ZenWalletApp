@@ -5,6 +5,7 @@ import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import com.aestroon.common.data.Converters
 import com.aestroon.common.data.dao.CategoryDao
+import com.aestroon.common.data.dao.GoalDao
 import com.aestroon.common.data.dao.LoanDao
 import com.aestroon.common.data.dao.LoanEntryDao
 import com.aestroon.common.data.dao.PlannedPaymentDao
@@ -13,6 +14,7 @@ import com.aestroon.common.data.dao.TransactionDao
 import com.aestroon.common.data.dao.UserDao
 import com.aestroon.common.data.dao.WalletDao
 import com.aestroon.common.data.entity.CategoryEntity
+import com.aestroon.common.data.entity.GoalEntity
 import com.aestroon.common.data.entity.LoanEntity
 import com.aestroon.common.data.entity.LoanEntryEntity
 import com.aestroon.common.data.entity.LocalUser
@@ -33,6 +35,7 @@ import com.aestroon.common.data.entity.WalletEntity
         PortfolioInstrumentEntity::class,
         LoanEntity::class,
         LoanEntryEntity::class,
+        GoalEntity::class,
     ],
     version = 10,
     autoMigrations = [
@@ -50,4 +53,5 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun plannedPaymentDao(): PlannedPaymentDao
     abstract fun loanDao(): LoanDao
     abstract fun loanEntryDao(): LoanEntryDao
+    abstract fun goalDao(): GoalDao
 }

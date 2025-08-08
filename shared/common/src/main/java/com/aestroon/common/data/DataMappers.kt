@@ -145,3 +145,28 @@ fun PortfolioInstrument.toEntity() = PortfolioInstrumentEntity(
     lastUpdatedPrice = this.last_updated_price,
     lastUpdatedDate = this.last_updated_date?.let { Instant.parse(it).toEpochMilli() }
 )
+
+@RequiresApi(Build.VERSION_CODES.O)
+fun GoalEntity.toNetworkModel() = Goal(
+    id = this.id,
+    user_id = this.userId,
+    name = this.name,
+    target_amount = this.targetAmount,
+    current_amount = this.currentAmount,
+    target_date = this.targetDate?.let { Instant.ofEpochMilli(it).toString().substring(0, 10) },
+    icon_name = this.iconName,
+    color = this.color
+)
+
+@RequiresApi(Build.VERSION_CODES.O)
+fun Goal.toEntity() = GoalEntity(
+    id = this.id,
+    userId = this.user_id,
+    name = this.name,
+    targetAmount = this.target_amount,
+    currentAmount = this.current_amount,
+    targetDate = this.target_date?.let { Instant.parse(it + "T00:00:00.00Z").toEpochMilli() },
+    iconName = this.icon_name,
+    color = this.color,
+    isSynced = true
+)
