@@ -8,6 +8,8 @@ import com.aestroon.common.data.entity.PortfolioEntity
 import com.aestroon.common.data.entity.PortfolioInstrumentEntity
 import com.aestroon.common.data.serializable.Portfolio
 import com.aestroon.common.data.serializable.PortfolioInstrument
+import com.aestroon.common.data.toEntity
+import com.aestroon.common.data.toNetworkModel
 import com.aestroon.common.utilities.network.ConnectivityObserver
 import io.github.jan.supabase.postgrest.Postgrest
 import kotlinx.coroutines.flow.Flow
@@ -56,9 +58,19 @@ class PortfolioRepositoryImpl(
     }
 
     override suspend fun addInstrument(instrument: PortfolioInstrumentEntity) {
-        portfolioDao.insertInstrument(instrument.copy(isSynced = false))
-        val portfolio = portfolioDao.getPortfolioById(instrument.portfolioId).first()
-        syncAll(portfolio.userId)
+        val instrumentToSave = instrument.copy(isSynced = false)
+        portfolioDao.insertInstrument(instrumentToSave)
+
+        if (connectivityObserver.observe().first() == ConnectivityObserver.Status.Available) {
+            try {
+                val portfolio = portfolioDao.getPortfolioById(instrument.portfolioId).first()
+                val networkInstrument = instrumentToSave.toNetworkModel(portfolio.userId)
+                postgrest.from("Portfolio_entry").upsert(networkInstrument)
+                portfolioDao.updateInstrument(instrumentToSave.copy(isSynced = true))
+            } catch (e: Exception) {
+                Log.e("PortfolioRepo", "Failed to sync added instrument: ${instrument.id}", e)
+            }
+        }
     }
 
     override suspend fun updatePortfolio(portfolio: PortfolioEntity) {
@@ -67,9 +79,19 @@ class PortfolioRepositoryImpl(
     }
 
     override suspend fun updateInstrument(instrument: PortfolioInstrumentEntity) {
-        portfolioDao.updateInstrument(instrument.copy(isSynced = false))
-        val portfolio = portfolioDao.getPortfolioById(instrument.portfolioId).first()
-        syncAll(portfolio.userId)
+        val instrumentToSave = instrument.copy(isSynced = false)
+        portfolioDao.updateInstrument(instrumentToSave)
+
+        if (connectivityObserver.observe().first() == ConnectivityObserver.Status.Available) {
+            try {
+                val portfolio = portfolioDao.getPortfolioById(instrument.portfolioId).first()
+                val networkInstrument = instrumentToSave.toNetworkModel(portfolio.userId)
+                postgrest.from("Portfolio_entry").upsert(networkInstrument)
+                portfolioDao.updateInstrument(instrumentToSave.copy(isSynced = true))
+            } catch (e: Exception) {
+                Log.e("PortfolioRepo", "Failed to sync updated instrument: ${instrument.id}", e)
+            }
+        }
     }
 
     override suspend fun deletePortfolio(portfolioId: String) {
@@ -89,85 +111,27 @@ class PortfolioRepositoryImpl(
     @RequiresApi(Build.VERSION_CODES.O)
     override suspend fun syncAll(userId: String) {
         if (connectivityObserver.observe().first() != ConnectivityObserver.Status.Available) return
+
         val unsyncedPortfolios = portfolioDao.getUnsyncedPortfolios().first()
         if (unsyncedPortfolios.isNotEmpty()) {
-            val networkPortfolios = unsyncedPortfolios.map {
-                Portfolio(
-                    id = it.id,
-                    name = it.name,
-                    type = it.type,
-                    user_id = it.userId,
-                    balance = it.balance,
-                    color = it.color,
-                    description = it.description,
-                    icon_url = it.iconName
-                )
-            }
+            val networkPortfolios = unsyncedPortfolios.map { it.toNetworkModel() }
             postgrest.from("Portfolios").upsert(networkPortfolios)
         }
 
         val unsyncedInstruments = portfolioDao.getUnsyncedInstruments().first()
         if (unsyncedInstruments.isNotEmpty()) {
-            val networkInstruments = unsyncedInstruments.map { entity ->
-                PortfolioInstrument(
-                    id = entity.id,
-                    portfolio_id = entity.portfolioId,
-                    user_id = userId,
-                    symbol = entity.symbol,
-                    name = entity.name,
-                    quantity = entity.quantity,
-                    average_buy_price = entity.averageBuyPrice,
-                    currency = entity.currency,
-                    maturity_date = entity.maturityDate?.let { Instant.ofEpochMilli(it).toString() },
-                    coupon_rate = entity.couponRate
-                )
-            }
+            val networkInstruments = unsyncedInstruments.map { it.toNetworkModel(userId) }
             postgrest.from("Portfolio_entry").upsert(networkInstruments)
         }
 
         val remotePortfolios = postgrest.from("Portfolios").select {
             filter { eq("user_id", userId) }
         }.decodeList<Portfolio>()
-
-        // This mapping is now corrected to include all fields
-        portfolioDao.clearAndInsertPortfolios(remotePortfolios.map {
-            PortfolioEntity(
-                id = it.id,
-                name = it.name,
-                description = it.description,
-                balance = it.balance,
-                color = it.color,
-                iconName = it.icon_url,
-                type = it.type,
-                userId = it.user_id,
-                isSynced = true
-            )
-        })
+        portfolioDao.clearAndInsertPortfolios(remotePortfolios.map { it.toEntity() })
 
         val remoteInstruments = postgrest.from("Portfolio_entry").select {
             filter { eq("user_id", userId) }
         }.decodeList<PortfolioInstrument>()
-
-        portfolioDao.clearAndInsertInstruments(remoteInstruments.map { remote ->
-            PortfolioInstrumentEntity(
-                id = remote.id,
-                portfolioId = remote.portfolio_id,
-                symbol = remote.symbol,
-                name = remote.name,
-                quantity = remote.quantity,
-                averageBuyPrice = remote.average_buy_price,
-                currency = remote.currency,
-                maturityDate = remote.maturity_date?.let {
-                    try {
-                        Instant.parse(it).toEpochMilli()
-                    } catch (e: Exception) {
-                        Log.e("PortfolioRepository", "${e.localizedMessage}")
-                        null
-                    }
-                },
-                couponRate = remote.coupon_rate,
-                isSynced = true
-            )
-        })
+        portfolioDao.clearAndInsertInstruments(remoteInstruments.map { it.toEntity() })
     }
 }

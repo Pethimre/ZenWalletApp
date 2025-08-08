@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.aestroon.common.data.repository.AuthRepository
 import com.aestroon.common.data.repository.UserRepository
+import com.aestroon.common.utilities.DEFAULT_BASE_CURRENCY
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -17,7 +18,7 @@ data class NetWorthState(
     val currentNetWorth: Double = 0.0,
     val netWorthGoal: Long = 0L,
     val progress: Float = 0f,
-    val currency: String = "USD"
+    val currency: String = DEFAULT_BASE_CURRENCY
 )
 
 @OptIn(ExperimentalCoroutinesApi::class)

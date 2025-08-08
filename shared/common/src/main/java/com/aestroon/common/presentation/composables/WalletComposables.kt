@@ -73,6 +73,7 @@ import com.aestroon.common.presentation.IconProvider
 import com.aestroon.common.presentation.screen.LegendItem
 import com.aestroon.common.theme.GreenChipColor
 import com.aestroon.common.theme.RedChipColor
+import com.aestroon.common.utilities.DEFAULT_BASE_CURRENCY
 import com.aestroon.common.utilities.TextFormatter
 import java.text.DecimalFormat
 import java.text.DecimalFormatSymbols
@@ -229,7 +230,7 @@ fun AddEditWalletDialog(
     var balanceStr by remember { mutableStateOf((existingWallet?.balance ?: 0L).div(100.0).toString()) }
     var goalAmountStr by remember { mutableStateOf((existingWallet?.goalAmount ?: 0L).div(100.0).toString()) }
     var selectedColor by remember { mutableStateOf(existingWallet?.composeColor ?: generateRandomColor()) }
-    var selectedCurrency by remember { mutableStateOf(existingWallet?.currency ?: "HUF") }
+    var selectedCurrency by remember { mutableStateOf(existingWallet?.currency ?: DEFAULT_BASE_CURRENCY) }
     var selectedIconName by remember { mutableStateOf(existingWallet?.iconName ?: IconProvider.walletIcons.first().name) }
     var isIncluded by remember { mutableStateOf(existingWallet?.included ?: true) }
     var currencyDropdownExpanded by remember { mutableStateOf(false) }

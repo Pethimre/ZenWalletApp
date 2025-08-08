@@ -106,9 +106,7 @@ class PortfolioViewModel(
             val heldInstruments = portfolioWithInstruments.instruments.map { entity ->
                 val assetType = PortfolioAssetType.valueOf(portfolioWithInstruments.portfolio.type)
                 val rateForInstrumentCurrency = rates[entity.currency] ?: 1.0
-
                 val averageBuyPriceInBase = entity.averageBuyPrice / rateForInstrumentCurrency
-
                 val livePriceInUsd = pricesInUsd[entity.id]
                 val usdToBaseRate = rates["USD"] ?: 1.0
 

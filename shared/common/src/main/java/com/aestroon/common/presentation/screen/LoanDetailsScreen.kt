@@ -35,6 +35,7 @@ fun LoanDetailScreen(
     val viewModel: LoansViewModel = getViewModel()
     val loanState by viewModel.getLoanWithEntries(loanId).collectAsState(initial = Pair(null, emptyList()))
     val (loan, entries) = loanState
+    val baseCurrency by viewModel.baseCurrency.collectAsState()
     var showDeleteConfirmation by remember { mutableStateOf(false) }
 
     if (showDeleteConfirmation) {
@@ -98,7 +99,7 @@ fun LoanDetailScreen(
                     Text(it.type.name, color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f))
                     Spacer(Modifier.height(16.dp))
                     Text(
-                        TextFormatter.formatBalance(it.remaining, "HUF"),
+                        TextFormatter.formatBalance(it.remaining, baseCurrency),
                         color = MaterialTheme.colorScheme.onPrimary,
                         fontSize = 36.sp,
                         fontWeight = FontWeight.Bold
@@ -109,7 +110,7 @@ fun LoanDetailScreen(
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.2f))
                     ) {
                         Column(Modifier.padding(16.dp)) {
-                            Text("Paid: ${TextFormatter.formatBalance(it.principal - it.remaining, "HUF")} / ${TextFormatter.formatBalance(it.principal, "HUF")}")
+                            "Paid: ${TextFormatter.formatBalance(it.principal - it.remaining, baseCurrency)} / ${TextFormatter.formatBalance(it.principal, baseCurrency)}"
                             Spacer(Modifier.height(8.dp))
                             LinearProgressIndicator(
                                 progress = if (it.principal > 0) (it.principal - it.remaining).toFloat() / it.principal else 0f,
@@ -133,7 +134,7 @@ fun LoanDetailScreen(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 items(entries) { entry ->
-                    LoanEntryItem(entry)
+                    LoanEntryItem(entry = entry, baseCurrency = baseCurrency)
                 }
             }
         }
@@ -143,7 +144,7 @@ fun LoanDetailScreen(
 }
 
 @Composable
-fun LoanEntryItem(entry: LoanEntryEntity) {
+fun LoanEntryItem(entry: LoanEntryEntity, baseCurrency: String) {
     val viewModel: LoansViewModel = getViewModel()
     val wallets by viewModel.wallets.collectAsState()
     val wallet = wallets.find { it.id == entry.walletId }
@@ -176,7 +177,7 @@ fun LoanEntryItem(entry: LoanEntryEntity) {
                 )
             }
             Text(
-                TextFormatter.formatBalance(entry.amount, "HUF"),
+                TextFormatter.formatBalance(entry.amount, baseCurrency),
                 fontWeight = FontWeight.Bold,
                 color = if (entry.isInterest) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
             )

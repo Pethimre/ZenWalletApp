@@ -7,10 +7,14 @@ import com.aestroon.common.data.entity.LoanEntryEntity
 import com.aestroon.common.data.entity.WalletEntity
 import com.aestroon.common.data.repository.AuthRepository
 import com.aestroon.common.data.repository.LoanRepository
+import com.aestroon.common.data.repository.UserRepository
 import com.aestroon.common.data.repository.WalletRepository
+import com.aestroon.common.utilities.DEFAULT_BASE_CURRENCY
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.firstOrNull
@@ -22,7 +26,8 @@ import java.util.Date
 class LoansViewModel(
     private val loanRepository: LoanRepository,
     private val walletRepository: WalletRepository,
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository,
+    private val userRepository: UserRepository,
 ) : ViewModel() {
 
     private val userId = authRepository.userIdFlow.filterNotNull()
@@ -35,10 +40,16 @@ class LoansViewModel(
         walletRepository.getWalletsForUser(id)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+    private val _baseCurrency = MutableStateFlow(DEFAULT_BASE_CURRENCY)
+    val baseCurrency: StateFlow<String> = _baseCurrency.asStateFlow()
+
     init {
         viewModelScope.launch {
-            userId.firstOrNull()?.let {
-                loanRepository.fetchRemoteLoans(it)
+            userId.firstOrNull()?.let { id ->
+                loanRepository.fetchRemoteLoans(id)
+                userRepository.getUserProfile(id).getOrNull()?.let { userProfile ->
+                    _baseCurrency.value = userProfile.base_currency
+                }
             }
         }
     }

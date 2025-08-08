@@ -115,7 +115,7 @@ val appModule = module {
     single { UserManager(get()) }
 
     // ViewModels
-    viewModel { LoansViewModel(get(), get(), get()) }
+    viewModel { LoansViewModel(get(), get(), get(), get()) }
     viewModel { PortfolioViewModel(get(), get(), get(), get()) }
     viewModel { DashboardViewModel(get(), get(), get(), get()) }
     viewModel { CalendarViewModel(get(), get(), get(), get(), get(), get()) }

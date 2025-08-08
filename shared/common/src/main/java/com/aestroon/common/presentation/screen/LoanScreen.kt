@@ -19,6 +19,7 @@ import com.aestroon.common.data.entity.LoanType
 import com.aestroon.common.domain.LoansViewModel
 import com.aestroon.common.utilities.TextFormatter
 import org.koin.androidx.compose.getViewModel
+import androidx.core.graphics.toColorInt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -29,6 +30,7 @@ fun LoansScreen(
 ) {
     val viewModel: LoansViewModel = getViewModel()
     val loans by viewModel.loans.collectAsState()
+    val baseCurrency by viewModel.baseCurrency.collectAsState()
 
     Scaffold(
         topBar = {
@@ -60,13 +62,13 @@ fun LoansScreen(
             item {
                 val totalOwed = loans.filter { it.type == LoanType.LENT }.sumOf { it.remaining }
                 Text(
-                    "You're owed ${TextFormatter.formatBalance(totalOwed, "HUF")}",
+                    "You're owed ${TextFormatter.formatBalance(totalOwed, baseCurrency)}",
                     style = MaterialTheme.typography.bodyLarge,
                     modifier = Modifier.padding(vertical = 8.dp)
                 )
             }
             items(loans, key = { it.id }) { loan ->
-                LoanCard(loan = loan, onClick = { onNavigateToLoanDetails(loan.id) })
+                LoanCard(loan = loan, baseCurrency = baseCurrency, onClick = { onNavigateToLoanDetails(loan.id) })
             }
         }
     }
@@ -74,12 +76,12 @@ fun LoansScreen(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LoanCard(loan: LoanEntity, onClick: () -> Unit) {
+fun LoanCard(loan: LoanEntity, baseCurrency: String, onClick: () -> Unit) {
     val progress = if (loan.principal > 0) (loan.principal - loan.remaining).toFloat() / loan.principal else 0f
     val progressPercentage = (progress * 100).toInt()
 
     val cardColor = try {
-        Color(android.graphics.Color.parseColor(loan.color))
+        Color(loan.color.toColorInt())
     } catch (e: Exception) {
         MaterialTheme.colorScheme.primary // Fallback color
     }
@@ -98,7 +100,7 @@ fun LoanCard(loan: LoanEntity, onClick: () -> Unit) {
             }
             Spacer(Modifier.height(8.dp))
             Text(
-                TextFormatter.formatBalance(loan.remaining, "HUF"),
+                TextFormatter.formatBalance(loan.remaining, baseCurrency),
                 fontSize = 22.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color.White
@@ -106,7 +108,7 @@ fun LoanCard(loan: LoanEntity, onClick: () -> Unit) {
             Spacer(Modifier.height(4.dp))
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Text(
-                    "${TextFormatter.formatBalance(loan.principal - loan.remaining, "HUF")} / ${TextFormatter.formatBalance(loan.principal, "HUF")}",
+                    "${TextFormatter.formatBalance(loan.principal - loan.remaining, baseCurrency)} / ${TextFormatter.formatBalance(loan.principal, baseCurrency)}",
                     fontSize = 14.sp,
                     color = Color.White.copy(alpha = 0.7f)
                 )
