@@ -4,6 +4,7 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -34,6 +35,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -66,7 +68,6 @@ fun CalendarScreen(
     val isLoadingMore by calendarViewModel.isLoadingMore.collectAsState()
     val baseCurrency by calendarViewModel.baseCurrency.collectAsState()
     val exchangeRates by calendarViewModel.exchangeRates.collectAsState()
-
     val totalBalance by walletsViewModel.summary.collectAsState()
 
     val pagerState = rememberPagerState(pageCount = { wallets.size })
@@ -78,75 +79,113 @@ fun CalendarScreen(
         }
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-    ) {
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Text("Total Balance", fontWeight = FontWeight.SemiBold)
-        Text(
-            text = TextFormatter.toPrettyAmountWithCurrency(totalBalance.totalBalance / 100.0, baseCurrency),
-            fontSize = 28.sp,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onBackground,
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        if (wallets.isNotEmpty()) {
-            HorizontalPager(state = pagerState) { page ->
-                WalletCard(wallets[page])
-            }
+    Column(modifier = Modifier.fillMaxSize()) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Spacer(modifier = Modifier.height(16.dp))
+            Text("Total Balance", fontWeight = FontWeight.SemiBold)
+            Text(
+                text = TextFormatter.toPrettyAmountWithCurrency(totalBalance.totalBalance / 100.0, baseCurrency),
+                fontSize = 28.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onBackground,
+            )
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
-
-        if (isLoading) {
+        if (wallets.isEmpty() && isLoading) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator()
             }
         } else {
-            TransactionList(
-                transactions = transactions,
-                isLoadingMore = isLoadingMore,
-                baseCurrency = baseCurrency,
-                exchangeRates = exchangeRates,
-                onLoadMore = { calendarViewModel.loadMoreTransactions() }
-            )
+            HorizontalPager(
+                state = pagerState,
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(horizontal = 16.dp),
+                pageSpacing = 12.dp
+            ) { page ->
+                Column(modifier = Modifier.fillMaxSize()) {
+                    WalletCard(
+                        wallet = wallets[page],
+                        baseCurrency = baseCurrency,
+                        exchangeRates = exchangeRates
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    if (isLoading) {
+                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            CircularProgressIndicator()
+                        }
+                    } else {
+                        TransactionList(
+                            transactions = transactions,
+                            isLoadingMore = isLoadingMore,
+                            baseCurrency = baseCurrency,
+                            exchangeRates = exchangeRates,
+                            onLoadMore = { calendarViewModel.loadMoreTransactions() }
+                        )
+                    }
+                }
+            }
         }
     }
 }
 
 @Composable
-fun WalletCard(wallet: WalletEntity) {
+fun WalletCard(
+    wallet: WalletEntity,
+    baseCurrency: String,
+    exchangeRates: Map<String, Double>?
+) {
+    val convertedBalance = remember(wallet, baseCurrency, exchangeRates) {
+        if (exchangeRates == null || wallet.currency == baseCurrency) return@remember null
+        val rate = exchangeRates[wallet.currency] ?: return@remember null
+        (wallet.balance / 100.0) / rate
+    }
+
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp),
         shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = wallet.composeColor.copy(alpha = 0.4f))
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
-        Row(
-            modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                imageVector = wallet.icon,
-                contentDescription = wallet.displayName,
-                tint = wallet.composeColor,
-                modifier = Modifier
-                    .size(40.dp)
-                    .background(wallet.composeColor.copy(alpha = 0.2f), CircleShape)
-                    .padding(8.dp)
-            )
-            Spacer(modifier = Modifier.width(12.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(wallet.displayName, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                Text(
-                    text = formatSimpleBalance(wallet.balance, wallet.currency),
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.SemiBold
+        Box(
+            modifier = Modifier
+                .background(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(
+                            wallet.composeColor.copy(alpha = 0.5f),
+                            wallet.composeColor.copy(alpha = 0.2f)
+                        )
+                    )
                 )
+                .padding(16.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = wallet.icon,
+                    contentDescription = wallet.displayName,
+                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                    modifier = Modifier
+                        .size(40.dp)
+                        .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.8f), CircleShape)
+                        .padding(8.dp)
+                )
+                Spacer(modifier = Modifier.width(12.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(wallet.displayName, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Text(
+                        text = formatSimpleBalance(wallet.balance, wallet.currency),
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    convertedBalance?.let {
+                        Text(
+                            text = "≈ ${TextFormatter.toPrettyAmountWithCurrency(it, baseCurrency)}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                        )
+                    }
+                }
             }
         }
     }
@@ -163,7 +202,7 @@ fun TransactionList(
 ) {
     val listState = rememberLazyListState()
 
-    LazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
+    LazyColumn(state = listState, modifier = Modifier.fillMaxSize().padding(horizontal = 8.dp)) {
         if (transactions.isEmpty() && !isLoadingMore) {
             item {
                 Text(
