@@ -75,19 +75,41 @@ class WalletsViewModel(
     val networkStatus: StateFlow<ConnectivityObserver.Status> = connectivityObserver.observe()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), ConnectivityObserver.Status.Unavailable)
 
-    val summary: StateFlow<WalletsSummary> = combine(wallets, exchangeRates, baseCurrency) { walletList, rates, base ->
+    val summary: StateFlow<WalletsSummary> = combine(
+        wallets,
+        exchangeRates,
+        baseCurrency
+    ) { walletList, rates, base ->
         val includedWallets = walletList.filter { it.included }
-        var totalInBase = 0.0
-        if (rates != null) {
-            includedWallets.forEach { wallet ->
-                val conversionRate = if (wallet.currency == base) 1.0 else (rates[base] ?: 1.0) / (rates[wallet.currency] ?: 1.0)
-                totalInBase += (wallet.balance / 100.0) * conversionRate
-            }
+        if (rates == null) {
+            val totalBalance = includedWallets.sumOf { it.balance }
+            val breakdown = if (totalBalance > 0) {
+                includedWallets.map { it to (it.balance.toFloat() / totalBalance) }
+            } else emptyList()
+            return@combine WalletsSummary(totalBalance, breakdown)
         }
-        val totalOriginal = includedWallets.sumOf { it.balance }.toDouble()
-        val breakdown = if (totalOriginal > 0) {
-            includedWallets.map { it to (it.balance / totalOriginal).toFloat() }
-        } else { emptyList() }
+
+        val walletsInBaseCurrency = includedWallets.map { wallet ->
+            val rate = rates[wallet.currency] ?: 0.0
+            val convertedBalance = if (wallet.currency == base) {
+                wallet.balance / 100.0
+            } else if (rate != 0.0) {
+                (wallet.balance / 100.0) / rate
+            } else {
+                0.0
+            }
+            wallet to convertedBalance
+        }
+
+        val totalInBase = walletsInBaseCurrency.sumOf { it.second }
+
+        val breakdown = if (totalInBase > 0) {
+            walletsInBaseCurrency.map { (wallet, convertedBalance) ->
+                wallet to (convertedBalance.toFloat() / totalInBase.toFloat())
+            }
+        } else {
+            emptyList()
+        }
 
         WalletsSummary(totalBalance = (totalInBase * 100).toLong(), balanceBreakdown = breakdown)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), WalletsSummary())
@@ -147,7 +169,6 @@ class WalletsViewModel(
             return
         }
         viewModelScope.launch {
-            // This logic is specifically for a single wallet, used when a card is expanded.
             transactionRepository.getTransactionsForWallet(walletId).firstOrNull()?.let { transactions ->
                 val calendar = Calendar.getInstance()
                 val currentMonth = calendar.get(Calendar.MONTH)

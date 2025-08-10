@@ -3,7 +3,6 @@ package com.aestroon.common.data.serializable
 import com.aestroon.common.utilities.DEFAULT_BASE_CURRENCY
 import kotlinx.serialization.Serializable
 
-// Naming scheme has to match the database fields
 @Serializable
 data class UserProfile(
     val id: String,

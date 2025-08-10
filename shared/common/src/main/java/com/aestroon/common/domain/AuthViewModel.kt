@@ -50,7 +50,6 @@ class AuthViewModel(
         viewModelScope.launch(Dispatchers.IO) {
             connectivityObserver.observe().collect { status ->
                 if (status == ConnectivityObserver.Status.Available && !_isAuthFlowActive.value) {
-                    Log.d("AuthViewModel", "Network is available and auth flow is not active, attempting to sync pending users.")
                     authRepository.syncPendingUsers()
                 }
             }
@@ -80,7 +79,7 @@ class AuthViewModel(
                         _isLoggedIn.value = true
                     } else {
                         _navigationEvent.emit(NavigationEvent.ToVerifyEmail(user?.email ?: ""))
-                        _loginUiState.value = UiState.Idle // Reset to idle after event
+                        _loginUiState.value = UiState.Idle
                     }
                 }
                 .onFailure {

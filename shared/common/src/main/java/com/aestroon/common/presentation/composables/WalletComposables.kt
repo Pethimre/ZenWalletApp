@@ -75,35 +75,9 @@ import com.aestroon.common.theme.GreenChipColor
 import com.aestroon.common.theme.RedChipColor
 import com.aestroon.common.utilities.DEFAULT_BASE_CURRENCY
 import com.aestroon.common.utilities.TextFormatter
-import java.text.DecimalFormat
-import java.text.DecimalFormatSymbols
-import java.util.Locale
-
-val defaultWalletColors = listOf(
-    Color(0xFF4CAF50), Color(0xFF2196F3), Color(0xFFF44336),
-    Color(0xFFFF9800), Color(0xFF9C27B0), Color(0xFF009688)
-)
-
-fun generateRandomColor() = defaultWalletColors.random()
-
-fun formatBalance(balanceInCents: Long, currencyCode: String): String {
-    val amount = balanceInCents / 100.0
-    return try {
-        val currency = java.util.Currency.getInstance(currencyCode)
-        val symbols = DecimalFormatSymbols(Locale.getDefault())
-        val pattern = "#,##0.00"
-
-        val formatter = DecimalFormat(pattern, symbols).apply {
-            this.currency = currency
-            minimumFractionDigits = 2
-            maximumFractionDigits = 2
-        }
-
-        "${currency.symbol} ${formatter.format(amount)}"
-    } catch (e: Exception) {
-        "$currencyCode ${String.format(Locale.getDefault(), "%,.2f", amount)}"
-    }
-}
+import com.aestroon.common.utilities.TextFormatter.formatBalance
+import com.aestroon.common.utilities.defaultWalletColors
+import com.aestroon.common.utilities.generateRandomColor
 
 @Composable
 fun SpendingWalletCard(
@@ -146,7 +120,11 @@ fun SpendingWalletCard(
                 )
                 Spacer(modifier = Modifier.width(12.dp))
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(wallet.displayName, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Text(
+                        wallet.displayName,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
                     Text(
                         if (wallet.isSynced) "Synced" else "Pending Sync...",
                         style = MaterialTheme.typography.bodySmall,
@@ -161,7 +139,12 @@ fun SpendingWalletCard(
                     )
                     convertedBalance?.let {
                         Text(
-                            text = "≈ ${TextFormatter.toPrettyAmountWithCurrency(it, baseCurrency)}",
+                            text = "≈ ${
+                                TextFormatter.toPrettyAmountWithCurrency(
+                                    it,
+                                    baseCurrency
+                                )
+                            }",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                         )
@@ -170,7 +153,9 @@ fun SpendingWalletCard(
                 Icon(
                     imageVector = Icons.Default.ExpandMore,
                     contentDescription = if (isExpanded) "Collapse" else "Expand",
-                    modifier = Modifier.padding(start = 8.dp).rotate(rotationAngle)
+                    modifier = Modifier
+                        .padding(start = 8.dp)
+                        .rotate(rotationAngle)
                 )
             }
 
@@ -187,26 +172,66 @@ fun SpendingWalletCard(
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text("Monthly Income", style = MaterialTheme.typography.labelMedium)
                             Text(
-                                TextFormatter.toPrettyAmountWithCurrency(monthlySummary?.income ?: 0.0, wallet.currency),
+                                TextFormatter.toPrettyAmountWithCurrency(
+                                    monthlySummary?.income ?: 0.0, wallet.currency
+                                ),
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = GreenChipColor
                             )
+                            if (wallet.currency != baseCurrency && monthlySummary != null && exchangeRates != null) {
+                                val convertedIncome =
+                                    remember(monthlySummary.income, baseCurrency, exchangeRates) {
+                                        val rate = exchangeRates[wallet.currency] ?: 0.0
+                                        if (rate != 0.0) (monthlySummary.income / rate) else 0.0
+                                    }
+                                Text(
+                                    text = "≈ ${
+                                        TextFormatter.toPrettyAmountWithCurrency(
+                                            convertedIncome,
+                                            baseCurrency
+                                        )
+                                    }",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                                )
+                            }
                         }
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text("Monthly Expense", style = MaterialTheme.typography.labelMedium)
                             Text(
-                                TextFormatter.toPrettyAmountWithCurrency(monthlySummary?.expense ?: 0.0, wallet.currency),
+                                TextFormatter.toPrettyAmountWithCurrency(
+                                    monthlySummary?.expense ?: 0.0, wallet.currency
+                                ),
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = RedChipColor
                             )
+                            if (wallet.currency != baseCurrency && monthlySummary != null && exchangeRates != null) {
+                                val convertedExpense =
+                                    remember(monthlySummary.expense, baseCurrency, exchangeRates) {
+                                        val rate = exchangeRates[wallet.currency] ?: 0.0
+                                        if (rate != 0.0) (monthlySummary.expense / rate) else 0.0
+                                    }
+                                Text(
+                                    text = "≈ ${
+                                        TextFormatter.toPrettyAmountWithCurrency(
+                                            convertedExpense,
+                                            baseCurrency
+                                        )
+                                    }",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                                )
+                            }
                         }
                     }
 
                     Spacer(modifier = Modifier.height(12.dp))
                     Row(
-                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 8.dp),
                         horizontalArrangement = Arrangement.End
                     ) {
                         IconButton(onClick = onEdit) { Icon(Icons.Default.Edit, "Edit") }
@@ -227,11 +252,31 @@ fun AddEditWalletDialog(
     onConfirm: (name: String, balance: String, goalAmount: String, color: Color, currency: String, iconName: String, included: Boolean) -> Unit
 ) {
     var name by remember { mutableStateOf(existingWallet?.displayName ?: "") }
-    var balanceStr by remember { mutableStateOf((existingWallet?.balance ?: 0L).div(100.0).toString()) }
-    var goalAmountStr by remember { mutableStateOf((existingWallet?.goalAmount ?: 0L).div(100.0).toString()) }
-    var selectedColor by remember { mutableStateOf(existingWallet?.composeColor ?: generateRandomColor()) }
-    var selectedCurrency by remember { mutableStateOf(existingWallet?.currency ?: DEFAULT_BASE_CURRENCY) }
-    var selectedIconName by remember { mutableStateOf(existingWallet?.iconName ?: IconProvider.walletIcons.first().name) }
+    var balanceStr by remember {
+        mutableStateOf(
+            (existingWallet?.balance ?: 0L).div(100.0).toString()
+        )
+    }
+    var goalAmountStr by remember {
+        mutableStateOf(
+            (existingWallet?.goalAmount ?: 0L).div(100.0).toString()
+        )
+    }
+    var selectedColor by remember {
+        mutableStateOf(
+            existingWallet?.composeColor ?: generateRandomColor()
+        )
+    }
+    var selectedCurrency by remember {
+        mutableStateOf(
+            existingWallet?.currency ?: DEFAULT_BASE_CURRENCY
+        )
+    }
+    var selectedIconName by remember {
+        mutableStateOf(
+            existingWallet?.iconName ?: IconProvider.walletIcons.first().name
+        )
+    }
     var isIncluded by remember { mutableStateOf(existingWallet?.included ?: true) }
     var currencyDropdownExpanded by remember { mutableStateOf(false) }
 
@@ -246,17 +291,35 @@ fun AddEditWalletDialog(
                 )
                 Spacer(Modifier.height(20.dp))
 
-                OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Wallet Name") }, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text("Wallet Name") },
+                    modifier = Modifier.fillMaxWidth()
+                )
                 Spacer(Modifier.height(12.dp))
-                OutlinedTextField(value = balanceStr, onValueChange = { balanceStr = it }, label = { Text("Current Balance") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(
+                    value = balanceStr,
+                    onValueChange = { balanceStr = it },
+                    label = { Text("Current Balance") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    modifier = Modifier.fillMaxWidth()
+                )
                 Spacer(Modifier.height(12.dp))
-                OutlinedTextField(value = goalAmountStr, onValueChange = { goalAmountStr = it }, label = { Text("Goal Amount (Optional)") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(
+                    value = goalAmountStr,
+                    onValueChange = { goalAmountStr = it },
+                    label = { Text("Goal Amount (Optional)") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    modifier = Modifier.fillMaxWidth()
+                )
                 Spacer(Modifier.height(16.dp))
 
-                // Icon Picker
                 Text("Icon:")
                 LazyRow(
-                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     items(IconProvider.walletIcons, key = { it.name }) { walletIcon ->
@@ -281,10 +344,11 @@ fun AddEditWalletDialog(
                 }
                 Spacer(Modifier.height(16.dp))
 
-                // Color Picker
                 Text("Color:")
                 LazyRow(
-                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     items(defaultWalletColors) { color ->
@@ -303,7 +367,6 @@ fun AddEditWalletDialog(
                 }
                 Spacer(Modifier.height(16.dp))
 
-                // Currency Dropdown
                 ExposedDropdownMenuBox(
                     expanded = currencyDropdownExpanded,
                     onExpandedChange = { currencyDropdownExpanded = !currencyDropdownExpanded },
@@ -315,7 +378,9 @@ fun AddEditWalletDialog(
                         readOnly = true,
                         label = { Text("Currency") },
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = currencyDropdownExpanded) },
-                        modifier = Modifier.menuAnchor().fillMaxWidth()
+                        modifier = Modifier
+                            .menuAnchor()
+                            .fillMaxWidth()
                     )
                     ExposedDropdownMenu(
                         expanded = currencyDropdownExpanded,
@@ -335,9 +400,10 @@ fun AddEditWalletDialog(
 
                 Spacer(Modifier.height(16.dp))
 
-                // Included in Total Switch
                 Row(
-                    modifier = Modifier.fillMaxWidth().clickable { isIncluded = !isIncluded },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { isIncluded = !isIncluded },
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
@@ -349,7 +415,17 @@ fun AddEditWalletDialog(
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                     TextButton(onClick = onDismiss) { Text("Cancel") }
                     Button(
-                        onClick = { onConfirm(name, balanceStr, goalAmountStr, selectedColor, selectedCurrency, selectedIconName, isIncluded) },
+                        onClick = {
+                            onConfirm(
+                                name,
+                                balanceStr,
+                                goalAmountStr,
+                                selectedColor,
+                                selectedCurrency,
+                                selectedIconName,
+                                isIncluded
+                            )
+                        },
                         enabled = name.isNotBlank() && balanceStr.toDoubleOrNull() != null
                     ) {
                         Text(if (existingWallet == null) "Add" else "Save")
@@ -367,7 +443,10 @@ fun ConfirmDeleteWalletDialog(walletName: String, onDismiss: () -> Unit, onConfi
         title = { Text("Delete Wallet") },
         text = { Text("Are you sure you want to delete the wallet \"$walletName\"?") },
         confirmButton = {
-            Button(onClick = { onConfirm(); onDismiss() }, colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)) {
+            Button(
+                onClick = onConfirm,
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+            ) {
                 Text("Delete")
             }
         },
@@ -389,7 +468,11 @@ fun OfflineWarningBanner(isVisible: Boolean) {
                 .padding(horizontal = 16.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(Icons.Default.Warning, contentDescription = "Warning", tint = MaterialTheme.colorScheme.onTertiaryContainer)
+            Icon(
+                Icons.Default.Warning,
+                contentDescription = "Warning",
+                tint = MaterialTheme.colorScheme.onTertiaryContainer
+            )
             Spacer(modifier = Modifier.width(8.dp))
             Text(
                 "You have changes that will be synced when you're back online.",
@@ -439,16 +522,35 @@ fun OverallSummaryCard(
 ) {
     Card(modifier = modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp)) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text("Wallets Overview", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+            Text(
+                "Wallets Overview",
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold
+            )
             Spacer(modifier = Modifier.height(12.dp))
 
-            SummaryRow("Total Balance:", TextFormatter.toPrettyAmountWithCurrency(summary.totalBalance / 100.0, baseCurrency))
-            SummaryRow("Σ Income (m):", TextFormatter.toPrettyAmountWithCurrency(monthlyIncome.toDouble(), baseCurrency), valueColor = GreenChipColor)
-            SummaryRow("Σ Expense (m):", TextFormatter.toPrettyAmountWithCurrency(monthlyExpense.toDouble(), baseCurrency), valueColor = RedChipColor)
+            SummaryRow(
+                "Total Balance:",
+                TextFormatter.toPrettyAmountWithCurrency(summary.totalBalance / 100.0, baseCurrency)
+            )
+            SummaryRow(
+                "Σ Income (m):",
+                TextFormatter.toPrettyAmountWithCurrency(monthlyIncome.toDouble(), baseCurrency),
+                valueColor = GreenChipColor
+            )
+            SummaryRow(
+                "Σ Expense (m):",
+                TextFormatter.toPrettyAmountWithCurrency(monthlyExpense.toDouble(), baseCurrency),
+                valueColor = RedChipColor
+            )
 
             if (summary.balanceBreakdown.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(16.dp))
-                Text("Balance Breakdown:", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                Text(
+                    "Balance Breakdown:",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold
+                )
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -476,13 +578,22 @@ fun OverallSummaryCard(
 }
 
 @Composable
-private fun SummaryRow(label: String, value: String, valueColor: Color = MaterialTheme.colorScheme.onSurface) {
+private fun SummaryRow(
+    label: String,
+    value: String,
+    valueColor: Color = MaterialTheme.colorScheme.onSurface
+) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(label, style = MaterialTheme.typography.bodyLarge)
-        Text(value, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = valueColor)
+        Text(
+            value,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            color = valueColor
+        )
     }
 }

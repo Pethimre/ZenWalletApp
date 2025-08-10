@@ -2,6 +2,7 @@ package com.aestroon.common.data.repository
 
 import android.util.Log
 import androidx.room.withTransaction
+import com.aestroon.common.data.TRANSACTIONS_TABLE_NAME
 import com.aestroon.common.data.dao.TransactionDao
 import com.aestroon.common.data.database.AppDatabase
 import com.aestroon.common.data.entity.TransactionEntity
@@ -31,8 +32,6 @@ class TransactionRepositoryImpl(
     private val currencyRepository: CurrencyRepository,
     private val connectivityObserver: ConnectivityObserver
 ) : TransactionRepository {
-
-    private val TRANSACTIONS_TABLE_NAME = "Transactions"
 
     override fun getTransactionsForUser(userId: String): Flow<List<TransactionEntity>> {
         return transactionDao.getTransactionsForUser(userId)
@@ -84,13 +83,11 @@ class TransactionRepositoryImpl(
             return@runCatching
         }
 
-        // Sync local to remote using the central mapper
         transactionDao.getUnsyncedTransactions().first().takeIf { it.isNotEmpty() }?.let { unsynced ->
             postgrest.from(TRANSACTIONS_TABLE_NAME).upsert(unsynced.map(TransactionEntity::toNetworkModel))
             unsynced.forEach { transactionDao.markTransactionAsSynced(it.id) }
         }
 
-        // Sync remote to local using the central mapper
         val remoteTransactions = postgrest.from(TRANSACTIONS_TABLE_NAME).select {
             filter { eq("user_id", userId) }
         }.decodeList<Transaction>()
@@ -100,7 +97,6 @@ class TransactionRepositoryImpl(
                 transactionDao.insertTransaction(remoteTransaction.toEntity())
             }
         }
-        Unit // Explicitly return Unit
     }.onFailure {
         Log.e("TransactionSync", "TRANSACTION SYNC FAILED", it)
     }

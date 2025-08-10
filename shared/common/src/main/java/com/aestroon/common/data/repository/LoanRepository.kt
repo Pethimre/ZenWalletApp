@@ -151,8 +151,6 @@ class LoanRepositoryImpl(
     override suspend fun fetchRemoteLoans(userId: String): Result<Unit> = runCatching {
         if (connectivityObserver.observe().first() != ConnectivityObserver.Status.Available) return@runCatching
 
-        Log.d("LoanRepo", "Fetching remote data for user $userId")
-
         postgrest.from("Loans").select().decodeList<Loan>().forEach { loan ->
             loanDao.insertLoan(loan.toEntity(::sanitizeColor))
         }

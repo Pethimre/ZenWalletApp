@@ -8,7 +8,6 @@ import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.get
 
-// --- Time Range Enum ---
 enum class TimeRange(val days: Long, val displayName: String) {
     DAY(1, "1D"),
     WEEK(7, "1W"),

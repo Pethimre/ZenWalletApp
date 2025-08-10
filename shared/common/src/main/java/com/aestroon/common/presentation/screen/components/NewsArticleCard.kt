@@ -53,7 +53,6 @@ fun NewsArticleCard(
             modifier = Modifier.padding(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Image Placeholder or Actual Image
             AsyncImage(
                 model = ImageRequest.Builder(LocalContext.current)
                     .data(article.imageUrl)

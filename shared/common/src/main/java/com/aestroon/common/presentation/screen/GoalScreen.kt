@@ -233,7 +233,7 @@ fun GoalCard(
             }
             Spacer(Modifier.height(8.dp))
             Text(
-                "${TextFormatter.formatBalance(goal.currentAmount, "")} / ${TextFormatter.formatBalance(goal.targetAmount, "")}",
+                "${TextFormatter.formatSimpleBalance(goal.currentAmount, "")} / ${TextFormatter.formatSimpleBalance(goal.targetAmount, "")}",
                 style = MaterialTheme.typography.bodyLarge
             )
             Spacer(Modifier.height(8.dp))
@@ -283,8 +283,6 @@ fun AddEditGoalDialog(goal: GoalEntity, onDismiss: () -> Unit, onConfirm: (goal:
     var targetAmountStr by remember { mutableStateOf(if (goal.targetAmount > 0) (goal.targetAmount / 100.0).toString() else "") }
     var currentAmountStr by remember { mutableStateOf((goal.currentAmount / 100.0).toString()) }
     var targetDateStr by remember { mutableStateOf(goal.targetDate?.let { SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date(it)) } ?: "") }
-
-    // --- KEY CHANGE: State for the selected icon and color ---
     var selectedIconName by remember { mutableStateOf(goal.iconName ?: IconProvider.goalIcons.first().name) }
     var selectedColor by remember { mutableStateOf(goal.composeColor) }
 
@@ -330,7 +328,6 @@ fun AddEditGoalDialog(goal: GoalEntity, onDismiss: () -> Unit, onConfirm: (goal:
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                     TextButton(onClick = onDismiss) { Text("Cancel") }
                     Button(onClick = {
-                        // --- KEY CHANGE: The updatedGoal now includes the icon and color ---
                         val updatedGoal = goal.copy(
                             name = name,
                             targetAmount = ((targetAmountStr.toDoubleOrNull() ?: 0.0) * 100).toLong(),

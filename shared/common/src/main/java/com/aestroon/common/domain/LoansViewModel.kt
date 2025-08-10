@@ -10,6 +10,7 @@ import com.aestroon.common.data.repository.LoanRepository
 import com.aestroon.common.data.repository.UserRepository
 import com.aestroon.common.data.repository.WalletRepository
 import com.aestroon.common.utilities.DEFAULT_BASE_CURRENCY
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -23,6 +24,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.util.Date
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class LoansViewModel(
     private val loanRepository: LoanRepository,
     private val walletRepository: WalletRepository,

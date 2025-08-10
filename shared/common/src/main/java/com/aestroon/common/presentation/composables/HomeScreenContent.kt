@@ -62,7 +62,7 @@ import com.aestroon.common.theme.GreenChipColor
 import com.aestroon.common.theme.OrangeChipColor
 import com.aestroon.common.theme.RedChipColor
 import com.aestroon.common.utilities.TextFormatter
-import com.aestroon.common.utilities.formatDayAndMonth
+import com.aestroon.common.utilities.TextFormatter.formatDayAndMonth
 import java.text.DecimalFormat
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -238,7 +238,6 @@ fun CollapsibleSectionCard(
         }
     }
 
-    // Calculate totals for each type
     val incomeInBase = transactions
         .filter { it.transactionType == TransactionType.INCOME }
         .sumOf(convertToBaseCurrency)

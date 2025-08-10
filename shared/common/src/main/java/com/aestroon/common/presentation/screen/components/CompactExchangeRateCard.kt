@@ -82,7 +82,6 @@ private fun ExchangeRateRow(
             textAlign = TextAlign.End
         )
 
-        // Trend Icon
         Box(modifier = Modifier.weight(0.5f, fill = false).padding(start = 8.dp), contentAlignment = Alignment.CenterEnd) {
             val trendIconAndColor = when (info.trend) {
                 RateTrend.UP -> Icons.Filled.ArrowDropUp to MaterialTheme.colorScheme.tertiary

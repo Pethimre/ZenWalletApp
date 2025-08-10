@@ -62,7 +62,7 @@ fun LoansScreen(
             item {
                 val totalOwed = loans.filter { it.type == LoanType.LENT }.sumOf { it.remaining }
                 Text(
-                    "You're owed ${TextFormatter.formatBalance(totalOwed, baseCurrency)}",
+                    "You're owed ${TextFormatter.formatSimpleBalance(totalOwed, baseCurrency)}",
                     style = MaterialTheme.typography.bodyLarge,
                     modifier = Modifier.padding(vertical = 8.dp)
                 )
@@ -83,7 +83,7 @@ fun LoanCard(loan: LoanEntity, baseCurrency: String, onClick: () -> Unit) {
     val cardColor = try {
         Color(loan.color.toColorInt())
     } catch (e: Exception) {
-        MaterialTheme.colorScheme.primary // Fallback color
+        MaterialTheme.colorScheme.primary
     }
 
     Card(
@@ -94,13 +94,12 @@ fun LoanCard(loan: LoanEntity, baseCurrency: String, onClick: () -> Unit) {
     ) {
         Column(Modifier.padding(16.dp)) {
             Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
-                // Icon can be added here later based on iconName
                 Text(loan.name, fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color.White)
                 Text(loan.type.name, fontSize = 12.sp, color = Color.White.copy(alpha = 0.7f))
             }
             Spacer(Modifier.height(8.dp))
             Text(
-                TextFormatter.formatBalance(loan.remaining, baseCurrency),
+                TextFormatter.formatSimpleBalance(loan.remaining, baseCurrency),
                 fontSize = 22.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color.White
@@ -108,7 +107,7 @@ fun LoanCard(loan: LoanEntity, baseCurrency: String, onClick: () -> Unit) {
             Spacer(Modifier.height(4.dp))
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Text(
-                    "${TextFormatter.formatBalance(loan.principal - loan.remaining, baseCurrency)} / ${TextFormatter.formatBalance(loan.principal, baseCurrency)}",
+                    "${TextFormatter.formatSimpleBalance(loan.principal - loan.remaining, baseCurrency)} / ${TextFormatter.formatSimpleBalance(loan.principal, baseCurrency)}",
                     fontSize = 14.sp,
                     color = Color.White.copy(alpha = 0.7f)
                 )

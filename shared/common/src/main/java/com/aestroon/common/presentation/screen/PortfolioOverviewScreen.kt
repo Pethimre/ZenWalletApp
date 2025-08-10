@@ -92,7 +92,6 @@ import java.text.DecimalFormat
 import java.text.SimpleDateFormat
 import java.util.Locale
 
-// --- Formatting (Unchanged) ---
 private val currencyFormatter = DecimalFormat("#,##0.00")
 private val percentageFormatter = DecimalFormat("0.00'%'")
 private fun formatCurrency(value: Double, currencySymbol: String = "HUF "): String { return "$currencySymbol${currencyFormatter.format(value)}" }
@@ -203,7 +202,6 @@ fun PortfolioOverviewScreen(
             accountName = account.accountName,
             assetType = account.accountType,
             onDismiss = viewModel::onAddInstrumentDialogDismiss,
-            // newCurrentPrice is not needed for a new instrument.
             onConfirm = { symbol, name, currency, quantity, price, maturityDateStr, couponRate, lookupPrice, _ ->
                 viewModel.onAddInstrumentConfirm(
                     account, symbol, name, currency, quantity, price,
@@ -230,8 +228,6 @@ fun PortfolioOverviewScreen(
     accountToDelete?.let { account -> ConfirmDeleteDialog(itemName = account.accountName, itemType = "account (and all its instruments)", onDismiss = { accountToDelete = null }, onConfirm = { viewModel.onDeleteAccount(account.id) }) }
     instrumentToDelete?.let { instrument -> ConfirmDeleteDialog(itemName = instrument.instrument.name, itemType = "instrument", onDismiss = { instrumentToDelete = null }, onConfirm = { viewModel.onDeleteInstrument(instrument.instrument.id) }) }
 }
-
-// --- Supporting UI Components ---
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -539,7 +535,6 @@ fun EditAccountDialog(
     }
 }
 
-// --- Dialogs ---
 @Composable
 fun AddEditAccountDialog(assetType: PortfolioAssetType? = null, existingAccount: PortfolioAccount? = null, onDismiss: () -> Unit, onConfirm: (accountName: String, type: String) -> Unit) {
     var accountName by remember { mutableStateOf(existingAccount?.accountName ?: "") }
@@ -572,7 +567,6 @@ fun AddEditInstrumentDialog(
         maturityDateStr: String, couponRate: Double?, lookupPrice: Boolean, newCurrentPrice: Double
     ) -> Unit
 ) {
-    // --- State variables for the dialog fields ---
     var symbol by remember { mutableStateOf(existingInstrument?.instrument?.symbol ?: "") }
     var name by remember { mutableStateOf(existingInstrument?.instrument?.name ?: "") }
     var currency by remember { mutableStateOf(existingInstrument?.instrument?.currency ?: "HUF") }
@@ -582,7 +576,6 @@ fun AddEditInstrumentDialog(
     var maturityDateStr by remember { mutableStateOf(existingInstrument?.instrument?.maturityDate?.let { dateFormatter.format(it) } ?: "") }
     var couponRate by remember { mutableStateOf(existingInstrument?.instrument?.couponRate?.toString() ?: "") }
 
-    // --- State variables for the new feature ---
     var lookupPrice by remember { mutableStateOf(existingInstrument?.lookupPrice ?: true) }
     var currentPrice by remember { mutableStateOf(existingInstrument?.instrument?.currentPrice?.toString() ?: averageBuyPrice) }
 
@@ -595,7 +588,6 @@ fun AddEditInstrumentDialog(
                 Text(text = dialogTitle, style = MaterialTheme.typography.headlineSmall, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
                 Spacer(Modifier.height(20.dp))
 
-                // --- Text Fields for instrument details ---
                 OutlinedTextField(value = symbol, onValueChange = { symbol = it }, label = { Text("Symbol (e.g., AAPL, BTC)") }, singleLine = true, modifier = Modifier.fillMaxWidth())
                 Spacer(Modifier.height(12.dp))
                 OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Instrument Name") }, singleLine = true, modifier = Modifier.fillMaxWidth())
@@ -606,7 +598,6 @@ fun AddEditInstrumentDialog(
                 Spacer(Modifier.height(12.dp))
                 OutlinedTextField(value = averageBuyPrice, onValueChange = { averageBuyPrice = it }, label = { Text("Average Buy Price") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), singleLine = true, modifier = Modifier.fillMaxWidth())
 
-                // --- Checkbox to toggle live price lookup ---
                 Spacer(Modifier.height(16.dp))
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -617,7 +608,6 @@ fun AddEditInstrumentDialog(
                     Text("Look up live price information")
                 }
 
-                // --- Conditionally visible field for manual price updates ---
                 AnimatedVisibility(visible = !lookupPrice) {
                     Column {
                         Spacer(Modifier.height(12.dp))
@@ -644,7 +634,6 @@ fun AddEditInstrumentDialog(
                     TextButton(onClick = onDismiss) { Text("Cancel") }
                     Spacer(Modifier.width(8.dp))
                     Button(
-                        // --- MODIFIED: The onClick lambda is now fully corrected ---
                         onClick = {
                             onConfirm(
                                 symbol,
@@ -655,7 +644,7 @@ fun AddEditInstrumentDialog(
                                 maturityDateStr,
                                 couponRate.toDoubleOrNull(),
                                 lookupPrice,
-                                currentPrice.toDoubleOrNull() ?: 0.0 // This was the missing argument
+                                currentPrice.toDoubleOrNull() ?: 0.0
                             )
                         },
                         enabled = symbol.isNotBlank() && quantity.isNotBlank() && averageBuyPrice.isNotBlank() && currency.isNotBlank()

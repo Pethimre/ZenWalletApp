@@ -5,11 +5,13 @@ import androidx.lifecycle.viewModelScope
 import com.aestroon.common.data.entity.GoalEntity
 import com.aestroon.common.data.repository.AuthRepository
 import com.aestroon.common.data.repository.GoalRepository
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.SharingStarted.Companion.WhileSubscribed
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.util.UUID
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class GoalsViewModel(
     private val goalRepository: GoalRepository,
     private val authRepository: AuthRepository
@@ -34,19 +36,15 @@ class GoalsViewModel(
         }
     }
 
-    // --- MODIFIED: This function now correctly sets the ID and UserID ---
     fun addOrUpdateGoal(goalFromUi: GoalEntity) = viewModelScope.launch {
-        // Get the current user's ID
         val currentUserId = userId.first()
 
         val goalToSave = if (goalFromUi.id.isBlank()) {
-            // This is a NEW goal. Create it with a fresh UUID and the correct user ID.
             goalFromUi.copy(
                 id = UUID.randomUUID().toString(),
                 userId = currentUserId
             )
         } else {
-            // This is an EXISTING goal being updated. Just ensure the user ID is set.
             goalFromUi.copy(userId = currentUserId)
         }
 

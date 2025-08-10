@@ -81,7 +81,6 @@ class RssNewsRepository {
                                 )
                             )
 
-                            // Reset fields
                             currentTitle = ""
                             currentDescription = null
                             currentLink = ""

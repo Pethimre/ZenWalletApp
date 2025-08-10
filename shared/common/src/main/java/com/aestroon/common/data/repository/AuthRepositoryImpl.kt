@@ -27,6 +27,23 @@ import kotlinx.serialization.json.put
 import okhttp3.Dispatcher
 import java.security.MessageDigest
 
+interface AuthRepository {
+    val userIdFlow: Flow<String?>
+    suspend fun login(email: String, password: String): Result<UserInfo?>
+    suspend fun signUp(displayName: String, email: String, password: String): Result<UserInfo?>
+    suspend fun syncPendingUsers()
+    suspend fun resendVerificationEmail(email: String): Result<Unit>
+    fun isUserVerified(user: UserInfo?): Boolean
+    suspend fun refreshSession(refreshToken: String): UserInfo?
+    fun getRefreshToken(): String?
+    suspend fun getUpdatedUser(): Result<UserInfo?>
+    suspend fun clearPendingUsers()
+    suspend fun logout()
+    suspend fun updateUser(displayName: String, phone: String): Result<UserInfo>
+    suspend fun updatePassword(newPassword: String): Result<UserInfo>
+    fun sessionStatus(): Flow<SessionStatus>
+}
+
 class AuthRepositoryImpl(
     private val auth: Auth,
     private val userDao: UserDao,
@@ -146,7 +163,10 @@ class AuthRepositoryImpl(
 
 
     override suspend fun clearPendingUsers() {
-        // Implementation remains the same
+        userDao.getUnsyncedUsers().first().forEach {
+            userDao.deleteUser(it)
+        }
+        Log.d("AuthRepository", "Cleared all pending (un-synced) users.")
     }
 
     override suspend fun logout() {

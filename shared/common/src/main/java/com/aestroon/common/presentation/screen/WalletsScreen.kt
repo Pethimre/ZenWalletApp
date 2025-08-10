@@ -1,6 +1,8 @@
 package com.aestroon.common.presentation.screen
 
 import AddEditWalletDialog
+import ConfirmDeleteWalletDialog
+import OfflineWarningBanner
 import OverallSummaryCard
 import SpendingWalletCard
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -52,6 +54,7 @@ import com.aestroon.common.domain.WalletsViewModel
 import com.aestroon.common.presentation.screen.components.ConfirmDeleteDialog
 import com.aestroon.common.theme.GreenChipColor
 import com.aestroon.common.theme.RedChipColor
+import com.aestroon.common.utilities.network.ConnectivityObserver
 import org.koin.androidx.compose.koinViewModel
 import kotlin.math.max
 
@@ -72,6 +75,9 @@ fun WalletsScreen(
     var showAddEditDialog by remember { mutableStateOf(false) }
     var walletToEdit by remember { mutableStateOf<WalletEntity?>(null) }
 
+    val hasPendingSyncs by viewModel.hasPendingSyncs.collectAsState()
+    val networkStatus by viewModel.networkStatus.collectAsState()
+
     var showConfirmDeleteDialog by remember { mutableStateOf<WalletEntity?>(null) }
 
     LaunchedEffect(expandedWalletId) {
@@ -82,6 +88,9 @@ fun WalletsScreen(
     val pagerState = rememberPagerState(pageCount = { tabs.size })
 
     Column(modifier = Modifier.fillMaxSize()) {
+
+        OfflineWarningBanner(isVisible = hasPendingSyncs && networkStatus != ConnectivityObserver.Status.Available)
+
         HorizontalPager(
             state = pagerState,
             modifier = Modifier.weight(1f)
@@ -173,11 +182,13 @@ fun WalletsScreen(
     }
 
     showConfirmDeleteDialog?.let { walletToDelete ->
-        ConfirmDeleteDialog(
-            itemName = walletToDelete.displayName,
+        ConfirmDeleteWalletDialog(
+            walletName = walletToDelete.displayName,
             onDismiss = { showConfirmDeleteDialog = null },
-            onConfirm = { viewModel.deleteWallet(walletToDelete) },
-            itemType = "wallet",
+            onConfirm = {
+                viewModel.deleteWallet(walletToDelete)
+                showConfirmDeleteDialog = null
+            }
         )
     }
 }
@@ -264,8 +275,6 @@ fun MonthlyCashFlowChart(
         }
     }
 }
-
-// --- PREVIEWS ---
 
 @Preview(showBackground = true, backgroundColor = 0xFF1C1B1F)
 @Composable

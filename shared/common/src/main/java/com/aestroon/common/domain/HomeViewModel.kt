@@ -78,7 +78,6 @@ class HomeViewModel(
 
     fun refreshAllData() {
         viewModelScope.launch {
-            Log.d("AppStartup", "refreshAllData: Refresh triggered.")
             _isRefreshing.value = true
 
             walletsViewModel.onEnterScreen()
@@ -87,7 +86,6 @@ class HomeViewModel(
             plannedPaymentsViewModel.syncPlannedPayments()
             newsViewModel.refresh()
             _isRefreshing.value = false
-            Log.d("AppStartup", "refreshAllData: Refresh finished.")
         }
     }
 

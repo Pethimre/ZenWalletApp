@@ -63,7 +63,7 @@ fun createMockNewsArticles(count: Int): List<NewsArticle> {
         "Recent data suggests a moderation in housing price growth and sales activity, indicating a potential cooldown in the previously heated real estate sector.",
         "Airlines and hotels are reporting a significant uptick in reservations as international travel restrictions are eased and pent-up demand is unleashed."
     )
-    val imageBaseUrl = "https://placehold.co/600x400/" // Using a placeholder image service
+    val imageBaseUrl = "https://placehold.co/600x400/"
     val categories = listOf("Business", "Technology", "Finance", "Economy", "Markets", "World News")
     val sources = listOf("Reuters", "Bloomberg", "Associated Press", "Financial Times")
 
@@ -73,7 +73,7 @@ fun createMockNewsArticles(count: Int): List<NewsArticle> {
             id = "news_${i + 1}",
             title = titles[i % titles.size],
             description = descriptions[i % descriptions.size],
-            link = "https://www.reuters.com/business/", // Placeholder link
+            link = "https://www.reuters.com/business/",
             imageUrl = "${imageBaseUrl}EBF0F1/grey?text=News+${i+1}\\n${titles[i % titles.size].substring(0,10)}...",
             pubDate = pubDate,
             sourceName = sources[i % sources.size],

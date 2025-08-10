@@ -41,7 +41,7 @@ import java.util.Locale
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddEditTransactionSheet(
-    existingTransaction: TransactionEntity?, // If null, it's "Add" mode. Otherwise, "Edit" mode.
+    existingTransaction: TransactionEntity?,
     wallets: List<WalletEntity>,
     categories: List<CategoryEntity>,
     onDismiss: () -> Unit,
@@ -59,7 +59,6 @@ fun AddEditTransactionSheet(
     val isEditMode = existingTransaction != null
     val title = if (isEditMode) "Edit Transaction" else "New Transaction"
 
-    // Initialize state. If in edit mode, pre-fill with existing data.
     var selectedType by remember { mutableStateOf(existingTransaction?.transactionType ?: TransactionType.EXPENSE) }
     var amountStr by remember { mutableStateOf(if (isEditMode) (existingTransaction!!.amount / 100.0).toString() else "") }
     var name by remember { mutableStateOf(existingTransaction?.name ?: "") }

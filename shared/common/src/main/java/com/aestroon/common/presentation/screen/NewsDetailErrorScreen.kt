@@ -33,7 +33,6 @@ fun NewsDetailErrorScreen(
     onBackClick: () -> Unit
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
-        // Gradient background
         Box(
             Modifier
                 .fillMaxSize()
@@ -46,7 +45,6 @@ fun NewsDetailErrorScreen(
                 )
         )
 
-        // Content
         Column(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
@@ -79,7 +77,6 @@ fun NewsDetailErrorScreen(
             }
         }
 
-        // Optional top back icon
         IconButton(
             onClick = onBackClick,
             modifier = Modifier

@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.util.*
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class PlannedPaymentsViewModel(
     private val plannedPaymentRepository: PlannedPaymentRepository,
     private val authRepository: AuthRepository,
@@ -28,7 +29,6 @@ class PlannedPaymentsViewModel(
     val baseCurrency: StateFlow<String> = currencyConversionRepository.baseCurrency
     val exchangeRates: StateFlow<Map<String, Double>?> = currencyConversionRepository.exchangeRates
 
-    @OptIn(ExperimentalCoroutinesApi::class)
     val plannedPayments: StateFlow<List<PlannedPaymentEntity>> = authRepository.userIdFlow
         .filterNotNull()
         .flatMapLatest { userId ->
@@ -36,7 +36,6 @@ class PlannedPaymentsViewModel(
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    @OptIn(ExperimentalCoroutinesApi::class)
     val wallets: StateFlow<List<WalletEntity>> = authRepository.userIdFlow
         .filterNotNull()
         .flatMapLatest { userId ->
@@ -44,7 +43,6 @@ class PlannedPaymentsViewModel(
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    @OptIn(ExperimentalCoroutinesApi::class)
     val categories: StateFlow<List<CategoryEntity>> = authRepository.userIdFlow
         .filterNotNull()
         .flatMapLatest { userId ->

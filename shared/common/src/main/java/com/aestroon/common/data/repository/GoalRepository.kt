@@ -43,13 +43,11 @@ class GoalRepositoryImpl(
     override suspend fun syncGoals(userId: String): Result<Unit> = runCatching {
         if (connectivityObserver.observe().first() != ConnectivityObserver.Status.Available) return@runCatching
 
-        // Sync local to remote
         goalDao.getUnsyncedGoals().first().takeIf { it.isNotEmpty() }?.let {
             postgrest.from("Goals").upsert(it.map(GoalEntity::toNetworkModel))
             it.forEach { goal -> goalDao.markAsSynced(goal.id) }
         }
 
-        // Sync remote to local
         val remoteGoals = postgrest.from("Goals").select {
             filter { eq("user_id", userId) }
         }.decodeList<Goal>()

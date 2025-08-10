@@ -48,8 +48,8 @@ import com.aestroon.common.theme.GreenChipColor
 import com.aestroon.common.theme.OrangeChipColor
 import com.aestroon.common.theme.RedChipColor
 import com.aestroon.common.utilities.TextFormatter
-import com.aestroon.common.utilities.TextFormatter.formatBalance
-import com.aestroon.common.utilities.formatDayAndMonth
+import com.aestroon.common.utilities.TextFormatter.formatSimpleBalance
+import com.aestroon.common.utilities.TextFormatter.formatDayAndMonth
 import org.koin.androidx.compose.koinViewModel
 import java.util.Calendar
 import java.util.Date
@@ -143,7 +143,7 @@ fun WalletCard(wallet: WalletEntity) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(wallet.displayName, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                 Text(
-                    text = formatBalance(wallet.balance, wallet.currency),
+                    text = formatSimpleBalance(wallet.balance, wallet.currency),
                     style = MaterialTheme.typography.bodyLarge,
                     fontWeight = FontWeight.SemiBold
                 )
@@ -257,7 +257,7 @@ fun TransactionListItem(
                     .background(it.composeColor.copy(alpha = 0.1f), CircleShape)
                     .padding(8.dp)
             )
-        } ?: Box(modifier = Modifier.size(40.dp)) // Placeholder if no category
+        } ?: Box(modifier = Modifier.size(40.dp))
 
         Spacer(modifier = Modifier.width(12.dp))
 

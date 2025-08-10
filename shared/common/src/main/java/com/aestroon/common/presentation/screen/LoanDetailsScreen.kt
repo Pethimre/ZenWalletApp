@@ -65,7 +65,7 @@ fun LoanDetailScreen(
         val backgroundColor = try {
             Color(android.graphics.Color.parseColor(it.color))
         } catch (e: Exception) {
-            MaterialTheme.colorScheme.primary // Fallback color
+            MaterialTheme.colorScheme.primary
         }
 
         Column(modifier = Modifier.fillMaxSize()) {
@@ -99,7 +99,7 @@ fun LoanDetailScreen(
                     Text(it.type.name, color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f))
                     Spacer(Modifier.height(16.dp))
                     Text(
-                        TextFormatter.formatBalance(it.remaining, baseCurrency),
+                        TextFormatter.formatSimpleBalance(it.remaining, baseCurrency),
                         color = MaterialTheme.colorScheme.onPrimary,
                         fontSize = 36.sp,
                         fontWeight = FontWeight.Bold
@@ -110,7 +110,7 @@ fun LoanDetailScreen(
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.2f))
                     ) {
                         Column(Modifier.padding(16.dp)) {
-                            "Paid: ${TextFormatter.formatBalance(it.principal - it.remaining, baseCurrency)} / ${TextFormatter.formatBalance(it.principal, baseCurrency)}"
+                            "Paid: ${TextFormatter.formatSimpleBalance(it.principal - it.remaining, baseCurrency)} / ${TextFormatter.formatSimpleBalance(it.principal, baseCurrency)}"
                             Spacer(Modifier.height(8.dp))
                             LinearProgressIndicator(
                                 progress = if (it.principal > 0) (it.principal - it.remaining).toFloat() / it.principal else 0f,
@@ -177,7 +177,7 @@ fun LoanEntryItem(entry: LoanEntryEntity, baseCurrency: String) {
                 )
             }
             Text(
-                TextFormatter.formatBalance(entry.amount, baseCurrency),
+                TextFormatter.formatSimpleBalance(entry.amount, baseCurrency),
                 fontWeight = FontWeight.Bold,
                 color = if (entry.isInterest) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
             )

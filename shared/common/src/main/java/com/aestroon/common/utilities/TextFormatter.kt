@@ -1,12 +1,14 @@
 package com.aestroon.common.utilities
 
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import java.text.DecimalFormat
+import java.text.DecimalFormatSymbols
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
+import java.util.Calendar
 import java.util.Date
 import java.util.Locale
-import kotlin.math.round
-import kotlin.math.abs
 import kotlin.math.absoluteValue
 
 object TextFormatter {
@@ -30,7 +32,7 @@ object TextFormatter {
         }
     }
 
-    fun formatBalance(balanceInCents: Long, currencyCode: String): String {
+    fun formatSimpleBalance(balanceInCents: Long, currencyCode: String): String {
         val amount = balanceInCents / 100.0
         return try {
             NumberFormat.getCurrencyInstance(Locale.getDefault()).apply {
@@ -71,6 +73,46 @@ object TextFormatter {
     fun formatPercentage(value: Double): String {
         val percentageFormatter = DecimalFormat("0.00'%'")
         return percentageFormatter.format(value)
+    }
+
+
+    fun Color.toHexString(): String {
+        return String.format("#%08X", this.toArgb())
+    }
+
+    fun formatDateForDisplay(date: Date, locale: Locale = Locale.getDefault()): String {
+        val today = Calendar.getInstance()
+        val yesterday = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, -1) }
+        val transactionCal = Calendar.getInstance().apply { time = date }
+
+        return when {
+            isSameDay(transactionCal, today) -> "Today"
+            isSameDay(transactionCal, yesterday) -> "Yesterday"
+            else -> SimpleDateFormat("MMM d", locale).format(date)
+        }
+    }
+
+    fun formatBalance(balanceInCents: Long, currencyCode: String): String {
+        val amount = balanceInCents / 100.0
+        return try {
+            val currency = java.util.Currency.getInstance(currencyCode)
+            val symbols = DecimalFormatSymbols(Locale.getDefault())
+            val pattern = "#,##0.00"
+
+            val formatter = DecimalFormat(pattern, symbols).apply {
+                this.currency = currency
+                minimumFractionDigits = 2
+                maximumFractionDigits = 2
+            }
+
+            "${currency.symbol} ${formatter.format(amount)}"
+        } catch (e: Exception) {
+            "$currencyCode ${String.format(Locale.getDefault(), "%,.2f", amount)}"
+        }
+    }
+
+    fun formatDayAndMonth(date: Date, locale: Locale = Locale.getDefault()): String {
+        return SimpleDateFormat("MMMM d", locale).format(date)
     }
 
     enum class CurrencyPosition { BEFORE, AFTER }

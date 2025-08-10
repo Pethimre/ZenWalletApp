@@ -108,7 +108,6 @@ class PortfolioRepositoryImpl(
         }
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
     override suspend fun syncAll(userId: String) {
         if (connectivityObserver.observe().first() != ConnectivityObserver.Status.Available) return
 

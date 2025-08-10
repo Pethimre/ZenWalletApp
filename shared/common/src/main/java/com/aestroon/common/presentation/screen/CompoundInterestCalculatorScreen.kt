@@ -176,9 +176,9 @@ fun ResultSummaryCard(result: CalculationResult, baseCurrency: String) {
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
     ) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            ResultRow("Future Value:", TextFormatter.formatBalance(result.futureValue, baseCurrency))
-            ResultRow("Total Contributions:", TextFormatter.formatBalance(result.totalContributions, baseCurrency))
-            ResultRow("Total Interest Earned:", TextFormatter.formatBalance(result.totalInterest, baseCurrency), isInterest = true)
+            ResultRow("Future Value:", TextFormatter.formatSimpleBalance(result.futureValue, baseCurrency))
+            ResultRow("Total Contributions:", TextFormatter.formatSimpleBalance(result.totalContributions, baseCurrency))
+            ResultRow("Total Interest Earned:", TextFormatter.formatSimpleBalance(result.totalInterest, baseCurrency), isInterest = true)
         }
     }
 }

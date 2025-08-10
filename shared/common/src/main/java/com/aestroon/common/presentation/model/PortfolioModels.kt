@@ -1,7 +1,6 @@
 import androidx.compose.ui.graphics.vector.ImageVector
 import java.util.Date
 
-// Represents a single financial instrument (e.g., Apple stock)
 data class Instrument(
     val id: String,
     val name: String,
@@ -15,7 +14,6 @@ data class Instrument(
     val couponRate: Double? = null
 )
 
-// Represents an instrument held by the user in a portfolio
 data class HeldInstrument(
     val instrument: Instrument,
     val quantity: Double,
@@ -28,7 +26,6 @@ data class HeldInstrument(
     val profitLossPercentage: Double get() = if (totalCost == 0.0) 0.0 else (profitLoss / totalCost) * 100
 }
 
-// Represents a user's portfolio account (e.g., "Crypto Exchange Wallet")
 data class PortfolioAccount(
     val id: String,
     val accountName: String,
@@ -41,7 +38,6 @@ data class PortfolioAccount(
     val overallProfitLossPercentage: Double get() = if (totalCostBasis == 0.0) 0.0 else (overallProfitLoss / totalCostBasis) * 100
 }
 
-// Represents the summary of all portfolios combined
 data class PortfolioSummary(
     val totalPortfolioValue: Double,
     val totalProfitLoss: Double,

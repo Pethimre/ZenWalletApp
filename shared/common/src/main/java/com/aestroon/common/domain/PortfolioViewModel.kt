@@ -42,6 +42,7 @@ data class PortfolioWithInstruments(
     val instruments: List<PortfolioInstrumentEntity>
 )
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class PortfolioViewModel(
     private val portfolioRepository: PortfolioRepository,
     private val authRepository: AuthRepository,
@@ -75,7 +76,6 @@ class PortfolioViewModel(
         }
     }
 
-    @OptIn(ExperimentalCoroutinesApi::class)
     private val portfolioWithInstruments: StateFlow<List<PortfolioWithInstruments>> = authRepository.userIdFlow
         .filterNotNull()
         .flatMapLatest { userId ->
@@ -291,11 +291,8 @@ class PortfolioViewModel(
                 maturityDate = maturityDate?.time,
                 couponRate = couponRate,
                 isSynced = false,
-                // --- MODIFIED: Logic to save the new fields ---
                 lookupPrice = lookupPrice,
-                // If lookup is disabled, save the new price; otherwise, clear it.
                 lastUpdatedPrice = if (!lookupPrice) newCurrentPrice else null,
-                // Update the date only if the price was manually updated.
                 lastUpdatedDate = if (!lookupPrice) System.currentTimeMillis() else null
             )
             portfolioRepository.updateInstrument(updatedInstrument)

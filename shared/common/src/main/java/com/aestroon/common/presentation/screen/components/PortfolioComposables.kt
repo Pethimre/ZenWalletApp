@@ -45,7 +45,6 @@ fun AssetPieChart(
         modifier = modifier.fillMaxWidth().height(150.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // --- The Pie Chart ---
         Canvas(modifier = Modifier.size(150.dp)) {
             var startAngle = 0f
             instruments.forEachIndexed { index, instrument ->
@@ -62,7 +61,6 @@ fun AssetPieChart(
         }
         Spacer(modifier = Modifier.width(16.dp))
 
-        // --- The Legend ---
         Column(modifier = Modifier.weight(1f)) {
             instruments.forEachIndexed { index, instrument ->
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 4.dp)) {

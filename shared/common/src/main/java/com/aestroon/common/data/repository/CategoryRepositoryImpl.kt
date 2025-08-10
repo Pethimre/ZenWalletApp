@@ -43,7 +43,6 @@ class CategoryRepositoryImpl(
             return@runCatching
         }
 
-        // Push local changes
         val unsynced = categoryDao.getUnsyncedCategories().first()
         if (unsynced.isNotEmpty()) {
             val networkCategories = unsynced.map { Category(it.id, it.name, it.iconName, it.color, it.userId) }
@@ -51,7 +50,6 @@ class CategoryRepositoryImpl(
             unsynced.forEach { categoryDao.markCategoryAsSynced(it.id) }
         }
 
-        // Pull remote changes
         val remote = postgrest.from(CATEGORIES_TABLE_NAME).select { filter { eq("user_id", userId) } }.decodeList<Category>()
         remote.forEach {
             val entity = CategoryEntity(it.id, it.name, it.icon_name, it.color, it.user_id, isSynced = true)

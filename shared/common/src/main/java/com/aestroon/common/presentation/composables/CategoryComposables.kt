@@ -22,8 +22,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.aestroon.common.data.entity.CategoryEntity
 import com.aestroon.common.presentation.IconProvider
-import defaultWalletColors
-import generateRandomColor
+import com.aestroon.common.utilities.defaultWalletColors
+import com.aestroon.common.utilities.generateRandomColor
 
 @Composable
 fun CategoryListItem(

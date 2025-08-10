@@ -40,7 +40,6 @@ fun VerifyEmailScreen(
 
     LaunchedEffect(uiState) {
         if (uiState is AuthViewModel.UiState.Success) {
-            // Give the user a moment to read the success message
             delay(2000)
             onNavigateToLogin()
         }

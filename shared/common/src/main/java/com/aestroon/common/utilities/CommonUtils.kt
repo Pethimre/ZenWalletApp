@@ -1,35 +1,18 @@
 package com.aestroon.common.utilities
 
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.toArgb
-import java.text.SimpleDateFormat
 import java.util.Calendar
-import java.util.Date
-import java.util.Locale
 
-fun formatDateForDisplay(date: Date, locale: Locale = Locale.getDefault()): String {
-    val today = Calendar.getInstance()
-    val yesterday = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, -1) }
-    val transactionCal = Calendar.getInstance().apply { time = date }
+val defaultWalletColors = listOf(
+    Color(0xFF4CAF50), Color(0xFF2196F3), Color(0xFFF44336),
+    Color(0xFFFF9800), Color(0xFF9C27B0), Color(0xFF009688)
+)
 
-    return when {
-        isSameDay(transactionCal, today) -> "Today"
-        isSameDay(transactionCal, yesterday) -> "Yesterday"
-        else -> SimpleDateFormat("MMM d", locale).format(date)
-    }
-}
-
-fun formatDayAndMonth(date: Date, locale: Locale = Locale.getDefault()): String {
-    return SimpleDateFormat("MMMM d", locale).format(date)
-}
+fun generateRandomColor() = defaultWalletColors.random()
 
 fun isSameDay(cal1: Calendar, cal2: Calendar): Boolean {
     return cal1.get(Calendar.YEAR) == cal2.get(Calendar.YEAR) &&
             cal1.get(Calendar.DAY_OF_YEAR) == cal2.get(Calendar.DAY_OF_YEAR)
-}
-
-fun Color.toHexString(): String {
-    return String.format("#%08X", this.toArgb())
 }
 
 fun String.toColor(): Color {

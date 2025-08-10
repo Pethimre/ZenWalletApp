@@ -398,13 +398,6 @@ fun AddEditPlannedPaymentSheet(
                     Button(onClick = {
                         val amountLong = (amountStr.replace(",", ".").toDoubleOrNull() ?: 0.0).times(100).toLong()
 
-                        // --- DEBUG LOGGING ---
-                        Log.d("SheetDebug", "SAVE CLICKED:")
-                        Log.d("SheetDebug", "  - Type: $selectedType")
-                        Log.d("SheetDebug", "  - From/To Wallet: ${fromWallet?.displayName} (ID: ${fromWallet?.id})")
-                        Log.d("SheetDebug", "  - Destination Wallet (for Transfer): ${toWallet?.displayName} (ID: ${toWallet?.id})")
-                        Log.d("SheetDebug", "  - Category: ${category?.name} (ID: ${category?.id})")
-
                         if (amountLong > 0 && name.isNotBlank() && fromWallet != null) {
                             onConfirm(
                                 existingPayment, name, description.ifBlank { null }, date, amountLong, fromWallet!!, category, recurrenceType, recurrenceValue.toIntOrNull() ?: 1, selectedType, toWallet

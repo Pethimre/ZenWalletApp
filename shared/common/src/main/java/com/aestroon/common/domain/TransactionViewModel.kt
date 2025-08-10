@@ -1,19 +1,11 @@
 package com.aestroon.common.domain
 
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AttachMoney
-import androidx.compose.material.icons.filled.CurrencyFranc
-import androidx.compose.material.icons.filled.EuroSymbol
-import androidx.compose.material.icons.filled.Paid
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.aestroon.common.data.entity.CategoryEntity
 import com.aestroon.common.data.entity.TransactionEntity
 import com.aestroon.common.data.entity.TransactionType
 import com.aestroon.common.data.entity.WalletEntity
-import com.aestroon.common.data.model.CurrencyExchangeInfo
-import com.aestroon.common.data.model.RateTrend
 import com.aestroon.common.data.repository.AuthRepository
 import com.aestroon.common.data.repository.CategoryRepository
 import com.aestroon.common.data.repository.CurrencyConversionRepository
@@ -54,7 +46,6 @@ class TransactionsViewModel(
     private val _transactionToEdit = MutableStateFlow<TransactionEntity?>(null)
     val transactionToEdit = _transactionToEdit.asStateFlow()
 
-    @OptIn(ExperimentalCoroutinesApi::class)
     val transactions: StateFlow<List<TransactionEntity>> = authRepository.userIdFlow
         .filterNotNull()
         .flatMapLatest { userId ->
@@ -62,7 +53,6 @@ class TransactionsViewModel(
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    @OptIn(ExperimentalCoroutinesApi::class)
     val wallets: StateFlow<List<WalletEntity>> = authRepository.userIdFlow
         .filterNotNull()
         .flatMapLatest { userId ->
@@ -70,7 +60,6 @@ class TransactionsViewModel(
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    @OptIn(ExperimentalCoroutinesApi::class)
     val categories: StateFlow<List<CategoryEntity>> = authRepository.userIdFlow
         .filterNotNull()
         .flatMapLatest { userId ->
@@ -78,7 +67,6 @@ class TransactionsViewModel(
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    @OptIn(ExperimentalCoroutinesApi::class)
     val categoriesMap: StateFlow<Map<String, CategoryEntity>> = categories.map { list ->
         list.associateBy { it.id }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())

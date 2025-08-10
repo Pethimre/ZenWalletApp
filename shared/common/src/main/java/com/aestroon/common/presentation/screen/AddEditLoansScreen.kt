@@ -51,12 +51,12 @@ fun AddEditLoanScreen(
             if (existingLoan != null) {
                 name = existingLoan.name
                 description = existingLoan.description ?: ""
-                principal = (existingLoan.principal / 100).toString() // Assuming stored in cents
+                principal = (existingLoan.principal / 100).toString()
                 loanType = existingLoan.type
                 selectedColor = try {
                     Color(android.graphics.Color.parseColor(existingLoan.color))
                 } catch (e: Exception) {
-                    Color(0xFF6200EE) // Fallback
+                    Color(0xFF6200EE)
                 }
             }
         }
@@ -86,7 +86,7 @@ fun AddEditLoanScreen(
                                 principal = principalLong,
                                 remaining = if (isEditing) (viewModel.loans.value.find { it.id == loanId }?.remaining ?: principalLong) else principalLong,
                                 color = colorString,
-                                iconName = "Default", // Add icon picker later
+                                iconName = "Default",
                                 type = loanType,
                                 userId = runBlocking { authRepository.userIdFlow.first() ?: "" }
                             )
@@ -122,7 +122,6 @@ fun AddEditLoanScreen(
                 Text("I Borrowed Money", modifier = Modifier.clickable { loanType = LoanType.BORROWED })
             }
 
-            // Simple Color Picker
             Text("Color", style = MaterialTheme.typography.titleMedium)
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 val colors = listOf(Color.Red, Color.Green, Color.Blue, Color.Yellow, Color.Magenta)

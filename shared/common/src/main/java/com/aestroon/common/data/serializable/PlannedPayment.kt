@@ -13,7 +13,6 @@ data class PlannedPayment(
     val name: String,
     @SerialName("Description")
     val description: String?,
-    // Using string for date serialization with Supabase
     val due_date: String,
     val amount: Long,
     val currency: String,
