@@ -223,7 +223,7 @@ class PortfolioViewModel(
     fun onAddInstrumentConfirm(
         account: PortfolioAccount, symbol: String, name: String, currency: String,
         quantity: Double, price: Double, maturityDateStr: String, couponRate: Double?,
-        lookupPrice: Boolean
+        lookupPrice: Boolean, newCurrentPrice: Double // Add newCurrentPrice parameter
     ) {
         viewModelScope.launch {
             val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
@@ -239,7 +239,7 @@ class PortfolioViewModel(
                 maturityDate = maturityDate?.time,
                 couponRate = couponRate,
                 lookupPrice = lookupPrice,
-                lastUpdatedPrice = if (!lookupPrice) price else null,
+                lastUpdatedPrice = if (!lookupPrice) newCurrentPrice else null,
                 lastUpdatedDate = if (!lookupPrice) System.currentTimeMillis() else null
             )
             portfolioRepository.addInstrument(instrument)

@@ -64,6 +64,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -102,7 +103,7 @@ private fun formatPercentage(value: Double): String { return percentageFormatter
 fun PortfolioOverviewScreen(
     viewModel: PortfolioViewModel = koinViewModel()
 ) {
-    var selectedAssetType by remember { mutableStateOf(PortfolioAssetType.ALL) }
+    var selectedAssetType by rememberSaveable { mutableStateOf(PortfolioAssetType.ALL) }
     val accounts by viewModel.accounts.collectAsState()
     val overallSummary by viewModel.overallSummary.collectAsState()
     val chartData by viewModel.chartData.collectAsState()
@@ -202,10 +203,10 @@ fun PortfolioOverviewScreen(
             accountName = account.accountName,
             assetType = account.accountType,
             onDismiss = viewModel::onAddInstrumentDialogDismiss,
-            onConfirm = { symbol, name, currency, quantity, price, maturityDateStr, couponRate, lookupPrice, _ ->
+            onConfirm = { symbol, name, currency, quantity, price, maturityDateStr, couponRate, lookupPrice, newCurrentPrice -> // <-- get newCurrentPrice here
                 viewModel.onAddInstrumentConfirm(
                     account, symbol, name, currency, quantity, price,
-                    maturityDateStr, couponRate, lookupPrice
+                    maturityDateStr, couponRate, lookupPrice, newCurrentPrice
                 )
             }
         )
