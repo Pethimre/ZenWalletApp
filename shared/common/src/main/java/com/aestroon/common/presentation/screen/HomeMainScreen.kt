@@ -115,6 +115,10 @@ fun HomeMainScreen(
                     name = name,
                     description = description ?: "",
                     category = category,
+                    date = date,
+                    fromWallet = fromWallet,
+                    type = type,
+                    toWallet = toWallet
                 )
             }
         )

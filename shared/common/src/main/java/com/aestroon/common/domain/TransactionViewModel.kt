@@ -195,6 +195,10 @@ class TransactionsViewModel(
         name: String,
         description: String,
         category: CategoryEntity?,
+        date: Date,
+        fromWallet: WalletEntity,
+        type: TransactionType,
+        toWallet: WalletEntity?
     ) {
         viewModelScope.launch {
             val originalTransaction = _transactionToEdit.value ?: return@launch
@@ -206,6 +210,11 @@ class TransactionsViewModel(
                 name = name,
                 description = description,
                 categoryId = category?.id,
+                date = date,
+                walletId = fromWallet.id,
+                currency = fromWallet.currency,
+                transactionType = type,
+                toWalletId = toWallet?.id,
                 isSynced = false
             )
 
