@@ -9,6 +9,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.CurrencyBitcoin
 import androidx.compose.material.icons.filled.ShowChart
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.aestroon.common.data.entity.PortfolioEntity
@@ -33,6 +34,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import java.text.DecimalFormat
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -47,18 +49,79 @@ class PortfolioViewModel(
     private val portfolioRepository: PortfolioRepository,
     private val authRepository: AuthRepository,
     private val marketDataRepository: MarketDataRepository,
-    private val currencyConversionRepository: CurrencyConversionRepository
+    private val currencyConversionRepository: CurrencyConversionRepository,
+    private val savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
+    private val dateFormatter = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+
+    // region Dialog Visibility State
     private val _showAddAccountDialog = MutableStateFlow<String?>(null)
     val showAddAccountDialog = _showAddAccountDialog.asStateFlow()
-    private val _showAddInstrumentDialog = MutableStateFlow<PortfolioAccount?>(null)
-    val showAddInstrumentDialog = _showAddInstrumentDialog.asStateFlow()
+
     private val _showEditAccountDialog = MutableStateFlow<PortfolioAccount?>(null)
     val showEditAccountDialog = _showEditAccountDialog.asStateFlow()
-    private val _showEditInstrumentDialog = MutableStateFlow<Pair<PortfolioAccount, HeldInstrument>?>(null)
-    val showEditInstrumentDialog = _showEditInstrumentDialog.asStateFlow()
 
+    val showAddInstrumentDialogFor: StateFlow<PortfolioAccount?> =
+        savedStateHandle.getStateFlow<String?>(ADD_INSTRUMENT_ACCOUNT_ID, null)
+            .flatMapLatest { accountId ->
+                if (accountId == null) flowOf(null)
+                else accounts.map { accs -> accs.find { it.id == accountId } }
+            }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
+    val showEditInstrumentDialogFor: StateFlow<Pair<PortfolioAccount, HeldInstrument>?> =
+        savedStateHandle.getStateFlow<String?>(EDIT_INSTRUMENT_ID, null)
+            .flatMapLatest { instrumentId ->
+                if (instrumentId == null) flowOf(null)
+                else accounts.map { accs ->
+                    var result: Pair<PortfolioAccount, HeldInstrument>? = null
+                    for (acc in accs) {
+                        val instrument = acc.instruments.find { it.instrument.id == instrumentId }
+                        if (instrument != null) {
+                            result = acc to instrument
+                            break
+                        }
+                    }
+                    result
+                }
+            }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+    // endregion
+
+    // region Add/Edit Instrument Dialog State
+    val dialogSymbol = savedStateHandle.getStateFlow(DIALOG_SYMBOL, "")
+    val dialogName = savedStateHandle.getStateFlow(DIALOG_NAME, "")
+    val dialogCurrency = savedStateHandle.getStateFlow(DIALOG_CURRENCY, "HUF")
+    val dialogQuantity = savedStateHandle.getStateFlow(DIALOG_QUANTITY, "")
+    val dialogPrice = savedStateHandle.getStateFlow(DIALOG_PRICE, "")
+    val dialogMaturityDate = savedStateHandle.getStateFlow(DIALOG_MATURITY, "")
+    val dialogCouponRate = savedStateHandle.getStateFlow(DIALOG_COUPON, "")
+    val dialogLookupPrice = savedStateHandle.getStateFlow(DIALOG_LOOKUP, true)
+    val dialogCurrentPrice = savedStateHandle.getStateFlow(DIALOG_CURRENT_PRICE, "")
+
+    fun onDialogSymbolChange(value: String) { savedStateHandle[DIALOG_SYMBOL] = value }
+    fun onDialogNameChange(value: String) { savedStateHandle[DIALOG_NAME] = value }
+    fun onDialogCurrencyChange(value: String) { savedStateHandle[DIALOG_CURRENCY] = value.uppercase() }
+    fun onDialogQuantityChange(value: String) { savedStateHandle[DIALOG_QUANTITY] = value }
+    fun onDialogPriceChange(value: String) { savedStateHandle[DIALOG_PRICE] = value }
+    fun onDialogMaturityDateChange(value: String) { savedStateHandle[DIALOG_MATURITY] = value }
+    fun onDialogCouponRateChange(value: String) { savedStateHandle[DIALOG_COUPON] = value }
+    fun onDialogLookupPriceChange(value: Boolean) { savedStateHandle[DIALOG_LOOKUP] = value }
+    fun onDialogCurrentPriceChange(value: String) { savedStateHandle[DIALOG_CURRENT_PRICE] = value }
+
+    private fun clearDialogState() {
+        savedStateHandle[DIALOG_SYMBOL] = ""
+        savedStateHandle[DIALOG_NAME] = ""
+        savedStateHandle[DIALOG_CURRENCY] = "HUF"
+        savedStateHandle[DIALOG_QUANTITY] = ""
+        savedStateHandle[DIALOG_PRICE] = ""
+        savedStateHandle[DIALOG_MATURITY] = ""
+        savedStateHandle[DIALOG_COUPON] = ""
+        savedStateHandle[DIALOG_LOOKUP] = true
+        savedStateHandle[DIALOG_CURRENT_PRICE] = ""
+    }
+    // endregion
+
+    // region UI State (Chart, Loading, etc.)
     private val _chartData = MutableStateFlow<List<Double>>(emptyList())
     val chartData: StateFlow<List<Double>> = _chartData.asStateFlow()
     private val _isChartLoading = MutableStateFlow(false)
@@ -67,6 +130,7 @@ class PortfolioViewModel(
 
     private val _marketDataError = MutableStateFlow<String?>(null)
     val marketDataError: StateFlow<String?> = _marketDataError.asStateFlow()
+    // endregion
 
     init {
         viewModelScope.launch {
@@ -217,30 +281,29 @@ class PortfolioViewModel(
         }
     }
 
-    fun onAddInstrumentClicked(account: PortfolioAccount) { _showAddInstrumentDialog.value = account }
-    fun onAddInstrumentDialogDismiss() { _showAddInstrumentDialog.value = null }
+    fun onAddInstrumentClicked(account: PortfolioAccount) {
+        savedStateHandle[ADD_INSTRUMENT_ACCOUNT_ID] = account.id
+    }
+    fun onAddInstrumentDialogDismiss() {
+        savedStateHandle[ADD_INSTRUMENT_ACCOUNT_ID] = null
+        clearDialogState()
+    }
 
-    fun onAddInstrumentConfirm(
-        account: PortfolioAccount, symbol: String, name: String, currency: String,
-        quantity: Double, price: Double, maturityDateStr: String, couponRate: Double?,
-        lookupPrice: Boolean, newCurrentPrice: Double // Add newCurrentPrice parameter
-    ) {
+    fun onAddInstrumentConfirm() {
         viewModelScope.launch {
-            val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-            val maturityDate: Date? = try { if (maturityDateStr.isNotBlank()) dateFormat.parse(maturityDateStr) else null } catch (e: Exception) { null }
-
+            val account = showAddInstrumentDialogFor.value ?: return@launch
             val instrument = PortfolioInstrumentEntity(
                 portfolioId = account.id,
-                symbol = symbol.uppercase(),
-                name = name,
-                quantity = quantity,
-                averageBuyPrice = price,
-                currency = currency,
-                maturityDate = maturityDate?.time,
-                couponRate = couponRate,
-                lookupPrice = lookupPrice,
-                lastUpdatedPrice = if (!lookupPrice) newCurrentPrice else null,
-                lastUpdatedDate = if (!lookupPrice) System.currentTimeMillis() else null
+                symbol = dialogSymbol.value.uppercase(),
+                name = if (dialogName.value.isNotBlank()) dialogName.value else dialogSymbol.value,
+                quantity = dialogQuantity.value.toDoubleOrNull() ?: 0.0,
+                averageBuyPrice = dialogPrice.value.toDoubleOrNull() ?: 0.0,
+                currency = dialogCurrency.value,
+                maturityDate = try { if (dialogMaturityDate.value.isNotBlank()) dateFormatter.parse(dialogMaturityDate.value)?.time else null } catch (e: Exception) { null },
+                couponRate = dialogCouponRate.value.toDoubleOrNull(),
+                lookupPrice = dialogLookupPrice.value,
+                lastUpdatedPrice = if (!dialogLookupPrice.value) dialogCurrentPrice.value.toDoubleOrNull() else null,
+                lastUpdatedDate = if (!dialogLookupPrice.value) System.currentTimeMillis() else null
             )
             portfolioRepository.addInstrument(instrument)
             onAddInstrumentDialogDismiss()
@@ -260,40 +323,43 @@ class PortfolioViewModel(
         }
     }
 
-    fun onEditInstrumentClicked(account: PortfolioAccount, instrument: HeldInstrument) { _showEditInstrumentDialog.value = account to instrument }
-    fun onEditInstrumentDialogDismiss() { _showEditInstrumentDialog.value = null }
+    fun onEditInstrumentClicked(account: PortfolioAccount, instrument: HeldInstrument) {
+        // Populate state holders with existing instrument data
+        savedStateHandle[DIALOG_SYMBOL] = instrument.instrument.symbol
+        savedStateHandle[DIALOG_NAME] = instrument.instrument.name
+        savedStateHandle[DIALOG_CURRENCY] = instrument.instrument.currency
+        savedStateHandle[DIALOG_QUANTITY] = instrument.quantity.toString()
+        savedStateHandle[DIALOG_PRICE] = instrument.averageBuyPrice.toString()
+        savedStateHandle[DIALOG_MATURITY] = instrument.instrument.maturityDate?.let { dateFormatter.format(it) } ?: ""
+        savedStateHandle[DIALOG_COUPON] = instrument.instrument.couponRate?.toString() ?: ""
+        savedStateHandle[DIALOG_LOOKUP] = instrument.lookupPrice
+        savedStateHandle[DIALOG_CURRENT_PRICE] = instrument.instrument.currentPrice.toString()
 
-    fun onEditInstrumentConfirm(
-        account: PortfolioAccount,
-        instrument: HeldInstrument,
-        symbol: String,
-        name: String,
-        currency: String,
-        quantity: Double,
-        price: Double, // This is the averageBuyPrice
-        maturityDateStr: String,
-        couponRate: Double?,
-        lookupPrice: Boolean, // The value from the checkbox
-        newCurrentPrice: Double // The new manually entered price
-    ) {
+        // Show the dialog
+        savedStateHandle[EDIT_INSTRUMENT_ID] = instrument.instrument.id
+    }
+    fun onEditInstrumentDialogDismiss() {
+        savedStateHandle[EDIT_INSTRUMENT_ID] = null
+        clearDialogState()
+    }
+
+    fun onEditInstrumentConfirm() {
         viewModelScope.launch {
-            val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-            val maturityDate: Date? = try { if (maturityDateStr.isNotBlank()) dateFormat.parse(maturityDateStr) else null } catch (e: Exception) { null }
-
+            val (account, instrument) = showEditInstrumentDialogFor.value ?: return@launch
             val updatedInstrument = PortfolioInstrumentEntity(
                 id = instrument.instrument.id,
                 portfolioId = account.id,
-                symbol = symbol.uppercase(),
-                name = name,
-                quantity = quantity,
-                averageBuyPrice = price,
-                currency = currency,
-                maturityDate = maturityDate?.time,
-                couponRate = couponRate,
+                symbol = dialogSymbol.value.uppercase(),
+                name = if (dialogName.value.isNotBlank()) dialogName.value else dialogSymbol.value,
+                quantity = dialogQuantity.value.toDoubleOrNull() ?: 0.0,
+                averageBuyPrice = dialogPrice.value.toDoubleOrNull() ?: 0.0,
+                currency = dialogCurrency.value,
+                maturityDate = try { if (dialogMaturityDate.value.isNotBlank()) dateFormatter.parse(dialogMaturityDate.value)?.time else null } catch (e: Exception) { null },
+                couponRate = dialogCouponRate.value.toDoubleOrNull(),
                 isSynced = false,
-                lookupPrice = lookupPrice,
-                lastUpdatedPrice = if (!lookupPrice) newCurrentPrice else null,
-                lastUpdatedDate = if (!lookupPrice) System.currentTimeMillis() else null
+                lookupPrice = dialogLookupPrice.value,
+                lastUpdatedPrice = if (!dialogLookupPrice.value) dialogCurrentPrice.value.toDoubleOrNull() else null,
+                lastUpdatedDate = if (!dialogLookupPrice.value) System.currentTimeMillis() else null
             )
             portfolioRepository.updateInstrument(updatedInstrument)
             onEditInstrumentDialogDismiss()
@@ -303,7 +369,6 @@ class PortfolioViewModel(
     fun onUpdateInstrumentPrice(instrument: HeldInstrument, newPrice: Double) {
         viewModelScope.launch {
             val originalEntity = portfolioRepository.getInstrumentById(instrument.instrument.id).firstOrNull()
-
             if (originalEntity != null) {
                 val updatedEntity = originalEntity.copy(
                     lastUpdatedPrice = newPrice,
@@ -317,4 +382,19 @@ class PortfolioViewModel(
 
     fun onDeleteAccount(portfolioId: String) { viewModelScope.launch { portfolioRepository.deletePortfolio(portfolioId) } }
     fun onDeleteInstrument(instrumentId: String) { viewModelScope.launch { portfolioRepository.deleteInstrument(instrumentId) } }
+
+    companion object {
+        private const val ADD_INSTRUMENT_ACCOUNT_ID = "addInstrumentAccountId"
+        private const val EDIT_INSTRUMENT_ID = "editInstrumentId"
+
+        private const val DIALOG_SYMBOL = "dialog_symbol"
+        private const val DIALOG_NAME = "dialog_name"
+        private const val DIALOG_CURRENCY = "dialog_currency"
+        private const val DIALOG_QUANTITY = "dialog_quantity"
+        private const val DIALOG_PRICE = "dialog_price"
+        private const val DIALOG_MATURITY = "dialog_maturity"
+        private const val DIALOG_COUPON = "dialog_coupon"
+        private const val DIALOG_LOOKUP = "dialog_lookup"
+        private const val DIALOG_CURRENT_PRICE = "dialog_current_price"
+    }
 }

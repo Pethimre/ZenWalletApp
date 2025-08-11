@@ -26,6 +26,7 @@ import com.aestroon.common.data.di.newsModule
 import com.aestroon.common.data.repository.UserPreferencesRepository
 import org.koin.android.ext.android.inject
 import org.koin.android.ext.koin.androidContext
+import androidx.navigation.compose.rememberNavController
 import org.koin.androidx.viewmodel.ext.android.viewModel
 import org.koin.core.context.startKoin
 
@@ -56,6 +57,8 @@ class MainActivity : FragmentActivity() {
                 var biometricUnlockAttempted by rememberSaveable { mutableStateOf(false) }
                 var biometricUnlockSuccess by rememberSaveable { mutableStateOf(false) }
 
+                val authenticatedNavController = rememberNavController()
+
                 Log.d("AppStartup", "Recomposition -> isLoggedIn: $isLoggedIn, restoreComplete: $restoreComplete, needsBiometric: ${isBiometricLockEnabled && isLoggedIn}")
 
                 LaunchedEffect(Unit) {
@@ -76,11 +79,9 @@ class MainActivity : FragmentActivity() {
 
                 when {
                     !restoreComplete -> {
-                        Log.d("AppStartup", "UI STATE: Showing SplashScreen")
                         SplashScreen()
                     }
                     needsBiometricUnlock && !biometricUnlockSuccess -> {
-                        Log.d("AppStartup", "UI STATE: Showing Biometric Lock Screen")
                         Box(
                             modifier = Modifier
                                 .fillMaxSize()
@@ -91,11 +92,12 @@ class MainActivity : FragmentActivity() {
                         }
                     }
                     isLoggedIn -> {
-                        Log.d("AppStartup", "UI STATE: Showing AuthenticatedNavGraph")
-                        AuthenticatedNavGraph(onLogoutClicked = { authViewModel.logout() })
+                        AuthenticatedNavGraph(
+                            navController = authenticatedNavController,
+                            onLogoutClicked = { authViewModel.logout() }
+                        )
                     }
                     else -> {
-                        Log.d("AppStartup", "UI STATE: Showing UnauthenticatedNavGraph")
                         UnauthenticatedNavGraph(authViewModel)
                     }
                 }

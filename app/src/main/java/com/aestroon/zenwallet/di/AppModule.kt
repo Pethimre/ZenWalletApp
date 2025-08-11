@@ -124,7 +124,7 @@ val appModule = module {
     viewModel { CalculatorViewModel(get(), get()) }
     viewModel { LoansViewModel(get(), get(), get(), get()) }
     viewModel { GoalsViewModel(get(), get()) }
-    viewModel { PortfolioViewModel(get(), get(), get(), get()) }
+    viewModel { PortfolioViewModel(get(), get(), get(), get(), get()) }
     viewModel { DashboardViewModel(get(), get(), get(), get()) }
     viewModel { CalendarViewModel(get(), get(), get(), get(), get(), get()) }
     viewModel { PlannedPaymentsViewModel(get(), get(), get(), get(), get()) }

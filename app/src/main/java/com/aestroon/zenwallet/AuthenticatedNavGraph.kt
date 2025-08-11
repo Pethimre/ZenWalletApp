@@ -1,7 +1,5 @@
 package com.aestroon.zenwallet
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -14,53 +12,54 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import com.aestroon.common.presentation.screen.CalendarScreen
 import com.aestroon.common.domain.DashboardViewModel
+import com.aestroon.common.domain.HomeViewModel
+import com.aestroon.common.domain.NewsViewModel
 import com.aestroon.common.domain.PlannedPaymentsViewModel
+import com.aestroon.common.domain.ProfileViewModel
 import com.aestroon.common.domain.TransactionsViewModel
 import com.aestroon.common.domain.WalletsViewModel
 import com.aestroon.common.navigation.AnimatedNavigationBar
 import com.aestroon.common.navigation.ButtonData
 import com.aestroon.common.navigation.ScreenNavItems
 import com.aestroon.common.presentation.AddEditTransactionSheet
-import com.aestroon.common.presentation.screen.PlannedPaymentsScreen
-import com.aestroon.common.presentation.screen.HomeMainScreen
-import com.aestroon.common.domain.HomeViewModel
-import com.aestroon.common.domain.NewsViewModel
-import com.aestroon.common.presentation.screen.NewsDetailErrorScreen
-import com.aestroon.common.presentation.screen.NewsDetailScreen
-import com.aestroon.common.presentation.screen.components.HomeScreenType
-import com.aestroon.common.presentation.screen.PortfolioOverviewScreen
-import com.aestroon.common.domain.ProfileViewModel
 import com.aestroon.common.presentation.screen.AddEditLoanScreen
 import com.aestroon.common.presentation.screen.AddLoanEntryScreen
-import com.aestroon.common.presentation.screen.LoanDetailScreen
-import com.aestroon.common.presentation.screen.LoansScreen
-import com.aestroon.common.presentation.screen.CurrencySelectionScreen
-import com.aestroon.common.presentation.screen.ProfileScreen
+import com.aestroon.common.presentation.screen.CalendarScreen
 import com.aestroon.common.presentation.screen.CategoriesScreen
 import com.aestroon.common.presentation.screen.CompoundInterestCalculatorScreen
+import com.aestroon.common.presentation.screen.CurrencySelectionScreen
 import com.aestroon.common.presentation.screen.GoalsScreen
+import com.aestroon.common.presentation.screen.HomeMainScreen
+import com.aestroon.common.presentation.screen.LoanDetailScreen
+import com.aestroon.common.presentation.screen.LoansScreen
+import com.aestroon.common.presentation.screen.NewsDetailErrorScreen
+import com.aestroon.common.presentation.screen.NewsDetailScreen
+import com.aestroon.common.presentation.screen.PlannedPaymentsScreen
+import com.aestroon.common.presentation.screen.PortfolioOverviewScreen
+import com.aestroon.common.presentation.screen.ProfileScreen
 import com.aestroon.common.presentation.screen.WalletsScreen
+import com.aestroon.common.presentation.screen.components.HomeScreenType
 import org.koin.androidx.compose.getViewModel
 
 @Composable
-fun AuthenticatedNavGraph(onLogoutClicked: () -> Unit) {
-    val navController = rememberNavController()
+fun AuthenticatedNavGraph(
+    navController: NavHostController,
+    onLogoutClicked: () -> Unit
+) {
     val snackbarHostState = remember { SnackbarHostState() }
 
     val newsViewModel: NewsViewModel = getViewModel()
