@@ -39,6 +39,7 @@ A sleek personal finance-tracking Android app built with **Jetpack Compose**, he
 - **Modularization & Gradle build optimization** (in progress)
 - **Core wallet & portfolio tracking** [DONE]
 - **Payment categories & expense visualization** [DONE]
+- **Localization for supporting more languages** (coming soon)
 - **Backup & import/export features** (coming soon)
 - **Shared expenses among users**
 - **Performance improvements & API caching**
